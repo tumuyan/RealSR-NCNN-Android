@@ -41,8 +41,10 @@
         android:id="@+id/spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
         android:entries="@array/style_array"
-     />
+        android:textAlignment="center" />
 
     <SearchView
         android:id="@+id/serarch_view"
@@ -57,8 +59,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:layout_editor_absoluteX="16dp">
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -69,15 +70,18 @@
                 android:id="@+id/photo_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="300dp"
-                android:maxHeight="600dp"
-                />
+                android:adjustViewBounds="true"
+                android:maxHeight="600dp" />
 
             <TextView
                 android:id="@+id/tv_log"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:padding="10dp"
+                android:autoLink="web"
+                android:paddingLeft="15dp"
+                android:paddingTop="5dp"
+                android:paddingRight="15dp"
+                android:paddingBottom="10dp"
                 android:text="@string/default_log" />
         </LinearLayout>
     </ScrollView>

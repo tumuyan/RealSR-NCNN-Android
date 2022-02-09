@@ -1,12 +1,26 @@
 # RealSR-NCNN-Android
 
 Real-ESRGAN is a Practical Algorithms for General Image Restoration.  
-RealSR-NCNN-Android is a simple Android application that based on Realsr-NCNN & Real-ESRGAN.  
+RealSR-NCNN-Android is a simple Android application that based on [Realsr-NCNN](https://github.com/nihui/realsr-ncnn-vulkan) & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).  
 The application does not collect any private information from your device.  
 
 This repository contains 2 project:  
 1. RealSR-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
 2. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell of the former. 
+
+
+
+### About Real-ESRGAN
+
+> [[Paper](https://arxiv.org/abs/2107.10833)] &emsp; [[Project Page]](https://github.com/xinntao/Real-ESRGAN) &emsp; [[YouTube Video](https://www.youtube.com/watch?v=fxHWoDSSvSc)] &emsp; [[B站讲解](https://www.bilibili.com/video/BV1H34y1m7sS/)] &emsp; [[Poster](https://xinntao.github.io/projects/RealESRGAN_src/RealESRGAN_poster.pdf)] &emsp; [[PPT slides](https://docs.google.com/presentation/d/1QtW6Iy8rm8rGLsJ0Ldti6kP-7Qyzy6XL/edit?usp=sharing&ouid=109799856763657548160&rtpof=true&sd=true)]<br>
+> [Xintao Wang](https://xinntao.github.io/), Liangbin Xie, [Chao Dong](https://scholar.google.com.hk/citations?user=OSDCB0UAAAAJ), [Ying Shan](https://scholar.google.com/citations?user=4oXBp9UAAAAJ&hl=en) <br>
+> Tencent ARC Lab; Shenzhen Institutes of Advanced Technology, Chinese Academy of Sciences
+
+![img](https://github.com/xinntao/Real-ESRGAN/raw/master/assets/teaser.jpg)
+**Note that RealESRGAN may still fail in some cases as the real-world degradations are really too complex.**
+Moreover, it **may not** perform well on **human faces, text**, *etc*, which will be optimized later.
+
+
 
 ## how to build RealSR-NCNN-Android-CLI
 ### step1
@@ -21,15 +35,23 @@ open this project with Android Studio, rebuild it and then you could find the pr
 
 
 ## how to use RealSR-NCNN-Android-CLI
+### Download models
+
+I have package and upload models, also you can download models from RealSR-NCNN and Real-ESRGAN.
+
+`https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.0/models.zip`
+
 ### Example Command
 
+make sure the elf file has execute permission. Then input command
+
 ```shell
-realsr-ncnn-vulkan.exe -i input.jpg -o output.png
+./realsr-ncnn -i input.jpg -o output.jpg -m model
 ```
 
 ### Full Usages
 ```console
-Usage: realsr-ncnn-vulkan -i infile -o outfile [options]...
+Usage: realsr-ncnn -i infile -o outfile [options]...
 
   -h                   show this help
   -v                   verbose output
@@ -55,7 +77,7 @@ If you encounter crash or error, try to upgrade your derive
 ## how to build RealSR-NCNN-Android-GUI
 download Real-ESRGAN/RealSRGAN models and put them to this folder, then build it with Android Studio
 
-``
+```
 RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
 │  libvulkan.so    
 │  styletransferncnn
@@ -68,7 +90,7 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
         x4.bin
         x4.param
 		
-``		
+```
 
 
 ## how to build RealSR-NCNN-Android-GUI
@@ -79,12 +101,11 @@ Also the app could input shell command.
 ## screenshot
 
 input & output
+![](Screenshot.jpg)
 
-<img src="Screenshot_1.jpg" style="zoom: 25%;" /> <img src="Screenshot_2.jpg" style="zoom: 25%;" /><img src="Screenshot_3.jpg" style="zoom: 25%;" />
+## Original Project
 
-
-## Thanks to...
-- https://github.com/xinntao/Real-ESRGAN for models
+- https://github.com/xinntao/Real-ESRGAN for real-esrgan models
 - https://github.com/nihui/realsr-ncnn-vulkan (Most of the code is copied from here, cause of the directory structure had to be adjusted, the original git was broken) 
 
 ## Other Open-Source Code Used

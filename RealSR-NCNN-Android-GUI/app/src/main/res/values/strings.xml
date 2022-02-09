@@ -1,14 +1,16 @@
 <resources>
     <string name="app_name">RealSR BigImage</string>
-    <string name="default_log">
-        Real-ESRGAN is a Practical Algorithms for General Image Restoration.
+    <string name="default_log">\n
+        Real-ESRGAN is a Practical Algorithms for General Image Restoration.\n
         This is a simple Android application that uses Realsr-NCNN &amp; Real-ESRGAN.
-        The application does not collect any private information from your device.</string>
+        Project url: https://github.com/tumuyan/RealSR-NCNN-Android\n\n
+        The application does not collect any private information from your device.
+    </string>
     <string name="input_command">Input  console command</string>
 
     <string-array name="style_array">
-        <item>real-esrgan-anime</item>
-        <item>real-esrgan</item>
-        <item>realsr</item>
+        <item>model: real-esrgan-anime</item>
+        <item>model: real-esrgan</item>
+        <item>model: realsr</item>
     </string-array>
 </resources>

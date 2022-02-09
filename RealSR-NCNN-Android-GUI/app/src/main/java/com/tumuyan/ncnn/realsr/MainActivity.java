@@ -182,8 +182,14 @@ public class MainActivity extends AppCompatActivity {
                                     @Override
                                     public void run() {
                                         srImage = BitmapFactory.decodeFile(dir + "/output.png");
-                                        imageView.setVisibility(View.VISIBLE);
-                                        imageView.setImageBitmap(srImage);
+                                        if(srImage!=null){
+                                            imageView.setVisibility(View.VISIBLE);
+//                                            int height = imageView.getWidth()*srImage.getHeight()/srImage.getWidth();
+//                                            Log.i("setMaxHeight","width="+imageView.getWidth()+", maxHeight="+height);
+//                                            imageView.setMaxHeight(height);
+                                            imageView.setImageBitmap(srImage);
+                                        }
+
                                     }
                                 }
                         );
@@ -285,13 +291,6 @@ public class MainActivity extends AppCompatActivity {
                     p.destroy();
                     return false;
                 }
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            logTextView.setText(con);
-                        }
-                    });
             }
 
         } catch (IOException e) {
@@ -483,8 +482,13 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         srImage = null;
-                        imageView.setVisibility(View.VISIBLE);
-                        imageView.setImageBitmap(selectedImage);
+                        if(selectedImage!=null){
+                            imageView.setVisibility(View.VISIBLE);
+//                            int height = imageView.getWidth()*selectedImage.getHeight()/selectedImage.getWidth();
+//                            Log.i("setMaxHeight","width="+imageView.getWidth()+", maxHeight="+height);
+//                            imageView.setMaxHeight(height);
+                            imageView.setImageBitmap(selectedImage);
+                        }
                     }
                 }
         );

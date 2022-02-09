@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">RealSR 放大图片</string>
-    <string name="default_log">Real-ESRGAN 是一个出实用的图像修复算法。
-        这是一个使用了Real-ESRGAN和RealSR-NCNN成果的简单安卓应用。
-        本应用不从您的设备中收集任何隐私信息。</string>
+    <string name="default_log">
+        \nReal ESRGAN是一个实用的图像修复算法，可以用来对低分辨率图片完成四倍放大和修复，化腐朽为神奇。\n
+        这个简单的应用使用了Real ESRGAN和RealSR NCNN的成果，项目地址：https://github.com/tumuyan/RealSR-NCNN-Android\n
+        图片处理过程完全在本地运行，处理耗时取决于图片大小以及设备的性能。\n\n
+        本应用不从您的设备中收集任何隐私信息，请放心使用。</string>
     <string name="input_command">输入命令（像console一样）</string>
 </resources>
