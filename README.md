@@ -1,14 +1,15 @@
 # RealSR-NCNN-Android
 
+[中文说明](https://github.com/tumuyan/RealSR-NCNN-Android/blob/master/README_CHS.md)
 Real-ESRGAN is a Practical Algorithms for General Image Restoration.  
-RealSR-NCNN-Android is a simple Android application that based on [Realsr-NCNN](https://github.com/nihui/realsr-ncnn-vulkan) & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).  
+RealSR-NCNN-Android is a simple Android application that based on [Realsr-NCNN](https://github.com/nihui/realsr-ncnn-vulkan) [SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan) & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).  
 The application does not collect any private information from your device.  
 
-This repository contains 2 project:  
-1. RealSR-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
-2. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell of the former. 
-
-
+This repository contains 4 project:  
+1. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell of the former.
+2. RealSR-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
+3. SRMD-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
+4. Waifu2x-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
 
 ### About Real-ESRGAN
 
@@ -18,8 +19,6 @@ This repository contains 2 project:
 
 ![img](https://github.com/xinntao/Real-ESRGAN/raw/master/assets/teaser.jpg)
 **Note that RealESRGAN may still fail in some cases as the real-world degradations are really too complex.**
-Moreover, it **may not** perform well on **human faces, text**, *etc*, which will be optimized later.
-
 
 
 ## how to build RealSR-NCNN-Android-CLI
@@ -28,7 +27,7 @@ https://github.com/Tencent/ncnn/releases
 download ncnn-android-vulkan.zip or build ncnn for android yourself
 
 ### step2
-extract ncnn-android-vulkan.zip into app/src/main/jni or change the ncnn_DIR path to yours in app/src/main/jni/CMakeLists.txt
+extract ncnn-android-vulkan.zip into `app/src/main/jni` or change the `ncnn_DIR` path to yours in `app/src/main/jni/CMakeLists.txt`
 
 ### step3
 open this project with Android Studio, rebuild it and then you could find the program in `RealSR-NCNN-Android-CLI\app\build\intermediates\cmake\debug\obj`
@@ -39,14 +38,14 @@ open this project with Android Studio, rebuild it and then you could find the pr
 
 I have package and upload models, also you can download models from RealSR-NCNN and Real-ESRGAN.
 
-`https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.0/models.zip`
+`https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.2/models.zip`
 
 ### Example Command
 
 make sure the elf file has execute permission. Then input command
 
 ```shell
-./realsr-ncnn -i input.jpg -o output.jpg -m model
+./realsr-ncnn -i input.jpg -o output.jpg
 ```
 
 ### Full Usages
@@ -55,15 +54,15 @@ Usage: realsr-ncnn -i infile -o outfile [options]...
 
   -h                   show this help
   -v                   verbose output
-  -i input-path        input image path (jpg/png/webp) or directory
-  -o output-path       output image path (jpg/png/webp) or directory
+  -i input-path        input image path (jpg/png) or directory
+  -o output-path       output image path (jpg/png) or directory
   -s scale             upscale ratio (4, default=4)
   -t tile-size         tile size (>=32/0=auto, default=0) can be 0,0,0 for multi-gpu
   -m model-path        realsr model path (default=models-DF2K_JPEG)
   -g gpu-id            gpu device to use (default=0) can be 0,1,2 for multi-gpu
   -j load:proc:save    thread count for load/proc/save (default=1:2:2) can be 1:2,2,2:2 for multi-gpu
   -x                   enable tta mode
-  -f format            output image format (jpg/png/webp, default=ext/png)
+  -f format            output image format (jpg/png, default=ext/png)
 ```
 
 - `input-path` and `output-path` accept either file path or directory path
@@ -78,22 +77,44 @@ If you encounter crash or error, try to upgrade your derive
 download Real-ESRGAN/RealSRGAN models and put them to this folder, then build it with Android Studio
 
 ```
-RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
-│  libvulkan.so    
-│  styletransferncnn
+│  libvulkan.so
+│  realsr-ncnn
+│  srmd-ncnn
 │  
-├─models-DF2K_ESRGAN_anime
+├─models-DF2K
 │      x4.bin
 │      x4.param
 │      
-└─models-DF2K_ESRGAN
-        x4.bin
-        x4.param
+├─models-DF2K_JPEG
+│      x4.bin
+│      x4.param
+│      
+├─models-Real-ESRGAN
+│      x4.bin
+│      x4.param
+│      
+├─models-Real-ESRGAN-anime
+│      x4.bin
+│      x4.param
+│      
+└─models-srmd
+        srmdnf_x2.bin
+        srmdnf_x2.param
+        srmdnf_x3.bin
+        srmdnf_x3.param
+        srmdnf_x4.bin
+        srmdnf_x4.param
+        srmd_x2.bin
+        srmd_x2.param
+        srmd_x3.bin
+        srmd_x3.param
+        srmd_x4.bin
+        srmd_x4.param
 		
 ```
 
 
-## how to build RealSR-NCNN-Android-GUI
+## how to use RealSR-NCNN-Android-GUI
 You can open photo picker, chose a model, click the `Run` button and wait some time. The photo view will show the result when the progrem finish its work. If you like the result, you could click the `Save` button.  
 
 Also the app could input shell command.
@@ -103,14 +124,19 @@ Also the app could input shell command.
 input & output
 ![](Screenshot.jpg)
 
-## Original Project
+## Others project in this Repository
+Building and usage is same as RealSR-NCNN-Android-CLI
 
-- https://github.com/xinntao/Real-ESRGAN for real-esrgan models
-- https://github.com/nihui/realsr-ncnn-vulkan (Most of the code is copied from here, cause of the directory structure had to be adjusted, the original git was broken) 
+## Original Project
+### real-esrgan original project and models
+- https://github.com/xinntao/Real-ESRGAN
+### C code and others models
+Most of the code is copied from Nihui, cause of the directory structure had to be adjusted, the original git was broken  
+- https://github.com/nihui/realsr-ncnn-vulkan
+- https://github.com/nihui/srmd-ncnn-vulkan
+- https://github.com/nihui/waifu2x-ncnn-vulkan
 
 ## Other Open-Source Code Used
-
 -   [https://github.com/Tencent/ncnn](https://github.com/Tencent/ncnn)  for fast neural network inference on ALL PLATFORMS
--   [https://github.com/webmproject/libwebp](https://github.com/webmproject/libwebp)  for encoding and decoding Webp images on ALL PLATFORMS (it was removed)
 -   [https://github.com/nothings/stb](https://github.com/nothings/stb)  for decoding and encoding image on Linux / MacOS
 -   [https://github.com/tronkko/dirent](https://github.com/tronkko/dirent)  for listing files in directory on Windows

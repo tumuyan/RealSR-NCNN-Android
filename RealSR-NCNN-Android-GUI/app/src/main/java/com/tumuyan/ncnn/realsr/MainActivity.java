@@ -1,6 +1,5 @@
 package com.tumuyan.ncnn.realsr;
 
-import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -16,7 +15,6 @@ import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -37,7 +35,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.Date;
-import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1;
@@ -131,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        findViewById(R.id.btn_share).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.btn_save).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
@@ -162,40 +159,54 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 newTast = true;
+                String q = searchView.getQuery().toString().trim();
+                if (q.equals("help")) {
+                    logTextView.setText(getString(R.string.default_log));
+                } else {
 
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-
-                        switch (style_type) {
-                            case 1:
-                                run20("./realsr-ncnn -i input.png -o output.png  -m models-DF2K_ESRGAN");
-                                break;
-                            case 2:
-                                run20("./realsr-ncnn -i input.png -o output.png  -m models-DF2K");
-                                break;
-                            default:
-                                run20("./realsr-ncnn -i input.png -o output.png  -m models-DF2K_ESRGAN_anime");
-                        }
-                        runOnUiThread(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        srImage = BitmapFactory.decodeFile(dir + "/output.png");
-                                        if(srImage!=null){
-                                            imageView.setVisibility(View.VISIBLE);
-//                                            int height = imageView.getWidth()*srImage.getHeight()/srImage.getWidth();
-//                                            Log.i("setMaxHeight","width="+imageView.getWidth()+", maxHeight="+height);
-//                                            imageView.setMaxHeight(height);
-                                            imageView.setImageBitmap(srImage);
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            switch (style_type) {
+                                case 1:
+                                    run20("./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN");
+                                    break;
+                                case 2:
+                                    run20("./realsr-ncnn -i input.png -o output.png  -m models-DF2K_JPEG");
+                                    break;
+                                case 3:
+                                    run20("./realsr-ncnn -i input.png -o output.png  -m models-DF2K");
+                                    break;
+                                case 4:
+                                    run20("./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 4");
+                                    break;
+                                case 5:
+                                    run20("./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 3");
+                                    break;
+                                case 6:
+                                    run20("./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 2");
+                                    break;
+                                default:
+                                    run20("./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-anime");
+                            }
+                            runOnUiThread(
+                                    new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            srImage = BitmapFactory.decodeFile(dir + "/output.png");
+                                            if (srImage != null) {
+                                                imageView.setVisibility(View.VISIBLE);
+                                                imageView.setImageBitmap(srImage);
+                                            }
                                         }
-
                                     }
-                                }
-                        );
+                            );
 
-                    }
-                }).start();
+                        }
+                    }).start();
+
+                }
+
             }
         });
     }

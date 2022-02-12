@@ -1,49 +1,49 @@
-// realsr implemented with ncnn library
+// srmd implemented with ncnn library
 
-#include "realsr.h"
+#include "srmd.h"
 
 #include <algorithm>
 #include <vector>
 
-static const uint32_t realsr_preproc_spv_data[] = {
-    #include "realsr_preproc.spv.hex.h"
+static const uint32_t srmd_preproc_spv_data[] = {
+    #include "srmd_preproc.spv.hex.h"
 };
-static const uint32_t realsr_preproc_fp16s_spv_data[] = {
-    #include "realsr_preproc_fp16s.spv.hex.h"
+static const uint32_t srmd_preproc_fp16s_spv_data[] = {
+    #include "srmd_preproc_fp16s.spv.hex.h"
 };
-static const uint32_t realsr_preproc_int8s_spv_data[] = {
-    #include "realsr_preproc_int8s.spv.hex.h"
+static const uint32_t srmd_preproc_int8s_spv_data[] = {
+    #include "srmd_preproc_int8s.spv.hex.h"
 };
-static const uint32_t realsr_postproc_spv_data[] = {
-    #include "realsr_postproc.spv.hex.h"
+static const uint32_t srmd_postproc_spv_data[] = {
+    #include "srmd_postproc.spv.hex.h"
 };
-static const uint32_t realsr_postproc_fp16s_spv_data[] = {
-    #include "realsr_postproc_fp16s.spv.hex.h"
+static const uint32_t srmd_postproc_fp16s_spv_data[] = {
+    #include "srmd_postproc_fp16s.spv.hex.h"
 };
-static const uint32_t realsr_postproc_int8s_spv_data[] = {
-    #include "realsr_postproc_int8s.spv.hex.h"
-};
-
-static const uint32_t realsr_preproc_tta_spv_data[] = {
-    #include "realsr_preproc_tta.spv.hex.h"
-};
-static const uint32_t realsr_preproc_tta_fp16s_spv_data[] = {
-    #include "realsr_preproc_tta_fp16s.spv.hex.h"
-};
-static const uint32_t realsr_preproc_tta_int8s_spv_data[] = {
-    #include "realsr_preproc_tta_int8s.spv.hex.h"
-};
-static const uint32_t realsr_postproc_tta_spv_data[] = {
-    #include "realsr_postproc_tta.spv.hex.h"
-};
-static const uint32_t realsr_postproc_tta_fp16s_spv_data[] = {
-    #include "realsr_postproc_tta_fp16s.spv.hex.h"
-};
-static const uint32_t realsr_postproc_tta_int8s_spv_data[] = {
-    #include "realsr_postproc_tta_int8s.spv.hex.h"
+static const uint32_t srmd_postproc_int8s_spv_data[] = {
+    #include "srmd_postproc_int8s.spv.hex.h"
 };
 
-RealSR::RealSR(int gpuid, bool _tta_mode)
+static const uint32_t srmd_preproc_tta_spv_data[] = {
+    #include "srmd_preproc_tta.spv.hex.h"
+};
+static const uint32_t srmd_preproc_tta_fp16s_spv_data[] = {
+    #include "srmd_preproc_tta_fp16s.spv.hex.h"
+};
+static const uint32_t srmd_preproc_tta_int8s_spv_data[] = {
+    #include "srmd_preproc_tta_int8s.spv.hex.h"
+};
+static const uint32_t srmd_postproc_tta_spv_data[] = {
+    #include "srmd_postproc_tta.spv.hex.h"
+};
+static const uint32_t srmd_postproc_tta_fp16s_spv_data[] = {
+    #include "srmd_postproc_tta_fp16s.spv.hex.h"
+};
+static const uint32_t srmd_postproc_tta_int8s_spv_data[] = {
+    #include "srmd_postproc_tta_int8s.spv.hex.h"
+};
+
+SRMD::SRMD(int gpuid, bool _tta_mode)
 {
     net.opt.use_vulkan_compute = true;
     net.opt.use_fp16_packed = true;
@@ -54,28 +54,30 @@ RealSR::RealSR(int gpuid, bool _tta_mode)
 
     net.set_vulkan_device(gpuid);
 
-    realsr_preproc = 0;
-    realsr_postproc = 0;
+    srmd_preproc = 0;
+    srmd_postproc = 0;
+    bicubic_2x = 0;
+    bicubic_3x = 0;
     bicubic_4x = 0;
     tta_mode = _tta_mode;
 }
 
-RealSR::~RealSR()
+SRMD::~SRMD()
 {
     // cleanup preprocess and postprocess pipeline
     {
-        delete realsr_preproc;
-        delete realsr_postproc;
+        delete srmd_preproc;
+        delete srmd_postproc;
     }
 
-    bicubic_4x->destroy_pipeline(net.opt);
-    delete bicubic_4x;
+    bicubic_2x->destroy_pipeline(net.opt);
+    delete bicubic_2x;
 }
 
 #if _WIN32
-int RealSR::load(const std::wstring& parampath, const std::wstring& modelpath)
+int SRMD::load(const std::wstring& parampath, const std::wstring& modelpath)
 #else
-int RealSR::load(const std::string& parampath, const std::string& modelpath)
+int SRMD::load(const std::string& parampath, const std::string& modelpath)
 #endif
 {
 #if _WIN32
@@ -115,47 +117,71 @@ int RealSR::load(const std::string& parampath, const std::string& modelpath)
         specializations[0].i = 0;
 #endif
 
-        realsr_preproc = new ncnn::Pipeline(net.vulkan_device());
-        realsr_preproc->set_optimal_local_size_xyz(32, 32, 3);
+        srmd_preproc = new ncnn::Pipeline(net.vulkan_device());
+        srmd_preproc->set_optimal_local_size_xyz(32, 32, 3);
 
-        realsr_postproc = new ncnn::Pipeline(net.vulkan_device());
-        realsr_postproc->set_optimal_local_size_xyz(32, 32, 3);
+        srmd_postproc = new ncnn::Pipeline(net.vulkan_device());
+        srmd_postproc->set_optimal_local_size_xyz(32, 32, 3);
 
         if (tta_mode)
         {
             if (net.opt.use_fp16_storage && net.opt.use_int8_storage)
-                realsr_preproc->create(realsr_preproc_tta_int8s_spv_data, sizeof(realsr_preproc_tta_int8s_spv_data), specializations);
+                srmd_preproc->create(srmd_preproc_tta_int8s_spv_data, sizeof(srmd_preproc_tta_int8s_spv_data), specializations);
             else if (net.opt.use_fp16_storage)
-                realsr_preproc->create(realsr_preproc_tta_fp16s_spv_data, sizeof(realsr_preproc_tta_fp16s_spv_data), specializations);
+                srmd_preproc->create(srmd_preproc_tta_fp16s_spv_data, sizeof(srmd_preproc_tta_fp16s_spv_data), specializations);
             else
-                realsr_preproc->create(realsr_preproc_tta_spv_data, sizeof(realsr_preproc_tta_spv_data), specializations);
+                srmd_preproc->create(srmd_preproc_tta_spv_data, sizeof(srmd_preproc_tta_spv_data), specializations);
 
             if (net.opt.use_fp16_storage && net.opt.use_int8_storage)
-                realsr_postproc->create(realsr_postproc_tta_int8s_spv_data, sizeof(realsr_postproc_tta_int8s_spv_data), specializations);
+                srmd_postproc->create(srmd_postproc_tta_int8s_spv_data, sizeof(srmd_postproc_tta_int8s_spv_data), specializations);
             else if (net.opt.use_fp16_storage)
-                realsr_postproc->create(realsr_postproc_tta_fp16s_spv_data, sizeof(realsr_postproc_tta_fp16s_spv_data), specializations);
+                srmd_postproc->create(srmd_postproc_tta_fp16s_spv_data, sizeof(srmd_postproc_tta_fp16s_spv_data), specializations);
             else
-                realsr_postproc->create(realsr_postproc_tta_spv_data, sizeof(realsr_postproc_tta_spv_data), specializations);
+                srmd_postproc->create(srmd_postproc_tta_spv_data, sizeof(srmd_postproc_tta_spv_data), specializations);
         }
         else
         {
             if (net.opt.use_fp16_storage && net.opt.use_int8_storage)
-                realsr_preproc->create(realsr_preproc_int8s_spv_data, sizeof(realsr_preproc_int8s_spv_data), specializations);
+                srmd_preproc->create(srmd_preproc_int8s_spv_data, sizeof(srmd_preproc_int8s_spv_data), specializations);
             else if (net.opt.use_fp16_storage)
-                realsr_preproc->create(realsr_preproc_fp16s_spv_data, sizeof(realsr_preproc_fp16s_spv_data), specializations);
+                srmd_preproc->create(srmd_preproc_fp16s_spv_data, sizeof(srmd_preproc_fp16s_spv_data), specializations);
             else
-                realsr_preproc->create(realsr_preproc_spv_data, sizeof(realsr_preproc_spv_data), specializations);
+                srmd_preproc->create(srmd_preproc_spv_data, sizeof(srmd_preproc_spv_data), specializations);
 
             if (net.opt.use_fp16_storage && net.opt.use_int8_storage)
-                realsr_postproc->create(realsr_postproc_int8s_spv_data, sizeof(realsr_postproc_int8s_spv_data), specializations);
+                srmd_postproc->create(srmd_postproc_int8s_spv_data, sizeof(srmd_postproc_int8s_spv_data), specializations);
             else if (net.opt.use_fp16_storage)
-                realsr_postproc->create(realsr_postproc_fp16s_spv_data, sizeof(realsr_postproc_fp16s_spv_data), specializations);
+                srmd_postproc->create(srmd_postproc_fp16s_spv_data, sizeof(srmd_postproc_fp16s_spv_data), specializations);
             else
-                realsr_postproc->create(realsr_postproc_spv_data, sizeof(realsr_postproc_spv_data), specializations);
+                srmd_postproc->create(srmd_postproc_spv_data, sizeof(srmd_postproc_spv_data), specializations);
         }
     }
 
-    // bicubic 4x for alpha channel
+    // bicubic 2x/3x/4x for alpha channel
+    {
+        bicubic_2x = ncnn::create_layer("Interp");
+        bicubic_2x->vkdev = net.vulkan_device();
+
+        ncnn::ParamDict pd;
+        pd.set(0, 3);// bicubic
+        pd.set(1, 2.f);
+        pd.set(2, 2.f);
+        bicubic_2x->load_param(pd);
+
+        bicubic_2x->create_pipeline(net.opt);
+    }
+    {
+        bicubic_3x = ncnn::create_layer("Interp");
+        bicubic_3x->vkdev = net.vulkan_device();
+
+        ncnn::ParamDict pd;
+        pd.set(0, 3);// bicubic
+        pd.set(1, 3.f);
+        pd.set(2, 3.f);
+        bicubic_3x->load_param(pd);
+
+        bicubic_3x->create_pipeline(net.opt);
+    }
     {
         bicubic_4x = ncnn::create_layer("Interp");
         bicubic_4x->vkdev = net.vulkan_device();
@@ -172,7 +198,7 @@ int RealSR::load(const std::string& parampath, const std::string& modelpath)
     return 0;
 }
 
-int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
+int SRMD::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
 {
     const unsigned char* pixeldata = (const unsigned char*)inimage.data;
     const int w = inimage.w;
@@ -190,7 +216,7 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
     opt.workspace_vkallocator = blob_vkallocator;
     opt.staging_vkallocator = staging_vkallocator;
 
-    // each tile 100x100
+    // each tile 400x400
     const int xtiles = (w + TILE_SIZE_X - 1) / TILE_SIZE_X;
     const int ytiles = (h + TILE_SIZE_Y - 1) / TILE_SIZE_Y;
 
@@ -272,14 +298,14 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     int tile_y0 = yi * TILE_SIZE_Y - prepadding;
                     int tile_y1 = std::min((yi + 1) * TILE_SIZE_Y, h) + prepadding;
 
-                    in_tile_gpu[0].create(tile_x1 - tile_x0, tile_y1 - tile_y0, 3, in_out_tile_elemsize, 1, blob_vkallocator);
-                    in_tile_gpu[1].create(tile_x1 - tile_x0, tile_y1 - tile_y0, 3, in_out_tile_elemsize, 1, blob_vkallocator);
-                    in_tile_gpu[2].create(tile_x1 - tile_x0, tile_y1 - tile_y0, 3, in_out_tile_elemsize, 1, blob_vkallocator);
-                    in_tile_gpu[3].create(tile_x1 - tile_x0, tile_y1 - tile_y0, 3, in_out_tile_elemsize, 1, blob_vkallocator);
-                    in_tile_gpu[4].create(tile_y1 - tile_y0, tile_x1 - tile_x0, 3, in_out_tile_elemsize, 1, blob_vkallocator);
-                    in_tile_gpu[5].create(tile_y1 - tile_y0, tile_x1 - tile_x0, 3, in_out_tile_elemsize, 1, blob_vkallocator);
-                    in_tile_gpu[6].create(tile_y1 - tile_y0, tile_x1 - tile_x0, 3, in_out_tile_elemsize, 1, blob_vkallocator);
-                    in_tile_gpu[7].create(tile_y1 - tile_y0, tile_x1 - tile_x0, 3, in_out_tile_elemsize, 1, blob_vkallocator);
+                    in_tile_gpu[0].create(tile_x1 - tile_x0, tile_y1 - tile_y0, noise == -1 ? 18 : 19, in_out_tile_elemsize, 1, blob_vkallocator);
+                    in_tile_gpu[1].create(tile_x1 - tile_x0, tile_y1 - tile_y0, noise == -1 ? 18 : 19, in_out_tile_elemsize, 1, blob_vkallocator);
+                    in_tile_gpu[2].create(tile_x1 - tile_x0, tile_y1 - tile_y0, noise == -1 ? 18 : 19, in_out_tile_elemsize, 1, blob_vkallocator);
+                    in_tile_gpu[3].create(tile_x1 - tile_x0, tile_y1 - tile_y0, noise == -1 ? 18 : 19, in_out_tile_elemsize, 1, blob_vkallocator);
+                    in_tile_gpu[4].create(tile_y1 - tile_y0, tile_x1 - tile_x0, noise == -1 ? 18 : 19, in_out_tile_elemsize, 1, blob_vkallocator);
+                    in_tile_gpu[5].create(tile_y1 - tile_y0, tile_x1 - tile_x0, noise == -1 ? 18 : 19, in_out_tile_elemsize, 1, blob_vkallocator);
+                    in_tile_gpu[6].create(tile_y1 - tile_y0, tile_x1 - tile_x0, noise == -1 ? 18 : 19, in_out_tile_elemsize, 1, blob_vkallocator);
+                    in_tile_gpu[7].create(tile_y1 - tile_y0, tile_x1 - tile_x0, noise == -1 ? 18 : 19, in_out_tile_elemsize, 1, blob_vkallocator);
 
                     if (channels == 4)
                     {
@@ -298,7 +324,7 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     bindings[8] = in_tile_gpu[7];
                     bindings[9] = in_alpha_tile_gpu;
 
-                    std::vector<ncnn::vk_constant_type> constants(13);
+                    std::vector<ncnn::vk_constant_type> constants(14);
                     constants[0].i = in_gpu.w;
                     constants[1].i = in_gpu.h;
                     constants[2].i = in_gpu.cstep;
@@ -309,19 +335,20 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     constants[7].i = prepadding;
                     constants[8].i = xi * TILE_SIZE_X;
                     constants[9].i = std::min(yi * TILE_SIZE_Y, prepadding);
-                    constants[10].i = channels;
-                    constants[11].i = in_alpha_tile_gpu.w;
-                    constants[12].i = in_alpha_tile_gpu.h;
+                    constants[10].i = noise;
+                    constants[11].i = channels;//(noise == -1 ? 18 : 19) + channels - 3;
+                    constants[12].i = in_alpha_tile_gpu.w;
+                    constants[13].i = in_alpha_tile_gpu.h;
 
                     ncnn::VkMat dispatcher;
                     dispatcher.w = in_tile_gpu[0].w;
                     dispatcher.h = in_tile_gpu[0].h;
-                    dispatcher.c = channels;
+                    dispatcher.c = (noise == -1 ? 18 : 19) + channels - 3;
 
-                    cmd.record_pipeline(realsr_preproc, bindings, constants, dispatcher);
+                    cmd.record_pipeline(srmd_preproc, bindings, constants, dispatcher);
                 }
 
-                // realsr
+                // srmd
                 ncnn::VkMat out_tile_gpu[8];
                 for (int ti = 0; ti < 8; ti++)
                 {
@@ -331,14 +358,9 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     ex.set_workspace_vkallocator(blob_vkallocator);
                     ex.set_staging_vkallocator(staging_vkallocator);
 
-                    ex.input("data", in_tile_gpu[ti]);
+                    ex.input("input", in_tile_gpu[ti]);
 
                     ex.extract("output", out_tile_gpu[ti], cmd);
-
-                    {
-                        cmd.submit_and_wait();
-                        cmd.reset();
-                    }
                 }
 
                 ncnn::VkMat out_alpha_tile_gpu;
@@ -347,6 +369,14 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     if (scale == 1)
                     {
                         out_alpha_tile_gpu = in_alpha_tile_gpu;
+                    }
+                    if (scale == 2)
+                    {
+                        bicubic_2x->forward(in_alpha_tile_gpu, out_alpha_tile_gpu, cmd, opt);
+                    }
+                    if (scale == 3)
+                    {
+                        bicubic_3x->forward(in_alpha_tile_gpu, out_alpha_tile_gpu, cmd, opt);
                     }
                     if (scale == 4)
                     {
@@ -388,7 +418,7 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     dispatcher.h = out_gpu.h;
                     dispatcher.c = channels;
 
-                    cmd.record_pipeline(realsr_postproc, bindings, constants, dispatcher);
+                    cmd.record_pipeline(srmd_postproc, bindings, constants, dispatcher);
                 }
             }
             else
@@ -403,7 +433,7 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     int tile_y0 = yi * TILE_SIZE_Y - prepadding;
                     int tile_y1 = std::min((yi + 1) * TILE_SIZE_Y, h) + prepadding;
 
-                    in_tile_gpu.create(tile_x1 - tile_x0, tile_y1 - tile_y0, 3, in_out_tile_elemsize, 1, blob_vkallocator);
+                    in_tile_gpu.create(tile_x1 - tile_x0, tile_y1 - tile_y0, noise == -1 ? 18 : 19, in_out_tile_elemsize, 1, blob_vkallocator);
 
                     if (channels == 4)
                     {
@@ -415,7 +445,7 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     bindings[1] = in_tile_gpu;
                     bindings[2] = in_alpha_tile_gpu;
 
-                    std::vector<ncnn::vk_constant_type> constants(13);
+                    std::vector<ncnn::vk_constant_type> constants(14);
                     constants[0].i = in_gpu.w;
                     constants[1].i = in_gpu.h;
                     constants[2].i = in_gpu.cstep;
@@ -426,19 +456,20 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     constants[7].i = prepadding;
                     constants[8].i = xi * TILE_SIZE_X;
                     constants[9].i = std::min(yi * TILE_SIZE_Y, prepadding);
-                    constants[10].i = channels;
-                    constants[11].i = in_alpha_tile_gpu.w;
-                    constants[12].i = in_alpha_tile_gpu.h;
+                    constants[10].i = noise;
+                    constants[11].i = channels;//(noise == -1 ? 18 : 19) + channels - 3;
+                    constants[12].i = in_alpha_tile_gpu.w;
+                    constants[13].i = in_alpha_tile_gpu.h;
 
                     ncnn::VkMat dispatcher;
                     dispatcher.w = in_tile_gpu.w;
                     dispatcher.h = in_tile_gpu.h;
-                    dispatcher.c = channels;
+                    dispatcher.c = (noise == -1 ? 18 : 19) + channels - 3;
 
-                    cmd.record_pipeline(realsr_preproc, bindings, constants, dispatcher);
+                    cmd.record_pipeline(srmd_preproc, bindings, constants, dispatcher);
                 }
 
-                // realsr
+                // srmd
                 ncnn::VkMat out_tile_gpu;
                 {
                     ncnn::Extractor ex = net.create_extractor();
@@ -447,7 +478,7 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     ex.set_workspace_vkallocator(blob_vkallocator);
                     ex.set_staging_vkallocator(staging_vkallocator);
 
-                    ex.input("data", in_tile_gpu);
+                    ex.input("input", in_tile_gpu);
 
                     ex.extract("output", out_tile_gpu, cmd);
                 }
@@ -458,6 +489,14 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     if (scale == 1)
                     {
                         out_alpha_tile_gpu = in_alpha_tile_gpu;
+                    }
+                    if (scale == 2)
+                    {
+                        bicubic_2x->forward(in_alpha_tile_gpu, out_alpha_tile_gpu, cmd, opt);
+                    }
+                    if (scale == 3)
+                    {
+                        bicubic_3x->forward(in_alpha_tile_gpu, out_alpha_tile_gpu, cmd, opt);
                     }
                     if (scale == 4)
                     {
@@ -492,7 +531,7 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     dispatcher.h = out_gpu.h;
                     dispatcher.c = channels;
 
-                    cmd.record_pipeline(realsr_postproc, bindings, constants, dispatcher);
+                    cmd.record_pipeline(srmd_postproc, bindings, constants, dispatcher);
                 }
             }
 
@@ -501,8 +540,6 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                 cmd.submit_and_wait();
                 cmd.reset();
             }
-
-            fprintf(stderr, "%.2f%%\n", (float)(yi * xtiles + xi) / (ytiles * xtiles) * 100);
         }
 
         // download
