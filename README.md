@@ -1,19 +1,19 @@
 # RealSR-NCNN-Android
 
-[中文说明](https://github.com/tumuyan/RealSR-NCNN-Android/blob/master/README_CHS.md)
+[中文说明](https://github.com/tumuyan/RealSR-NCNN-Android/blob/master/README_CHS.md)  
 Real-ESRGAN is a Practical Algorithms for General Image Restoration.  
 RealSR-NCNN-Android is a simple Android application that based on [Realsr-NCNN](https://github.com/nihui/realsr-ncnn-vulkan) [SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan) & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).  
 The application does not collect any private information from your device.  
 
 This repository contains 4 project:  
-1. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell of the former.
+1. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell of the follow programs.
 2. RealSR-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
 3. SRMD-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
 4. Waifu2x-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
 
 ### About Real-ESRGAN
 
-> [[Paper](https://arxiv.org/abs/2107.10833)] &emsp; [[Project Page]](https://github.com/xinntao/Real-ESRGAN) &emsp; [[YouTube Video](https://www.youtube.com/watch?v=fxHWoDSSvSc)] &emsp; [[B站讲解](https://www.bilibili.com/video/BV1H34y1m7sS/)] &emsp; [[Poster](https://xinntao.github.io/projects/RealESRGAN_src/RealESRGAN_poster.pdf)] &emsp; [[PPT slides](https://docs.google.com/presentation/d/1QtW6Iy8rm8rGLsJ0Ldti6kP-7Qyzy6XL/edit?usp=sharing&ouid=109799856763657548160&rtpof=true&sd=true)]<br>
+> [[Paper](https://arxiv.org/abs/2107.10833)] &emsp; [[Project Page]](https://github.com/xinntao/Real-ESRGAN) &emsp; [[YouTube Video](https://www.youtube.com/watch?v=fxHWoDSSvSc)] &emsp; [[Bilibili](https://www.bilibili.com/video/BV1H34y1m7sS/)] &emsp; [[Poster](https://xinntao.github.io/projects/RealESRGAN_src/RealESRGAN_poster.pdf)] &emsp; [[PPT slides](https://docs.google.com/presentation/d/1QtW6Iy8rm8rGLsJ0Ldti6kP-7Qyzy6XL/edit?usp=sharing&ouid=109799856763657548160&rtpof=true&sd=true)]<br>
 > [Xintao Wang](https://xinntao.github.io/), Liangbin Xie, [Chao Dong](https://scholar.google.com.hk/citations?user=OSDCB0UAAAAJ), [Ying Shan](https://scholar.google.com/citations?user=4oXBp9UAAAAJ&hl=en) <br>
 > Tencent ARC Lab; Shenzhen Institutes of Advanced Technology, Chinese Academy of Sciences
 
@@ -77,6 +77,7 @@ If you encounter crash or error, try to upgrade your derive
 download Real-ESRGAN/RealSRGAN models and put them to this folder, then build it with Android Studio
 
 ```
+RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
 │  libvulkan.so
 │  realsr-ncnn
 │  srmd-ncnn
@@ -97,6 +98,12 @@ download Real-ESRGAN/RealSRGAN models and put them to this folder, then build it
 │      x4.bin
 │      x4.param
 │      
+├─models-Real-ESRGANv2-anime
+│      x2.bin
+│      x2.param
+│      x4.bin
+│      x4.param
+│      
 └─models-srmd
         srmdnf_x2.bin
         srmdnf_x2.param
@@ -110,7 +117,8 @@ download Real-ESRGAN/RealSRGAN models and put them to this folder, then build it
         srmd_x3.param
         srmd_x4.bin
         srmd_x4.param
-		
+        
+
 ```
 
 

@@ -172,18 +172,24 @@ public class MainActivity extends AppCompatActivity {
                                     run20("./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN");
                                     break;
                                 case 2:
-                                    run20("./realsr-ncnn -i input.png -o output.png  -m models-DF2K_JPEG");
+                                    run20("./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime -s 2");
                                     break;
                                 case 3:
-                                    run20("./realsr-ncnn -i input.png -o output.png  -m models-DF2K");
+                                    run20("./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime");
                                     break;
                                 case 4:
-                                    run20("./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 4");
+                                    run20("./realsr-ncnn -i input.png -o output.png  -m models-DF2K_JPEG");
                                     break;
                                 case 5:
-                                    run20("./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 3");
+                                    run20("./realsr-ncnn -i input.png -o output.png  -m models-DF2K");
                                     break;
                                 case 6:
+                                    run20("./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 4");
+                                    break;
+                                case 7:
+                                    run20("./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 3");
+                                    break;
+                                case 8:
                                     run20("./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 2");
                                     break;
                                 default:

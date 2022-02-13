@@ -520,10 +520,10 @@ int main(int argc, char **argv)
 #endif
     }
 
-    if (scale != 4) {
-        fprintf(stderr, "invalid scale argument\n");
-        return -1;
-    }
+//    if (scale != 4) {
+//        fprintf(stderr, "invalid scale argument\n");
+//        return -1;
+//    }
 
     if (tilesize.size() != (gpuid.empty() ? 1 : gpuid.size()) && !tilesize.empty()) {
         fprintf(stderr, "invalid tilesize argument\n");
@@ -637,18 +637,13 @@ int main(int argc, char **argv)
 #if _WIN32
     wchar_t parampath[256];
     wchar_t modelpath[256];
-    if (scale == 4)
-    {
-        swprintf(parampath, 256, L"%s/x4.param", model.c_str());
-        swprintf(modelpath, 256, L"%s/x4.bin", model.c_str());
-    }
+    swprintf(parampath, 256, L"%s/x%d.param", model.c_str(), scale);
+    swprintf(modelpath, 256, L"%s/x%d.bin", model.c_str(), scale);
 #else
     char parampath[256];
     char modelpath[256];
-    if (scale == 4) {
-        sprintf(parampath, "%s/x4.param", model.c_str());
-        sprintf(modelpath, "%s/x4.bin", model.c_str());
-    }
+    sprintf(parampath, "%s/x%d.param", model.c_str(), scale);
+    sprintf(modelpath, "%s/x%d.bin", model.c_str(), scale);
 #endif
 
     path_t paramfullpath = sanitize_filepath(parampath);

@@ -89,6 +89,12 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
 │      x4.bin
 │      x4.param
 │      
+├─models-Real-ESRGANv2-anime
+│      x2.bin
+│      x2.param
+│      x4.bin
+│      x4.param
+│      
 └─models-srmd
         srmdnf_x2.bin
         srmdnf_x2.param
@@ -102,7 +108,7 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
         srmd_x3.param
         srmd_x4.bin
         srmd_x4.param
-		
+        		
 ```
 
 

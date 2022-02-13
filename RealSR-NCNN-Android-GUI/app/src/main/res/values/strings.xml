@@ -9,18 +9,20 @@
 
      \n
     </string>
-    <string name="input_command">Input  console command</string>
+    <string name="input_command">Input console command, for example: ./realsr-ncnn -i input.png -o output.png</string>
     <string name="open">Open</string>
     <string name="run">Run</string>
     <string name="save">Save</string>
 
     <string-array name="style_array">
-        <item>model: real-esrgan-anime-x4</item>
-        <item>model: real-esrgan-x4</item>
-        <item>model: realsr-df2k-jpeg-x4</item>
-        <item>model: realsr-df2k-x4</item>
-        <item>model: srmd-x4</item>
-        <item>model: srmd-x3</item>
-        <item>model: srmd-x2</item>
+        <item>real-esrgan-anime-x4</item>
+        <item>real-esrgan-x4</item>
+        <item>real-esrganv2-anime-x2</item>
+        <item>real-esrganv2-anime-x4 (fast but oversharpening)</item>
+        <item>realsr-df2k-jpeg-x4</item>
+        <item>realsr-df2k-x4</item>
+        <item>srmd-x4</item>
+        <item>srmd-x3</item>
+        <item>srmd-x2</item>
     </string-array>
 </resources>
