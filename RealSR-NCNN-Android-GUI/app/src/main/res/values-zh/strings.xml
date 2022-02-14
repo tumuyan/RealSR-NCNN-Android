@@ -22,4 +22,6 @@
     <string name="open">选择图片</string>
     <string name="save">导出结果</string>
     <string name="run">开始放大</string>
+    <string name="done">完成</string>
+    <string name="busy">在忙</string>
 </resources>

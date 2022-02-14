@@ -3,7 +3,14 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/prg/RealSR-NCNN-Android/RealSR-NCNN-Android-GUI/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.144" />
+        <entry key="..\:/prg/RealSR-NCNN-Android/RealSR-NCNN-Android-GUI/app/src/main/res/drawable/ic_baseline_all_inclusive_24.xml" value="0.144" />
+        <entry key="..\:/prg/RealSR-NCNN-Android/RealSR-NCNN-Android-GUI/app/src/main/res/drawable/ic_launcher_background.xml" value="0.144" />
+        <entry key="..\:/prg/RealSR-NCNN-Android/RealSR-NCNN-Android-GUI/app/src/main/res/drawable/ic_launcher_foreground.xml" value="0.144" />
         <entry key="..\:/prg/RealSR-NCNN-Android/RealSR-NCNN-Android-GUI/app/src/main/res/layout/activity_main.xml" value="0.25" />
+        <entry key="..\:/prg/RealSR-NCNN-Android/RealSR-NCNN-Android-GUI/app/src/main/res/menu/main_menu.xml" value="0.25364583333333335" />
+        <entry key="..\:/prg/RealSR-NCNN-Android/RealSR-NCNN-Android-GUI/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" value="0.1" />
+        <entry key="..\:/prg/RealSR-NCNN-Android/RealSR-NCNN-Android-GUI/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" value="0.144" />
         <entry key="..\:/prg/RealSR/Application/app/src/main/res/layout/activity_main.xml" value="0.1" />
       </map>
     </option>

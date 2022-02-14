@@ -13,6 +13,8 @@
     <string name="open">Open</string>
     <string name="run">Run</string>
     <string name="save">Save</string>
+    <string name="done">Done</string>
+    <string name="busy">Busy</string>
 
     <string-array name="style_array">
         <item>real-esrgan-anime-x4</item>
