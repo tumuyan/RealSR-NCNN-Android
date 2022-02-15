@@ -10,8 +10,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
 import android.os.Bundle;
@@ -21,11 +19,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ImageView;
 import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.davemorrissey.labs.subscaleview.ImageSource;
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -41,11 +41,10 @@ public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1;
     private static final int MY_PERMISSIONS_REQUEST = 100;
     private int style_type = 0;
-    private ImageView imageView;
-    private Bitmap selectedImage = null;
-    private Bitmap srImage = null;
+    private SubsamplingScaleImageView imageView;
     private TextView logTextView;
-    private boolean newTast = true;
+    private boolean initProcess;
+    private boolean newTast;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
             + File.separator + "RealSR" + File.separator;
@@ -59,7 +58,8 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
         progress = menu.findItem(R.id.progress);
-        if (!newTast) {
+        if (initProcess) {
+            initProcess = false;
             progress.setTitle("");
             Log.i("onCreateOptionsMenu", "onCreate() done");
         }
@@ -132,7 +132,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (newText.trim().length() < 2) {
-                    progress.setTitle("");
+                    if (progress != null)
+                        progress.setTitle("");
                     return true;
                 }
                 if (imageView.getVisibility() == View.VISIBLE)
@@ -161,13 +162,6 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(getApplicationContext(), "Fail!", Toast.LENGTH_SHORT).show();
             }
-
-/*                if (srImage != null) {
-                MediaStore.Images.Media.insertImage(getContentResolver(), srImage, "RealSR4X_" + f.format(new Date()), "" + style_type);
-                Toast.makeText(getApplicationContext(), "Saved!", Toast.LENGTH_SHORT).show();
-            } else
-                Toast.makeText(getApplicationContext(), "No Result!", Toast.LENGTH_SHORT).show();
-            */
         });
 
         findViewById(R.id.btn_run).setOnClickListener(view -> {
@@ -206,11 +200,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     runOnUiThread(
                             () -> {
-                                srImage = BitmapFactory.decodeFile(dir + "/output.png");
-                                if (srImage != null) {
-                                    imageView.setVisibility(View.VISIBLE);
-                                    imageView.setImageBitmap(srImage);
-                                }
+                                imageView.setImage(ImageSource.uri(dir + "/output.png"));
                             }
                     );
 
@@ -223,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
         if (progress != null)
             progress.setTitle("");
         else
-            newTast = false;
+            initProcess = true;
     }
 
     private void requirePremision() {
@@ -491,16 +481,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         Log.i("saveImage", "decodeFile");
-        selectedImage = BitmapFactory.decodeFile(file.getAbsolutePath());
 
         Log.i("saveImage", "runOnUiThread");
         runOnUiThread(
                 () -> {
-                    srImage = null;
-                    if (selectedImage != null) {
-                        imageView.setVisibility(View.VISIBLE);
-                        imageView.setImageBitmap(selectedImage);
-                    }
+                    imageView.setVisibility(View.VISIBLE);
+                    imageView.setImage(ImageSource.uri(dir + "/input.png"));
                 }
         );
 
