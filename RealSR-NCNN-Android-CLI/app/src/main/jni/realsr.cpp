@@ -45,11 +45,14 @@ static const uint32_t realsr_postproc_tta_int8s_spv_data[] = {
 
 RealSR::RealSR(int gpuid, bool _tta_mode)
 {
+    const ncnn::GpuInfo& gpuInfo =  ncnn::get_gpu_info(gpuid);
+
     net.opt.use_vulkan_compute = true;
-    net.opt.use_fp16_packed = true;
-    net.opt.use_fp16_storage = true;
+    net.opt.use_fp16_packed = gpuInfo.support_int8_packed();
+    net.opt.use_fp16_storage = gpuInfo.support_fp16_storage();
     net.opt.use_fp16_arithmetic = false;
-    net.opt.use_int8_storage = true;
+//    net.opt.use_int8_packed = gpuInfo.support_int8_packed();
+    net.opt.use_int8_storage = gpuInfo.support_int8_storage();
     net.opt.use_int8_arithmetic = false;
 
     net.set_vulkan_device(gpuid);

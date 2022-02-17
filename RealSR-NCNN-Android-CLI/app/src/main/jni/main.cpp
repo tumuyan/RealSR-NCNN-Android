@@ -7,6 +7,7 @@
 #include <clocale>
 
 #define _DEMO_PATH  false
+#define _VERBOSE_LOG  true
 
 #if _WIN32
 // image decoder and encoder with wic
@@ -223,7 +224,15 @@ void *load(void *args) {
                 fclose(fp);
             }
 
-            if (filedata) {
+            if (!filedata) {
+                if (_VERBOSE_LOG) {
+#if _WIN32
+                    fwprintf(stderr, L"no filedata\n");
+#else // _WIN32
+                    fprintf(stderr, "no filedata\n");
+#endif // _WIN32
+                }
+            } else {
                 {
                     // not webp, try jpg png etc.
 #if _WIN32
@@ -243,13 +252,34 @@ void *load(void *args) {
                             pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 4);
                             c = 4;
                         }
+
+                        if (_VERBOSE_LOG) {
+#if _WIN32
+                            fwprintf(stderr, L"pixeldata loaded\n");
+#else // _WIN32
+                            fprintf(stderr, "pixeldata loaded\n");
+#endif // _WIN32
+                        }
+                    } else if (_VERBOSE_LOG) {
+#if _WIN32
+                        fwprintf(stderr, L"no pixeldata\n");
+#else // _WIN32
+                        fprintf(stderr, "no pixeldata\n");
+#endif // _WIN32
                     }
 #endif // _WIN32
                 }
 
                 free(filedata);
             }
+        } else if (_VERBOSE_LOG) {
+#if _WIN32
+            fwprintf(stderr, L"fopen failed\n");
+#else // _WIN32
+            fprintf(stderr, "fopen failed\n");
+#endif // _WIN32
         }
+
         if (pixeldata) {
             Task v;
             v.id = i;
@@ -691,12 +721,18 @@ int main(int argc, char **argv)
     }
 
     if (verbose)
-        fprintf(stderr, "init heap_budget\n");
+        fprintf(stderr, "init heap_budget, use_gpu_count=%d\n", use_gpu_count);
     for (int i = 0; i < use_gpu_count; i++) {
-        if (tilesize[i] != 0)
-            continue;
+
 
         uint32_t heap_budget = ncnn::get_gpu_device(gpuid[i])->get_heap_budget();
+
+        fprintf(stderr, "[%d %s] heap budget=%d, tilesize=%d\n", gpuid[i],
+                ncnn::get_gpu_info(gpuid[i]).device_name(), heap_budget, tilesize[i]
+        );
+
+        if (tilesize[i] != 0)
+            continue;
 
         // more fine-grained tilesize policy here
         if (model.find(PATHSTR("models-Real")) != path_t::npos ||

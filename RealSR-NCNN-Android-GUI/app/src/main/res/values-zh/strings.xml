@@ -5,7 +5,7 @@
         \n这是一个使用人工智能放大图片的安卓应用。
         \n项目地址：https://github.com/tumuyan/RealSR-NCNN-Android
         \n酷安下载：https://www.coolapk.com/apk/292197
-        \n\n最初使用了Real ESRGAN和RealSR NCNN的成果，后来又添加了SRMD NCNN。
+        \n\n最初使用了Real ESRGAN和RealSR NCNN的成果，后来又添加了SRMD NCNN和Real CUGAN NCNN。
         \nReal ESRGAN是一个实用的图像修复算法，可以用来对低分辨率图片完成四倍放大和修复，化腐朽为神奇。
 
         \n\n与借助云计算的商业服务相比，图片处理过程完全在本地运行，处理耗时取决于图片大小以及设备的性能；但正因此，本应用可以提供可靠稳定的运算，并且没有被收集隐私的隐忧。

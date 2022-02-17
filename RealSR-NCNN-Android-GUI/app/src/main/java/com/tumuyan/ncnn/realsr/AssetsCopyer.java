@@ -71,9 +71,13 @@ public class AssetsCopyer {
         try {
 
             File file = new File(fileName);
-            if(skipExistFile && file.exists()){
-                Log.d(TAG, "skip file: " + fileName);
-                return bRet;
+            if (file.exists()) {
+                if (skipExistFile) {
+                    Log.d(TAG, "skip file: " + fileName);
+                    return bRet;
+                }
+            }else if(!file.getParentFile().exists()){
+                file.getParentFile().mkdirs();
             }
 
             OutputStream os = new FileOutputStream(file);

@@ -1,4 +1,4 @@
-project(srmd-ncnn)
+project(realcugan-ncnn)
 
 cmake_minimum_required(VERSION 3.4.1)
 
@@ -12,7 +12,9 @@ add_library(ncnn SHARED IMPORTED)
 set_target_properties(ncnn PROPERTIES IMPORTED_LOCATION
         ${CMAKE_SOURCE_DIR}/${ANDROID_ABI}/lib/libncnn.so)
 
+add_executable(realcugan-ncnn
+        main.cpp
+        realcugan.cpp
+        )
 
-add_executable(srmd-ncnn main.cpp srmd.cpp)
-
-target_link_libraries(srmd-ncnn ncnn)
+target_link_libraries(realcugan-ncnn ncnn)

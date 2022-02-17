@@ -16,6 +16,7 @@
     <string name="done">Done</string>
     <string name="busy">Busy</string>
 
+
     <string-array name="style_array">
         <item>real-esrgan-anime-x4</item>
         <item>real-esrgan-x4</item>
@@ -26,5 +27,15 @@
         <item>srmd-x4</item>
         <item>srmd-x3</item>
         <item>srmd-x2</item>
+        <item>real-cugan-x2-no-denoise</item>
+        <item>real-cugan-x2-conservative</item>
+        <item>real-cugan-x2-noise0</item>
+        <item>real-cugan-x2-noise1</item>
+        <item>real-cugan-x2-noise2</item>
+        <item>real-cugan-x2-noise3</item>
+        <item>real-cugan-x4-conservative</item>
+        <item>real-cugan-x4-noise0</item>
+        <item>real-cugan-x4-noise3</item>
     </string-array>
+
 </resources>

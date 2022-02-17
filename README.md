@@ -27,7 +27,7 @@ https://github.com/Tencent/ncnn/releases
 download ncnn-android-vulkan.zip or build ncnn for android yourself
 
 ### step2
-extract ncnn-android-vulkan.zip into `app/src/main/jni` or change the `ncnn_DIR` path to yours in `app/src/main/jni/CMakeLists.txt`
+extract ncnn-android-vulkan-shared.zip into `app/src/main/jni` 
 
 ### step3
 open this project with Android Studio, rebuild it and then you could find the program in `RealSR-NCNN-Android-CLI\app\build\intermediates\cmake\debug\obj`
@@ -38,7 +38,7 @@ open this project with Android Studio, rebuild it and then you could find the pr
 
 I have package and upload models, also you can download models from RealSR-NCNN and Real-ESRGAN.
 
-`https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.2/models.zip`
+`https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.4.1/models.zip`
 
 ### Example Command
 
@@ -78,7 +78,9 @@ download Real-ESRGAN/RealSRGAN models and put them to this folder, then build it
 
 ```
 RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
+│  libncnn.so
 │  libvulkan.so
+│  realcugan-ncnn
 │  realsr-ncnn
 │  srmd-ncnn
 │  
@@ -89,6 +91,10 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
 ├─models-DF2K_JPEG
 │      x4.bin
 │      x4.param
+│      
+├─models-nose
+│      up2x-no-denoise.bin
+│      up2x-no-denoise.param
 │      
 ├─models-Real-ESRGAN
 │      x4.bin
@@ -104,6 +110,30 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
 │      x4.bin
 │      x4.param
 │      
+├─models-se
+│      up2x-conservative.bin
+│      up2x-conservative.param
+│      up2x-denoise1x.bin
+│      up2x-denoise1x.param
+│      up2x-denoise2x.bin
+│      up2x-denoise2x.param
+│      up2x-denoise3x.bin
+│      up2x-denoise3x.param
+│      up2x-no-denoise.bin
+│      up2x-no-denoise.param
+│      up3x-conservative.bin
+│      up3x-conservative.param
+│      up3x-denoise3x.bin
+│      up3x-denoise3x.param
+│      up3x-no-denoise.bin
+│      up3x-no-denoise.param
+│      up4x-conservative.bin
+│      up4x-conservative.param
+│      up4x-denoise3x.bin
+│      up4x-denoise3x.param
+│      up4x-no-denoise.bin
+│      up4x-no-denoise.param
+│      
 └─models-srmd
         srmdnf_x2.bin
         srmdnf_x2.param
@@ -117,7 +147,6 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
         srmd_x3.param
         srmd_x4.bin
         srmd_x4.param
-        
 
 ```
 

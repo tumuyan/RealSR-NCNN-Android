@@ -16,3 +16,4 @@ local.properties
 /app/src/main/assets/realsr/
 /app/build
 /app/release/
+/app/Android CLI

@@ -40,7 +40,7 @@ import java.util.Date;
 public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1;
     private static final int MY_PERMISSIONS_REQUEST = 100;
-    private int style_type = 0;
+    private int selectCommand = 0;
     private SubsamplingScaleImageView imageView;
     private TextView logTextView;
     private boolean initProcess;
@@ -53,6 +53,30 @@ public class MainActivity extends AppCompatActivity {
     private String modelName = "SR";
     private SearchView searchView;
     private MenuItem progress;
+
+
+
+
+    private String[] command = new String[]{
+            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-anime",
+            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN",
+            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime -s 2",
+            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime",
+            "./realsr-ncnn -i input.png -o output.png  -m models-DF2K_JPEG",
+            "./realsr-ncnn -i input.png -o output.png  -m models-DF2K",
+            "./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 4",
+            "./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 3",
+            "./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 2",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-nose -s 2  -n 0",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 2  -n -1",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 2  -n 0",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 2  -n 1",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 2  -n 2",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 2  -n 3",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n -1",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n 0",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n 3"
+    };
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -79,13 +103,12 @@ public class MainActivity extends AppCompatActivity {
         logTextView = findViewById(R.id.tv_log);
         searchView = findViewById(R.id.serarch_view);
 
-        requirePremision();
 
         SharedPreferences mySharePerferences = getSharedPreferences("config", Activity.MODE_PRIVATE);
         int version = mySharePerferences.getInt("version", 0);
 
         dir = this.getCacheDir().getAbsolutePath();
-        AssetsCopyer.releaseAssets(getApplicationContext(),
+        AssetsCopyer.releaseAssets(this,
                 "realsr", dir
                 , version == BuildConfig.VERSION_CODE
         );
@@ -103,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                style_type = pos;
+                selectCommand = pos;
                 Log.i("setOnItemSelectedListener", "select " + pos);
             }
 
@@ -168,47 +191,26 @@ public class MainActivity extends AppCompatActivity {
             newTast = true;
             progress.setTitle("");
             {
-
                 new Thread(() -> {
-                    switch (style_type) {
-                        case 1:
-                            run20("./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN");
-                            break;
-                        case 2:
-                            run20("./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime -s 2");
-                            break;
-                        case 3:
-                            run20("./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime");
-                            break;
-                        case 4:
-                            run20("./realsr-ncnn -i input.png -o output.png  -m models-DF2K_JPEG");
-                            break;
-                        case 5:
-                            run20("./realsr-ncnn -i input.png -o output.png  -m models-DF2K");
-                            break;
-                        case 6:
-                            run20("./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 4");
-                            break;
-                        case 7:
-                            run20("./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 3");
-                            break;
-                        case 8:
-                            run20("./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 2");
-                            break;
-                        default:
-                            run20("./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-anime");
+                    if (selectCommand >= command.length || selectCommand < 0) {
+                        Log.w("btn_run.onClick", "select=" + selectCommand + ", length=" + command.length);
+                        selectCommand = 0;
                     }
-                    runOnUiThread(
-                            () -> {
-                                imageView.setImage(ImageSource.uri(dir + "/output.png"));
-                            }
-                    );
-
+                    if (run20(command[selectCommand])) {
+                        runOnUiThread(
+                                () -> {
+                                    imageView.setVisibility(View.VISIBLE);
+                                    imageView.setImage(ImageSource.uri(dir + "/output.png"));
+                                }
+                        );
+                    }
                 }).start();
-
             }
-
         });
+
+//        System.load(dir + "/libncnn.so");
+
+        requirePremision();
 
         if (progress != null)
             progress.setTitle("");
@@ -230,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
             if (file.isFile())
                 file.delete();
             if (!file.exists())
-                file.mkdir();
+                file.mkdirs();
         }
     }
 
@@ -307,7 +309,7 @@ public class MainActivity extends AppCompatActivity {
 
     private String progressText = "";
 
-    public synchronized String run20(@NonNull String cmd) {
+    public synchronized boolean run20(@NonNull String cmd) {
         Log.i("run20", "cmd = " + cmd);
 
         if (cmd.startsWith("./realsr-ncnn") || cmd.startsWith("./rsmd-ncnn")) {
@@ -335,7 +337,7 @@ public class MainActivity extends AppCompatActivity {
             process = Runtime.getRuntime().exec("sh");
         } catch (Exception e) {
             e.printStackTrace();
-            return e.getMessage();
+            return false;
         }
 
         successResult = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -373,7 +375,7 @@ public class MainActivity extends AppCompatActivity {
                         process.destroy();
                         result.append("break");
                         progress.setTitle("break");
-                        return result.toString();
+                        return false;
                     }
                     boolean p = run_ncnn && line.matches("\\d([0-9.]*)%");
                     progressText = line;
@@ -400,7 +402,7 @@ public class MainActivity extends AppCompatActivity {
                         process.destroy();
                         result.append("break");
                         progress.setTitle("break");
-                        return result.toString();
+                        return false;
                     }
 
                     boolean p = run_ncnn && line.matches("\\d([0-9.]*)%");
@@ -427,7 +429,7 @@ public class MainActivity extends AppCompatActivity {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return e.getMessage();
+            return false;
         }
 
         try {
@@ -445,7 +447,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         Log.i("run20", "finish");
-        return result.toString();
+        return true;
     }
 
 

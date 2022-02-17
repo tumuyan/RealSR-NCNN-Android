@@ -30,7 +30,7 @@ https://github.com/Tencent/ncnn/releases
 下载 ncnn-android-vulkan.zip 或者你自己编译ncnn
 
 ### step2
-解压 ncnn-android-vulkan.zip 到 `app/src/main/jni`，或者修改 `app/src/main/jni/CMakeLists.txt` 中的 `ncnn_DIR` 参数
+解压 ncnn-android-vulkan-shared.zip 到 `app/src/main/jni`
 
 ### step3
 用 Android Studio 打开工程, rebuild 然后你就可以在 `RealSR-NCNN-Android-CLI\app\build\intermediates\cmake\debug\obj` 找到编译好的二进制文件
@@ -39,7 +39,7 @@ https://github.com/Tencent/ncnn/releases
 ## 如何使用 RealSR-NCNN-Android-CLI
 ### 下载模型
 我已经打包上传模型文件，当然你也可以自己从 RealSR-NCNN 和 Real-ESRGAN 的仓库下载模型。
-`https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.2/models.zip`
+`https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.4.1/models.zip`
 
 ### 命令范例
 确认程序有执行权限，然后输入命令：
@@ -69,7 +69,9 @@ https://github.com/Tencent/ncnn/releases
 
 ```
 RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
+│  libncnn.so
 │  libvulkan.so
+│  realcugan-ncnn
 │  realsr-ncnn
 │  srmd-ncnn
 │  
@@ -80,6 +82,10 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
 ├─models-DF2K_JPEG
 │      x4.bin
 │      x4.param
+│      
+├─models-nose
+│      up2x-no-denoise.bin
+│      up2x-no-denoise.param
 │      
 ├─models-Real-ESRGAN
 │      x4.bin
@@ -94,6 +100,30 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
 │      x2.param
 │      x4.bin
 │      x4.param
+│      
+├─models-se
+│      up2x-conservative.bin
+│      up2x-conservative.param
+│      up2x-denoise1x.bin
+│      up2x-denoise1x.param
+│      up2x-denoise2x.bin
+│      up2x-denoise2x.param
+│      up2x-denoise3x.bin
+│      up2x-denoise3x.param
+│      up2x-no-denoise.bin
+│      up2x-no-denoise.param
+│      up3x-conservative.bin
+│      up3x-conservative.param
+│      up3x-denoise3x.bin
+│      up3x-denoise3x.param
+│      up3x-no-denoise.bin
+│      up3x-no-denoise.param
+│      up4x-conservative.bin
+│      up4x-conservative.param
+│      up4x-denoise3x.bin
+│      up4x-denoise3x.param
+│      up4x-no-denoise.bin
+│      up4x-no-denoise.param
 │      
 └─models-srmd
         srmdnf_x2.bin

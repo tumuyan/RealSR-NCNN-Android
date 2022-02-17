@@ -9,7 +9,7 @@ android {
 
         ndk {
             moduleName "ncnn"
-            abiFilters "armeabi-v7a", "arm64-v8a", "x86"
+            abiFilters "arm64-v8a", "armeabi-v7a", "x86"
         }
         minSdkVersion 24
     }
