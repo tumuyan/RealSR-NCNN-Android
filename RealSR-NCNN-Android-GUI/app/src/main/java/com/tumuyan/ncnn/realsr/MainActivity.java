@@ -53,11 +53,10 @@ public class MainActivity extends AppCompatActivity {
     private String modelName = "SR";
     private SearchView searchView;
     private MenuItem progress;
+    private Spinner spinner;
 
 
-
-
-    private String[] command = new String[]{
+    private final String[] command = new String[]{
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-anime",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime -s 2",
@@ -77,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n 0",
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n 3"
     };
+    private int tileSize;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -96,6 +96,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+
+        SharedPreferences mySharePerferences = getSharedPreferences("config", Activity.MODE_PRIVATE);
+        tileSize = mySharePerferences.getInt("tileSize", 0);
+
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -106,6 +115,8 @@ public class MainActivity extends AppCompatActivity {
 
         SharedPreferences mySharePerferences = getSharedPreferences("config", Activity.MODE_PRIVATE);
         int version = mySharePerferences.getInt("version", 0);
+        String defaultCommand = mySharePerferences.getString("defaultCommand", "");
+        searchView.setQuery(defaultCommand, false);
 
         dir = this.getCacheDir().getAbsolutePath();
         AssetsCopyer.releaseAssets(this,
@@ -122,7 +133,9 @@ public class MainActivity extends AppCompatActivity {
         run_command("chmod 777 " + dir + " -R");
 //        run_command("ls " + dir + " -l");
 
-        Spinner spinner = findViewById(R.id.spinner);
+        spinner = findViewById(R.id.spinner);
+        selectCommand = mySharePerferences.getInt("selectCommand", 0);
+        spinner.setSelection(selectCommand);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
@@ -196,7 +209,8 @@ public class MainActivity extends AppCompatActivity {
                         Log.w("btn_run.onClick", "select=" + selectCommand + ", length=" + command.length);
                         selectCommand = 0;
                     }
-                    if (run20(command[selectCommand])) {
+                    String cmd = tileSize > 0 ? command[selectCommand] + " -t " + tileSize : command[selectCommand];
+                    if (run20(cmd)) {
                         runOnUiThread(
                                 () -> {
                                     imageView.setVisibility(View.VISIBLE);
@@ -206,6 +220,11 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }).start();
             }
+        });
+
+        findViewById(R.id.btn_setting).setOnClickListener(view -> {
+            Intent intent = new Intent(this, SettingActivity.class);
+            this.startActivity(intent);
         });
 
 //        System.load(dir + "/libncnn.so");

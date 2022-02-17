@@ -21,9 +21,14 @@
         -s 放大倍数，可选(2/3/4, default=2)\n
         </string>
     <string name="input_command">输入shell命令,如 ./realsr-ncnn -i input.png -o output.png</string>
-    <string name="open">选择图片</string>
-    <string name="save">导出结果</string>
-    <string name="run">开始放大</string>
+    <string name="open">选图</string>
+    <string name="save">导出</string>
+    <string name="run">放大</string>
+    <string name="setting">设置</string>
     <string name="done">完成</string>
     <string name="busy">在忙</string>
+    <string name="default_select_command">默认选中列表中的哪个预设</string>
+    <string name="tile_size">预设命令的Tile Size参数</string>
+    <string name="default_command">主界面输入框内的默认命令</string>
+    <string name="save_setting">保存设置</string>
 </resources>

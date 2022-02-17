@@ -108,6 +108,7 @@ static void print_usage()
     fprintf(stdout, "  -n noise-level       denoise level (-1/0/1/2/3, default=-1)\n");
     fprintf(stdout, "  -s scale             upscale ratio (1/2/3/4, default=2)\n");
     fprintf(stdout, "  -t tile-size         tile size (>=32/0=auto, default=0) can be 0,0,0 for multi-gpu\n");
+    fprintf(stdout, "  -c syncgap-mode      sync gap mode (0/1/2/3, default=3)\n");
     fprintf(stdout, "  -m model-path        realcugan model path (default=models-se)\n");
     fprintf(stdout, "  -g gpu-id            gpu device to use (-1=cpu, default=auto) can be 0,1,2 for multi-gpu\n");
     fprintf(stdout, "  -j load:proc:save    thread count for load/proc/save (default=1:2:2) can be 1:2,2,2:2 for multi-gpu\n");
@@ -432,13 +433,14 @@ int main(int argc, char** argv)
     std::vector<int> jobs_proc;
     int jobs_save = 2;
     int verbose = 0;
+    int syncgap = 3;
     int tta_mode = 0;
     path_t format = PATHSTR("png");
 
 #if _WIN32
     setlocale(LC_ALL, "");
     wchar_t opt;
-    while ((opt = getopt(argc, argv, L"i:o:n:s:t:m:g:j:f:vxh")) != (wchar_t)-1)
+    while ((opt = getopt(argc, argv, L"i:o:n:s:t:c:m:g:j:f:vxh")) != (wchar_t)-1)
     {
         switch (opt)
         {
@@ -456,6 +458,9 @@ int main(int argc, char** argv)
             break;
         case L't':
             tilesize = parse_optarg_int_array(optarg);
+            break;
+        case L'c':
+            syncgap = _wtoi(optarg);
             break;
         case L'm':
             model = optarg;
@@ -484,7 +489,7 @@ int main(int argc, char** argv)
     }
 #else // _WIN32
     int opt;
-    while ((opt = getopt(argc, argv, "i:o:n:s:t:m:g:j:f:vxh")) != -1)
+    while ((opt = getopt(argc, argv, "i:o:n:s:t:c:m:g:j:f:vxh")) != -1)
     {
         switch (opt)
         {
@@ -502,6 +507,9 @@ int main(int argc, char** argv)
             break;
         case 't':
             tilesize = parse_optarg_int_array(optarg);
+            break;
+        case 'c':
+            syncgap = atoi(optarg);
             break;
         case 'm':
             model = optarg;
@@ -554,6 +562,12 @@ int main(int argc, char** argv)
         return -1;
     }
 
+    if (!(syncgap == 0 || syncgap == 1 || syncgap == 2 || syncgap == 3))
+    {
+        fprintf(stderr, "invalid syncgap argument\n");
+        return -1;
+    }
+
     for (int i=0; i<(int)tilesize.size(); i++)
     {
         if (tilesize[i] != 0 && tilesize[i] < 32)
@@ -593,6 +607,7 @@ int main(int argc, char** argv)
         {
             format = PATHSTR("png");
         }
+ 
         else if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG"))
         {
             format = PATHSTR("jpg");
@@ -689,11 +704,10 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    int syncgap = 0;
-
-    if (model.find(PATHSTR("models-se")) != path_t::npos)
+    if (model.find(PATHSTR("models-nose")) != path_t::npos)
     {
-        syncgap = 1;
+        // force syncgap off for nose models
+        syncgap = 0;
     }
 
 #if _WIN32
@@ -807,14 +821,45 @@ int main(int argc, char** argv)
         // more fine-grained tilesize policy here
         if (model.find(PATHSTR("models-nose")) != path_t::npos || model.find(PATHSTR("models-se")) != path_t::npos)
         {
-            if (heap_budget > 2600)
-                tilesize[i] = 400;
-            else if (heap_budget > 740)
-                tilesize[i] = 200;
-            else if (heap_budget > 250)
-                tilesize[i] = 100;
-            else
-                tilesize[i] = 32;
+            if (scale == 2)
+            {
+                if (heap_budget > 1300)
+                    tilesize[i] = 400;
+                else if (heap_budget > 800)
+                    tilesize[i] = 300;
+                else if (heap_budget > 400)
+                    tilesize[i] = 200;
+                else if (heap_budget > 200)
+                    tilesize[i] = 100;
+                else
+                    tilesize[i] = 32;
+            }
+            if (scale == 3)
+            {
+                if (heap_budget > 3300)
+                    tilesize[i] = 400;
+                else if (heap_budget > 1900)
+                    tilesize[i] = 300;
+                else if (heap_budget > 950)
+                    tilesize[i] = 200;
+                else if (heap_budget > 320)
+                    tilesize[i] = 100;
+                else
+                    tilesize[i] = 32;
+            }
+            if (scale == 4)
+            {
+                if (heap_budget > 1690)
+                    tilesize[i] = 400;
+                else if (heap_budget > 980)
+                    tilesize[i] = 300;
+                else if (heap_budget > 530)
+                    tilesize[i] = 200;
+                else if (heap_budget > 240)
+                    tilesize[i] = 100;
+                else
+                    tilesize[i] = 32;
+            }
         }
     }
 

@@ -45,19 +45,19 @@ public class AssetsCopyer {
                     String[] childNames = assets.list(name);//判断是文件还是文件夹
                     if (!TextUtils.isEmpty(name) && childNames.length > 0) {
                         checkFolderExists(releaseDir + File.separator + name);
-                        releaseAssets(context, name, releaseDir,skipExistFile);//递归, 因为资源都是带着全路径,
+                        releaseAssets(context, name, releaseDir, skipExistFile);//递归, 因为资源都是带着全路径,
                         //所以不需要在递归是设置目标文件夹的路径
                     } else {
                         InputStream is = assets.open(name);
 //                        FileUtil.writeFile(releaseDir + File.separator + name, is);
-                        writeFile(releaseDir + File.separator + name, is,skipExistFile);
+                        writeFile(releaseDir + File.separator + name, is, skipExistFile);
                     }
                 }
             } else {// is file
                 InputStream is = assets.open(assetsDir);
                 // 写入文件前, 需要提前级联创建好路径, 下面有代码贴出
 //                FileUtil.writeFile(releaseDir + File.separator + assetsDir, is);
-                writeFile(releaseDir + File.separator + assetsDir, is,skipExistFile);
+                writeFile(releaseDir + File.separator + assetsDir, is, skipExistFile);
             }
 
         } catch (Exception e) {
@@ -65,8 +65,7 @@ public class AssetsCopyer {
         }
     }
 
-    private static boolean writeFile(String fileName, InputStream in,boolean skipExistFile) throws IOException
-    {
+    private static boolean writeFile(String fileName, InputStream in, boolean skipExistFile) throws IOException {
         boolean bRet = true;
         try {
 
@@ -76,15 +75,14 @@ public class AssetsCopyer {
                     Log.d(TAG, "skip file: " + fileName);
                     return bRet;
                 }
-            }else if(!file.getParentFile().exists()){
+            } else if (!file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
             }
 
             OutputStream os = new FileOutputStream(file);
             byte[] buffer = new byte[4112];
             int read;
-            while((read = in.read(buffer)) != -1)
-            {
+            while ((read = in.read(buffer)) != -1) {
                 os.write(buffer, 0, read);
             }
             in.close();
@@ -92,7 +90,7 @@ public class AssetsCopyer {
             os.flush();
             os.close();
             os = null;
-			Log.d(TAG, "copyed file: " + fileName);
+            Log.d(TAG, "copyed file: " + fileName);
         } catch (FileNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -101,11 +99,9 @@ public class AssetsCopyer {
         return bRet;
     }
 
-    private static void checkFolderExists(String path)
-    {
+    private static void checkFolderExists(String path) {
         File file = new File(path);
-        if((file.exists() && !file.isDirectory()) || !file.exists())
-        {
+        if ((file.exists() && !file.isDirectory()) || !file.exists()) {
             file.mkdirs();
         }
     }
