@@ -3,16 +3,18 @@
 [English](https://github.com/tumuyan/RealSR-NCNN-Android/blob/master/README.md)
 
 这是一个使用人工智能放大图片的安卓应用。与借助云计算的商业服务相比，图片处理过程完全在本地运行，处理耗时取决于图片大小以及设备的性能；但正因此，本应用可以提供可靠稳定的运算，并且没有被收集隐私的隐忧。  
+下载地址: [酷安](https://www.coolapk.com/apk/292197) 或Github：[Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases)： 
 
-最初使用了[Realsr-NCNN](https://github.com/nihui/realsr-ncnn-vulkan)和[Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)的成果，
-后来又添加了[SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan)。  
+最初使用了[RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan)和[Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)的成果，
+后来又添加了[SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan)和[RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan)。  
 Real ESRGAN是一个实用的图像修复算法，可以用来对低分辨率图片完成四倍放大和修复，化腐朽为神奇。如果未来有Real CUGAN NCNN项目，应该也会加入；而Waifu2X已经较为落后，考虑到应用的大小，不会加入。  
 
-项目仓库包含了4个工程：
+项目仓库包含了5个工程：
 1. RealSR-NCNN-Android-GUI 可以编译出APK文件，这样用户可以在图形环境下操作。（不过他的本质就是在给命令行程序套壳，而不是通过JNI调用库文件）
 2. RealSR-NCNN-Android-CLI 可以编译出RealSR-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。
-3. SRMD-NCNN-Android-CLI 可以编译出SRMD-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。
-4. Waifu2x-NCNN-Android-CLI 可以编译出Waifu2x-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。
+3. RealCUGAN-NCNN-Android-CLI 可以编译出SRMD-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。
+4. SRMD-NCNN-Android-CLI 可以编译出SRMD-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。
+5. Waifu2x-NCNN-Android-CLI 可以编译出Waifu2x-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用(未加入到GUI中)。
 
 ### 关于 Real-ESRGAN
 
@@ -27,10 +29,10 @@ Real ESRGAN是一个实用的图像修复算法，可以用来对低分辨率图
 ## 如何编译 RealSR-NCNN-Android-CLI
 ### step1
 https://github.com/Tencent/ncnn/releases
-下载 ncnn-android-vulkan.zip 或者你自己编译ncnn
+下载 ncnn-yyyymmdd-android-vulkan-shared.zip 或者你自己编译ncnn
 
 ### step2
-解压 ncnn-android-vulkan-shared.zip 到 `app/src/main/jni`
+解压 ncnn-yyyymmdd-android-vulkan-shared.zip 到 `app/src/main/jni`
 
 ### step3
 用 Android Studio 打开工程, rebuild 然后你就可以在 `RealSR-NCNN-Android-CLI\app\build\intermediates\cmake\debug\obj` 找到编译好的二进制文件
@@ -144,7 +146,7 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
 
 ## 如何使用 RealSR-NCNN-Android-GUI
 支持两种操作方式:
-1. 选择图片 - 点击`开始放大`（视图片大小和设备性能需要等待不同时间——毕竟原项目是使用电脑显卡运行的）- 查看放大效果是否满意，如果满意点击`导出结果`保存到相册。也可以在运行前切换使用的模型。切换模型后无需重新选择图片。
+1. 点击`选图`选择图片 - 点击`放大`（视图片大小和设备性能需要等待不同时间——毕竟原项目是使用电脑显卡运行的）- 查看放大效果是否满意，如果满意点击`导出`保存到相册。也可以在运行前切换使用的模型。切换模型后无需重新选择图片。
 2. 直接在输入框内输入命令完成调用
 
 ## 截屏
@@ -162,6 +164,7 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
 - https://github.com/nihui/realsr-ncnn-vulkan 
 - https://github.com/nihui/srmd-ncnn-vulkan
 - https://github.com/nihui/waifu2x-ncnn-vulkan
+- https://github.com/nihui/realcugan-ncnn-vulkan
 
 ## 使用的其他开源项目
 

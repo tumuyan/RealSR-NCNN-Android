@@ -2,14 +2,15 @@
 
 [中文说明](https://github.com/tumuyan/RealSR-NCNN-Android/blob/master/README_CHS.md)  
 Real-ESRGAN is a Practical Algorithms for General Image Restoration.  
-RealSR-NCNN-Android is a simple Android application that based on [Realsr-NCNN](https://github.com/nihui/realsr-ncnn-vulkan) [SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan) & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).  
+RealSR-NCNN-Android is a simple Android application that based on [RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan) [SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan) [RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan) & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).  
 The application does not collect any private information from your device.  
 
 This repository contains 4 project:  
 1. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell of the follow programs.
 2. RealSR-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
-3. SRMD-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
-4. Waifu2x-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
+3. RealCUGAN-NCNN-Android-CLI  can build a program that can be used by the console (for example, Termux) for Android.
+4. SRMD-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
+5. Waifu2x-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android (Not packaged in APK).
 
 ### About Real-ESRGAN
 
@@ -24,10 +25,10 @@ This repository contains 4 project:
 ## how to build RealSR-NCNN-Android-CLI
 ### step1
 https://github.com/Tencent/ncnn/releases
-download ncnn-android-vulkan.zip or build ncnn for android yourself
+download ncnn-yyyymmdd-android-vulkan-shared.zip.
 
 ### step2
-extract ncnn-android-vulkan-shared.zip into `app/src/main/jni` 
+extract ncnn-yyyymmdd-android-vulkan-shared.zip into `app/src/main/jni` 
 
 ### step3
 open this project with Android Studio, rebuild it and then you could find the program in `RealSR-NCNN-Android-CLI\app\build\intermediates\cmake\debug\obj`
@@ -172,6 +173,7 @@ Most of the code is copied from Nihui, cause of the directory structure had to b
 - https://github.com/nihui/realsr-ncnn-vulkan
 - https://github.com/nihui/srmd-ncnn-vulkan
 - https://github.com/nihui/waifu2x-ncnn-vulkan
+- https://github.com/nihui/realcugan-ncnn-vulkan
 
 ## Other Open-Source Code Used
 -   [https://github.com/Tencent/ncnn](https://github.com/Tencent/ncnn)  for fast neural network inference on ALL PLATFORMS
