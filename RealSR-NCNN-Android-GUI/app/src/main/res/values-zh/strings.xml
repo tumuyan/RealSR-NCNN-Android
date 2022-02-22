@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">RealSR 图片放大</string>
     <string name="default_log">
-        \n这是一个使用人工智能放大图片的安卓应用。
+        \n这是一个使用人工智能技术放大图片的安卓应用。
         \n项目地址：https://github.com/tumuyan/RealSR-NCNN-Android
         \n酷安下载：https://www.coolapk.com/apk/292197
         \n\n最初使用了Real ESRGAN和RealSR NCNN的成果，后来又添加了SRMD NCNN和Real CUGAN NCNN。
@@ -10,7 +10,7 @@
 
         \n\n与借助云计算的商业服务相比，图片处理过程完全在本地运行，处理耗时取决于图片大小以及设备的性能；但正因此，本应用可以提供可靠稳定的运算，并且没有被收集隐私的隐忧。
         \n\n\n本应用除使用下拉选项中的预设参数外，还支持在输入框内输入命令。内置程序包括：realsr-ncnn,srmd-ncnn.
-        \n用法: ./realsr-ncnn或./srmd-ncnn -i 输入的图片路径 -o 输出的图片路径 [其他可选参数]...
+        \n用法: ./realsr-ncnn或./srmd-ncnn或./realcugan-ncnn -i 输入的图片路径 -o 输出的图片路径 [其他可选参数]...
         主要参数有：\n
         -i 输入的图片路径（jpg/png路径或者目录路径）\n
         -o 输出的图片路径（jpg/png路径或者目录路径）\n

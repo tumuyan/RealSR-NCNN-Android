@@ -1,18 +1,21 @@
 # RealSR-NCNN-Android
 
 [中文说明](https://github.com/tumuyan/RealSR-NCNN-Android/blob/master/README_CHS.md)  
-Real-ESRGAN is a Practical Algorithms for General Image Restoration.  
-RealSR-NCNN-Android is a simple Android application that based on [RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan) [SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan) [RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan) & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).  
+
+RealSR-NCNN-Android is a simple Android application that based on [RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan), [SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan), [RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan) & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).  
 The application does not collect any private information from your device.  
 
-This repository contains 4 project:  
+This repository contains 5 project:  
 1. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell of the follow programs.
-2. RealSR-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
+2. RealSR-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android. This program can use realsr models and real-esrgan models.
 3. RealCUGAN-NCNN-Android-CLI  can build a program that can be used by the console (for example, Termux) for Android.
 4. SRMD-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
 5. Waifu2x-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android (Not packaged in APK).
 
 ### About Real-ESRGAN
+
+![realesrgan_logo](https://github.com/xinntao/Real-ESRGAN/raw/master/assets/realesrgan_logo.png)  
+Real-ESRGAN is a Practical Algorithms for General Image Restoration.
 
 > [[Paper](https://arxiv.org/abs/2107.10833)] &emsp; [[Project Page]](https://github.com/xinntao/Real-ESRGAN) &emsp; [[YouTube Video](https://www.youtube.com/watch?v=fxHWoDSSvSc)] &emsp; [[Bilibili](https://www.bilibili.com/video/BV1H34y1m7sS/)] &emsp; [[Poster](https://xinntao.github.io/projects/RealESRGAN_src/RealESRGAN_poster.pdf)] &emsp; [[PPT slides](https://docs.google.com/presentation/d/1QtW6Iy8rm8rGLsJ0Ldti6kP-7Qyzy6XL/edit?usp=sharing&ouid=109799856763657548160&rtpof=true&sd=true)]<br>
 > [Xintao Wang](https://xinntao.github.io/), Liangbin Xie, [Chao Dong](https://scholar.google.com.hk/citations?user=OSDCB0UAAAAJ), [Ying Shan](https://scholar.google.com/citations?user=4oXBp9UAAAAJ&hl=en) <br>
@@ -21,6 +24,17 @@ This repository contains 4 project:
 ![img](https://github.com/xinntao/Real-ESRGAN/raw/master/assets/teaser.jpg)
 **Note that RealESRGAN may still fail in some cases as the real-world degradations are really too complex.**
 
+## About RealSR
+[[paper]](http://openaccess.thecvf.com/content_CVPRW_2020/papers/w31/Ji_Real-World_Super-Resolution_via_Kernel_Estimation_and_Noise_Injection_CVPRW_2020_paper.pdf) [[project]](https://github.com/jixiaozhong/RealSR)  [[NTIRE 2020 Challenge on Real-World Image Super-Resolution: Methods and Results]](https://arxiv.org/pdf/2005.01996.pdf)
+
+## About SRMD
+[[paper]](http://openaccess.thecvf.com/content_cvpr_2018/papers/Zhang_Learning_a_Single_CVPR_2018_paper.pdf) [[project]](https://github.com/cszn/SRMD)
+![demo](https://github.com/cszn/SRMD/raw/master/figs/realSR1.png) 
+![demo](https://github.com/cszn/SRMD/raw/master/figs/realSR2.png)
+
+## About Real-CUGAN
+[[project]](https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
+Real-CUGAN is an AI super resolution model for anime images, trained in a million scale anime dataset, using the same architecture as Waifu2x-CUNet. 
 
 ## how to build RealSR-NCNN-Android-CLI
 ### step1

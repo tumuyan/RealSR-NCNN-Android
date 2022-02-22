@@ -55,6 +55,15 @@ public class SettingActivity extends AppCompatActivity {
 
     }
 
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        overridePendingTransition(0, android.R.anim.slide_out_right);
+//        overridePendingTransition(android.R.anim.fade_in, android.R.anim.slide_out_right);
+    }
+
+
     private void save() {
         SharedPreferences.Editor editor = mySharePerferences.edit();
         editor.putInt("selectCommand", selectCommand);

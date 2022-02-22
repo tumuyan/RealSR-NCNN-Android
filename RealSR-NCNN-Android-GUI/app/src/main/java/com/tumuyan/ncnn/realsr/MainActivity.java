@@ -225,6 +225,9 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btn_setting).setOnClickListener(view -> {
             Intent intent = new Intent(this, SettingActivity.class);
             this.startActivity(intent);
+
+            overridePendingTransition(0, android.R.anim.slide_out_right);
+//            overridePendingTransition(android.R.anim.fade_in, android.R.anim.slide_out_right);
         });
 
 //        System.load(dir + "/libncnn.so");
@@ -331,11 +334,15 @@ public class MainActivity extends AppCompatActivity {
     public synchronized boolean run20(@NonNull String cmd) {
         Log.i("run20", "cmd = " + cmd);
 
-        if (cmd.startsWith("./realsr-ncnn") || cmd.startsWith("./rsmd-ncnn")) {
+        if (cmd.startsWith("./realsr-ncnn") || cmd.startsWith("./srmd-ncnn") || cmd.startsWith("./realcugan-ncnn")) {
             modelName = "Real-ESRGAN-anime";
             if (cmd.matches(".+\\s-m(\\s+)models-.+")) {
                 modelName = cmd.replaceFirst(".+\\s-m(\\s+)models-([^\\s]+).*", "$2");
             }
+            if (modelName.equals("se")||modelName.equals("nose")){
+                modelName = "Real-CUGAN-"+modelName;
+            }
+
             runOnUiThread(() -> progress.setTitle(getResources().getString(R.string.busy)));
 
         } else

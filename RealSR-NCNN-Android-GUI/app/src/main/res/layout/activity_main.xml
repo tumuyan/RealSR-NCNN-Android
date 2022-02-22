@@ -13,20 +13,20 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/btn_setting"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginHorizontal="3dp"
-            android:text="@string/setting" />
-
-        <Button
             android:id="@+id/btn_open"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginHorizontal="3dp"
             android:text="@string/open" />
+
+        <Button
+            android:id="@+id/btn_setting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="3dp"
+            android:layout_weight="1"
+            android:text="@string/setting" />
 
         <Button
             android:id="@+id/btn_run"
@@ -52,6 +52,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="10dp"
+        android:layout_marginTop="7dp"
         android:layout_marginRight="10dp"
         android:entries="@array/style_array"
         android:textAlignment="center" />
