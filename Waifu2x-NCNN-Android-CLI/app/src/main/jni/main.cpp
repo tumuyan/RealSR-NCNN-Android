@@ -22,7 +22,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 #endif // _WIN32
-
+#include "webp_image.h"
 
 #if _WIN32
 #include <wchar.h>
@@ -119,6 +119,7 @@ class Task
 {
 public:
     int id;
+    int webp;
     int scale;
 
     path_t inpath;
@@ -199,6 +200,7 @@ void* load(void* args)
     {
         const path_t& imagepath = ltp->input_files[i];
 
+        int webp = 0;
 
         unsigned char* pixeldata = 0;
         int w;
@@ -229,6 +231,12 @@ void* load(void* args)
 
             if (filedata)
             {
+                pixeldata = webp_load(filedata, length, &w, &h, &c);
+                if (pixeldata)
+                {
+                    webp = 1;
+                }
+                else
                 {
                     // not webp, try jpg png etc.
 #if _WIN32
@@ -263,6 +271,7 @@ void* load(void* args)
         {
             Task v;
             v.id = i;
+            v.webp = webp;
             v.scale = scale;
             v.inpath = imagepath;
             v.outpath = ltp->output_files[i];
@@ -387,6 +396,11 @@ void* save(void* args)
         // free input pixel data
         {
             unsigned char* pixeldata = (unsigned char*)v.inimage.data;
+            if (v.webp == 1)
+            {
+                free(pixeldata);
+            }
+            else
             {
 #if _WIN32
                 free(pixeldata);
@@ -400,7 +414,11 @@ void* save(void* args)
 
         path_t ext = get_file_extension(v.outpath);
 
-         if (ext == PATHSTR("png") || ext == PATHSTR("PNG"))
+        if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP"))
+        {
+            success = webp_save(v.outpath.c_str(), v.outimage.w, v.outimage.h, v.outimage.elempack, (const unsigned char*)v.outimage.data);
+        }
+        else if (ext == PATHSTR("png") || ext == PATHSTR("PNG"))
         {
 #if _WIN32
             success = wic_encode_image(v.outpath.c_str(), v.outimage.w, v.outimage.h, v.outimage.elempack, v.outimage.data);
@@ -619,6 +637,10 @@ int main(int argc, char** argv)
         {
             format = PATHSTR("png");
         }
+        else if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP"))
+        {
+            format = PATHSTR("webp");
+        }
         else if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG"))
         {
             format = PATHSTR("jpg");
@@ -630,7 +652,7 @@ int main(int argc, char** argv)
         }
     }
 
-    if (format != PATHSTR("png") && format != PATHSTR("jpg"))
+    if (format != PATHSTR("png") && format != PATHSTR("webp") && format != PATHSTR("jpg"))
     {
         fprintf(stderr, "invalid format argument\n");
         return -1;
