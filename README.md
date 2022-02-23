@@ -4,6 +4,7 @@
 
 RealSR-NCNN-Android is a simple Android application that based on [RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan), [SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan), [RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan) & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).  
 The application does not collect any private information from your device.  
+Download: Github [Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases) or [CoolApk](https://www.coolapk.com/apk/292197)
 
 This repository contains 5 project:  
 1. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell of the follow programs.
@@ -36,19 +37,22 @@ Real-ESRGAN is a Practical Algorithms for General Image Restoration.
 [[project]](https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
 Real-CUGAN is an AI super resolution model for anime images, trained in a million scale anime dataset, using the same architecture as Waifu2x-CUNet. 
 
-## how to build RealSR-NCNN-Android-CLI
+## How to build RealSR-NCNN-Android-CLI
 ### step1
-https://github.com/Tencent/ncnn/releases
-download ncnn-yyyymmdd-android-vulkan-shared.zip.
+https://github.com/Tencent/ncnn/releases  
+download ncnn-yyyymmdd-android-vulkan-shared.zip.  
+https://github.com/webmproject/libwebp
+download the source of libwebp.  
 
 ### step2
-extract ncnn-yyyymmdd-android-vulkan-shared.zip into `app/src/main/jni` 
+extract `ncnn-yyyymmdd-android-vulkan-shared.zip` into `../3rdparty/ncnn-android-vulkan-shared`  
+extract the source of libwebp into `app/src/main/jni/webp`
 
 ### step3
 open this project with Android Studio, rebuild it and then you could find the program in `RealSR-NCNN-Android-CLI\app\build\intermediates\cmake\debug\obj`
 
 
-## how to use RealSR-NCNN-Android-CLI
+## How to use RealSR-NCNN-Android-CLI
 ### Download models
 
 I have package and upload models, also you can download models from RealSR-NCNN and Real-ESRGAN.
@@ -88,8 +92,8 @@ Usage: realsr-ncnn -i infile -o outfile [options]...
 
 If you encounter crash or error, try to upgrade your derive
 
-## how to build RealSR-NCNN-Android-GUI
-download Real-ESRGAN/RealSRGAN models and put them to this folder, then build it with Android Studio
+## How to build RealSR-NCNN-Android-GUI
+download models & elf files, put them to this folder, then build it with Android Studio. (I have upload the assets.zip)
 
 ```
 RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
@@ -166,12 +170,12 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
 ```
 
 
-## how to use RealSR-NCNN-Android-GUI
+## How to use RealSR-NCNN-Android-GUI
 You can open photo picker, chose a model, click the `Run` button and wait some time. The photo view will show the result when the progrem finish its work. If you like the result, you could click the `Save` button.  
 
 Also the app could input shell command.
 
-## screenshot
+## Screenshot
 
 input & output
 ![](Screenshot.jpg)
@@ -179,11 +183,15 @@ input & output
 ## Others project in this Repository
 Building and usage is same as RealSR-NCNN-Android-CLI
 
-## Original Project
-### real-esrgan original project and models
+## Thanks to
+### original super-resolution projects
 - https://github.com/xinntao/Real-ESRGAN
-### C code and others models
-Most of the code is copied from Nihui, cause of the directory structure had to be adjusted, the original git was broken  
+- https://github.com/jixiaozhong/RealSR
+- https://github.com/cszn/SRMD
+- https://github.com/bilibili/ailab/tree/main/Real-CUGAN
+
+### ncnn projects and models
+Most of the C code is copied from Nihui, cause of the directory structure had to be adjusted, the original git was broken  
 - https://github.com/nihui/realsr-ncnn-vulkan
 - https://github.com/nihui/srmd-ncnn-vulkan
 - https://github.com/nihui/waifu2x-ncnn-vulkan
@@ -193,3 +201,4 @@ Most of the code is copied from Nihui, cause of the directory structure had to b
 -   [https://github.com/Tencent/ncnn](https://github.com/Tencent/ncnn)  for fast neural network inference on ALL PLATFORMS
 -   [https://github.com/nothings/stb](https://github.com/nothings/stb)  for decoding and encoding image on Linux / MacOS
 -   [https://github.com/tronkko/dirent](https://github.com/tronkko/dirent)  for listing files in directory on Windows
+-   [https://github.com/webmproject/libwebp](https://github.com/webmproject/libwebp) for encoding and decoding Webp images on ALL PLATFORMS
