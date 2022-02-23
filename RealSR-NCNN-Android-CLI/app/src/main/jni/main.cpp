@@ -30,6 +30,7 @@
 
 #endif // _WIN32
 
+#include "webp_image.h"
 
 #if _WIN32
 #include <wchar.h>
@@ -109,24 +110,24 @@ static void print_usage() {
     fprintf(stderr, "Usage: realsr-ncnn -i infile -o outfile [options]...\n\n");
     fprintf(stderr, "  -h                   show this help\n");
     fprintf(stderr, "  -v                   verbose output\n");
-    fprintf(stderr, "  -i input-path        input image path (jpg/png) or directory\n");
-    fprintf(stderr, "  -o output-path       output image path (jpg/png) or directory\n");
+    fprintf(stderr, "  -i input-path        input image path (jpg/png/webp) or directory\n");
+    fprintf(stderr, "  -o output-path       output image path (jpg/png/webp) or directory\n");
     fprintf(stderr, "  -s scale             upscale ratio (4, default=4)\n");
     fprintf(stderr,
             "  -t tile-size         tile size (>=32/0=auto, default=0) can be 0,0,0 for multi-gpu\n");
-    fprintf(stderr,
-            "  -m model-path        realsr model path (default=models-Real-ESRGAN-anime)\n");
+    fprintf(stderr, "  -m model-path        realsr model path (default=models-DF2K_JPEG)\n");
     fprintf(stderr,
             "  -g gpu-id            gpu device to use (default=auto) can be 0,1,2 for multi-gpu\n");
     fprintf(stderr,
             "  -j load:proc:save    thread count for load/proc/save (default=1:2:2) can be 1:2,2,2:2 for multi-gpu\n");
     fprintf(stderr, "  -x                   enable tta mode\n");
-    fprintf(stderr, "  -f format            output image format (jpg/png, default=ext/png)\n");
+    fprintf(stderr, "  -f format            output image format (jpg/png/webp, default=ext/png)\n");
 }
 
 class Task {
 public:
     int id;
+    int webp;
 
     path_t inpath;
     path_t outpath;
@@ -198,6 +199,7 @@ void *load(void *args) {
     for (int i = 0; i < count; i++) {
         const path_t &imagepath = ltp->input_files[i];
 
+        int webp = 0;
 
         unsigned char *pixeldata = 0;
         int w;
@@ -224,16 +226,11 @@ void *load(void *args) {
                 fclose(fp);
             }
 
-            if (!filedata) {
-                if (_VERBOSE_LOG) {
-#if _WIN32
-                    fwprintf(stderr, L"no filedata\n");
-#else // _WIN32
-                    fprintf(stderr, "no filedata\n");
-#endif // _WIN32
-                }
-            } else {
-                {
+            if (filedata) {
+                pixeldata = webp_load(filedata, length, &w, &h, &c);
+                if (pixeldata) {
+                    webp = 1;
+                } else {
                     // not webp, try jpg png etc.
 #if _WIN32
                     pixeldata = wic_decode_image(imagepath.c_str(), &w, &h, &c);
@@ -252,26 +249,18 @@ void *load(void *args) {
                             pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 4);
                             c = 4;
                         }
-
-                        if (_VERBOSE_LOG) {
-#if _WIN32
-                            fwprintf(stderr, L"pixeldata loaded\n");
-#else // _WIN32
-                            fprintf(stderr, "pixeldata loaded\n");
-#endif // _WIN32
-                        }
-                    } else if (_VERBOSE_LOG) {
-#if _WIN32
-                        fwprintf(stderr, L"no pixeldata\n");
-#else // _WIN32
-                        fprintf(stderr, "no pixeldata\n");
-#endif // _WIN32
                     }
 #endif // _WIN32
                 }
-
-                free(filedata);
+            } else if (_VERBOSE_LOG) {
+#if _WIN32
+                fwprintf(stderr, L"no filedata\n");
+#else // _WIN32
+                fprintf(stderr, "no filedata\n");
+#endif // _WIN32
             }
+
+            free(filedata);
         } else if (_VERBOSE_LOG) {
 #if _WIN32
             fwprintf(stderr, L"fopen failed\n");
@@ -299,7 +288,8 @@ void *load(void *args) {
                 fwprintf(stderr, L"image %ls has alpha channel ! %ls will output %ls\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
 #else // _WIN32
                 fprintf(stderr, "image %s has alpha channel ! %s will output %s\n",
-                        imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
+                        imagepath.c_str(),
+                        imagepath.c_str(), output_filename2.c_str());
 #endif // _WIN32
             }
 
@@ -361,8 +351,9 @@ void *save(void *args) {
         // free input pixel data
         {
             unsigned char *pixeldata = (unsigned char *) v.inimage.data;
-
-            {
+            if (v.webp == 1) {
+                free(pixeldata);
+            } else {
 #if _WIN32
                 free(pixeldata);
 #else
@@ -375,7 +366,10 @@ void *save(void *args) {
 
         path_t ext = get_file_extension(v.outpath);
 
-        if (ext == PATHSTR("png") || ext == PATHSTR("PNG")) {
+        if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP")) {
+            success = webp_save(v.outpath.c_str(), v.outimage.w, v.outimage.h, v.outimage.elempack,
+                                (const unsigned char *) v.outimage.data);
+        } else if (ext == PATHSTR("png") || ext == PATHSTR("PNG")) {
 #if _WIN32
             success = wic_encode_image(v.outpath.c_str(), v.outimage.w, v.outimage.h, v.outimage.elempack, v.outimage.data);
 #else
@@ -538,6 +532,8 @@ int main(int argc, char **argv)
 #if _DEMO_PATH
         fprintf(stderr, "demo input argument\n");
         inputpath = optarg_in;
+#else
+        return -1;
 #endif
     }
 
@@ -547,6 +543,8 @@ int main(int argc, char **argv)
 #if _DEMO_PATH
         fprintf(stderr, "demo output argument\n");
         outputpath = optarg_ou;
+#else
+        return -1;
 #endif
     }
 
@@ -590,6 +588,8 @@ int main(int argc, char **argv)
 
         if (ext == PATHSTR("png") || ext == PATHSTR("PNG")) {
             format = PATHSTR("png");
+        } else if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP")) {
+            format = PATHSTR("webp");
         } else if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") ||
                    ext == PATHSTR("JPEG")) {
             format = PATHSTR("jpg");
@@ -599,7 +599,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (format != PATHSTR("png") && format != PATHSTR("jpg")) {
+    if (format != PATHSTR("png") && format != PATHSTR("webp") && format != PATHSTR("jpg")) {
         fprintf(stderr, "invalid format argument\n");
         return -1;
     }
