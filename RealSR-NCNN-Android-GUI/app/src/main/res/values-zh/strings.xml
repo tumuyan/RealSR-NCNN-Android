@@ -9,9 +9,9 @@
         \nReal ESRGAN是一个实用的图像修复算法，可以用来对低分辨率图片完成四倍放大和修复，化腐朽为神奇。
 
         \n\n与借助云计算的商业服务相比，图片处理过程完全在本地运行，处理耗时取决于图片大小以及设备的性能；但正因此，本应用可以提供可靠稳定的运算，并且没有被收集隐私的隐忧。
-        \n\n\n本应用除使用下拉选项中的预设参数外，还支持在输入框内输入命令。内置程序包括：realsr-ncnn,srmd-ncnn.
-        \n用法: ./realsr-ncnn或./srmd-ncnn或./realcugan-ncnn -i 输入的图片路径 -o 输出的图片路径 [其他可选参数]...
-        主要参数有：\n
+        \n\n\n本应用除使用下拉选项中的预设参数外，还支持在输入框内输入命令。用法:
+        \n./realsr-ncnn或./srmd-ncnn或./realcugan-ncnn -i 输入的图片路径 -o 输出的图片路径 [其他可选参数]...
+        \n主要参数有：\n
         -i 输入的图片路径（jpg/png路径或者目录路径）\n
         -o 输出的图片路径（jpg/png路径或者目录路径）\n
         -m 模型所在目录的路径\n
@@ -19,6 +19,10 @@
         \n其中srmd-ncnn额外支持：\n
         -n 降噪等级，可选(-1/0/1/2/3/4/5/6/7/8/9/10, default=3)\n
         -s 放大倍数，可选(2/3/4, default=2)\n
+         \n其中realcugan-ncnn额外支持：\n
+        -n 降噪等级，可选(default=-1，2xse模型支持-1/0/1/2/3, 3x和4xse模型支持-1/0/3)\n
+        -s 放大倍数，可选(2/3/4, default=2)\n
+        -c sync gap mode，可选(0/1/2/3, default=3)\n
         </string>
     <string name="input_command">输入shell命令,如 ./realsr-ncnn -i input.png -o output.png</string>
     <string name="open">选图</string>
@@ -27,7 +31,7 @@
     <string name="setting">设置</string>
     <string name="done">完成</string>
     <string name="busy">在忙</string>
-    <string name="default_select_command">默认选中列表中的哪个预设</string>
+    <string name="default_select_command">默认选中哪个预设命令</string>
     <string name="tile_size">预设命令的Tile Size参数</string>
     <string name="default_command">主界面输入框内的默认命令</string>
     <string name="save_setting">保存设置</string>

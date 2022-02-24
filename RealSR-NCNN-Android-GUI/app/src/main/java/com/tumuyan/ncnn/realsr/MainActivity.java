@@ -44,7 +44,6 @@ public class MainActivity extends AppCompatActivity {
     private SubsamplingScaleImageView imageView;
     private TextView logTextView;
     private boolean initProcess;
-    private boolean newTast;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
             + File.separator + "RealSR" + File.separator;
@@ -54,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
     private SearchView searchView;
     private MenuItem progress;
     private Spinner spinner;
+    private Process process;
 
 
     private final String[] command = new String[]{
@@ -87,6 +87,16 @@ public class MainActivity extends AppCompatActivity {
             progress.setTitle("");
             Log.i("onCreateOptionsMenu", "onCreate() done");
         }
+        progress.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                if (process != null) {
+                    process.destroy();
+                    progress.setTitle("");
+                }
+                return false;
+            }
+        });
         return true;
     }
 
@@ -152,13 +162,22 @@ public class MainActivity extends AppCompatActivity {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                newTast = true;
-                progress.setTitle("");
 
                 String q = searchView.getQuery().toString().trim();
+
+
                 if (q.equals("help")) {
                     logTextView.setText(getString(R.string.default_log));
+                } else if (q.equals("lr")) {
+                    imageView.setVisibility(View.VISIBLE);
+                    imageView.setImage(ImageSource.uri(dir + "/input.png"));
+                } else if (q.equals("hr")) {
+                    imageView.setVisibility(View.VISIBLE);
+                    imageView.setImage(ImageSource.uri(dir + "/output.png"));
                 } else {
+                    if (process != null)
+                        process.destroy();
+                    progress.setTitle("");
                     new Thread(() -> run20(query)).start();
                 }
                 return false;
@@ -187,7 +206,7 @@ public class MainActivity extends AppCompatActivity {
 
             SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");
             String filePath = galleryPath + modelName + "_" + f.format(new Date()) + ".png";
-            run20("cp output.png " + filePath);
+            run_command("cp output.png " + filePath);
             File file = new File(filePath);
             if (file.exists()) {
                 Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
@@ -201,9 +220,10 @@ public class MainActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btn_run).setOnClickListener(view -> {
-            newTast = true;
             progress.setTitle("");
             {
+                if (process != null)
+                    process.destroy();
                 new Thread(() -> {
                     if (selectCommand >= command.length || selectCommand < 0) {
                         Log.w("btn_run.onClick", "select=" + selectCommand + ", length=" + command.length);
@@ -298,7 +318,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // 在主进程执行命令但是不刷新UI，也不被打断
-    public synchronized boolean run_command(@NonNull String command) {
+    public boolean run_command(@NonNull String command) {
 
         if (command.trim().length() < 1) {
             Log.d("run_command", "command=" + command + "; break");
@@ -307,11 +327,10 @@ public class MainActivity extends AppCompatActivity {
 
         StringBuilder con = new StringBuilder();
         String result;
-        Process p;
 
         try {
-            p = Runtime.getRuntime().exec(command);
-            BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            Process process = Runtime.getRuntime().exec(command);
+            BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
             while ((result = br.readLine()) != null) {
                 con.append(result);
                 con.append('\n');
@@ -333,14 +352,15 @@ public class MainActivity extends AppCompatActivity {
 
     public synchronized boolean run20(@NonNull String cmd) {
         Log.i("run20", "cmd = " + cmd);
+        final long timeStart = System.currentTimeMillis();
 
         if (cmd.startsWith("./realsr-ncnn") || cmd.startsWith("./srmd-ncnn") || cmd.startsWith("./realcugan-ncnn")) {
             modelName = "Real-ESRGAN-anime";
             if (cmd.matches(".+\\s-m(\\s+)models-.+")) {
                 modelName = cmd.replaceFirst(".+\\s-m(\\s+)models-([^\\s]+).*", "$2");
             }
-            if (modelName.equals("se")||modelName.equals("nose")){
-                modelName = "Real-CUGAN-"+modelName;
+            if (modelName.equals("se") || modelName.equals("nose")) {
+                modelName = "Real-CUGAN-" + modelName;
             }
 
             runOnUiThread(() -> progress.setTitle(getResources().getString(R.string.busy)));
@@ -348,10 +368,8 @@ public class MainActivity extends AppCompatActivity {
         } else
             modelName = "SR";
         final boolean run_ncnn = !modelName.equals("SR");
-        newTast = false;
-        // shell进程
-        Process process;
-        // 对应进程的3个流
+
+        // 对应process进程的3个流
         BufferedReader successResult;
         BufferedReader errorResult;
         DataOutputStream os;
@@ -397,12 +415,6 @@ public class MainActivity extends AppCompatActivity {
                 while ((line = errorResult.readLine()) != null) {
 
                     result.append(line).append("\n");
-                    if (newTast) {
-                        process.destroy();
-                        result.append("break");
-                        progress.setTitle("break");
-                        return false;
-                    }
                     boolean p = run_ncnn && line.matches("\\d([0-9.]*)%");
                     progressText = line;
 
@@ -416,6 +428,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                try {
+                    errorResult.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
             Log.i("run20", "process.getErrorStream() finish");
@@ -424,12 +442,6 @@ public class MainActivity extends AppCompatActivity {
                 while ((line = successResult.readLine()) != null) {
 
                     result.append(line).append("\n");
-                    if (newTast) {
-                        process.destroy();
-                        result.append("break");
-                        progress.setTitle("break");
-                        return false;
-                    }
 
                     boolean p = run_ncnn && line.matches("\\d([0-9.]*)%");
                     progressText = line;
@@ -457,20 +469,32 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
             return false;
         }
+        Log.d("run_20", "finish, process " + (process != null));
 
         try {
+            Log.d("run_20", "finish, exitValue " + process.exitValue());
             if (process.exitValue() != 0)
                 process.destroy();
-
         } catch (Exception e) {
             e.printStackTrace();
+
+            runOnUiThread(() -> {
+                logTextView.setText(result.append("\nbreak"));
+                progress.setTitle("");
+            });
+            return false;
         }
 
+
+        result.append("\nfinish, use ").append((System.currentTimeMillis() - timeStart) / 1000).append(" second");
+
         runOnUiThread(() -> {
-            logTextView.setText(result.append("\nfinish"));
+            if (run_ncnn)
+                logTextView.setText(result.append(", ").append(modelName));
+            else
+                logTextView.setText(result);
             progress.setTitle(getResources().getString(R.string.done));
         });
-
 
         Log.i("run20", "finish");
         return true;
