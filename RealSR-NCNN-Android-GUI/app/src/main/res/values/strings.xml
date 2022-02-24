@@ -20,6 +20,9 @@
     <string name="tile_size">Tile size for default command</string>
     <string name="default_command">Preset command in the TextEditor</string>
     <string name="save_setting">Save Setting</string>
+    <string name="lr">Show low resolution image</string>
+    <string name="hr">Show high resolution image</string>
+    <string name="show">Show image</string>
     <string-array name="style_array">
         <item>real-esrgan-anime-x4</item>
         <item>real-esrgan-x4</item>

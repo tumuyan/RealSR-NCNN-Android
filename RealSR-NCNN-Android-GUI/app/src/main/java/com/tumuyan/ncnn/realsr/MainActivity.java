@@ -171,9 +171,15 @@ public class MainActivity extends AppCompatActivity {
                 } else if (q.equals("lr")) {
                     imageView.setVisibility(View.VISIBLE);
                     imageView.setImage(ImageSource.uri(dir + "/input.png"));
+                    logTextView.setText(getString(R.string.lr));
                 } else if (q.equals("hr")) {
                     imageView.setVisibility(View.VISIBLE);
                     imageView.setImage(ImageSource.uri(dir + "/output.png"));
+                    logTextView.setText(getString(R.string.hr));
+                } else if (q.startsWith("show ")) {
+                    imageView.setVisibility(View.VISIBLE);
+                    imageView.setImage(ImageSource.uri(q.replaceFirst("(\\s+)show(\\s+)", "")));
+                    logTextView.setText(getString(R.string.show));
                 } else {
                     if (process != null)
                         process.destroy();
