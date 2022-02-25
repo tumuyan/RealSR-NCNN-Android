@@ -87,15 +87,12 @@ public class MainActivity extends AppCompatActivity {
             progress.setTitle("");
             Log.i("onCreateOptionsMenu", "onCreate() done");
         }
-        progress.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                if (process != null) {
-                    process.destroy();
-                    progress.setTitle("");
-                }
-                return false;
+        progress.setOnMenuItemClickListener(item -> {
+            if (process != null) {
+                process.destroy();
+                progress.setTitle("");
             }
+            return false;
         });
         return true;
     }
@@ -212,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
 
             SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");
             String filePath = galleryPath + modelName + "_" + f.format(new Date()) + ".png";
-            run_command("cp output.png " + filePath);
+            run_command("cp " + dir + "/output.png " + filePath);
             File file = new File(filePath);
             if (file.exists()) {
                 Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
@@ -241,6 +238,7 @@ public class MainActivity extends AppCompatActivity {
                                 () -> {
                                     imageView.setVisibility(View.VISIBLE);
                                     imageView.setImage(ImageSource.uri(dir + "/output.png"));
+                                    logTextView.setText(getString(R.string.hr) + "\n" + logTextView.getText());
                                 }
                         );
                     }
@@ -492,7 +490,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-        result.append("\nfinish, use ").append((System.currentTimeMillis() - timeStart) / 1000).append(" second");
+        result.append("\nfinish, use ").append((float) (System.currentTimeMillis() - timeStart) / 1000).append(" second");
 
         runOnUiThread(() -> {
             if (run_ncnn)
@@ -545,6 +543,7 @@ public class MainActivity extends AppCompatActivity {
                 () -> {
                     imageView.setVisibility(View.VISIBLE);
                     imageView.setImage(ImageSource.uri(dir + "/input.png"));
+                    logTextView.setText(getString(R.string.lr));
                 }
         );
 

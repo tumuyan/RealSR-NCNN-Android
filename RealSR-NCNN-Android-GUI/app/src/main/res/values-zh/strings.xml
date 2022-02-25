@@ -13,8 +13,8 @@
         \n一、调用超分辨率程序:
         \n./realsr-ncnn或./srmd-ncnn或./realcugan-ncnn -i 输入的图片路径 -o 输出的图片路径 [其他可选参数]...
         \n主要参数有：\n
-        -i 输入的图片路径（jpg/png路径或者目录路径）\n
-        -o 输出的图片路径（jpg/png路径或者目录路径）\n
+        -i 输入的图片路径（jpg/png/webp文件路径或者目录路径）\n
+        -o 输出的图片路径（jpg/png/webp文件路径或者目录路径）\n
         -m 模型所在目录的路径\n
         -x 开启tta模式\n
         \n其中srmd-ncnn额外支持：\n
