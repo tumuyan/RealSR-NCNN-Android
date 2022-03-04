@@ -747,6 +747,10 @@ int main(int argc, char **argv)
                 tilesize[i] = 32;
         }
     }
+        fprintf(stderr, "[%d %s] jobs_load=%d jobs_proc=%d total_jobs_proc=%d  jobs_save=%d\n", 0,
+                ncnn::get_gpu_info().device_name(), jobs_load, jobs_proc.size()
+                ,total_jobs_proc, jobs_save);
+
     if (verbose)
         fprintf(stderr, "init realsr\n");
     else

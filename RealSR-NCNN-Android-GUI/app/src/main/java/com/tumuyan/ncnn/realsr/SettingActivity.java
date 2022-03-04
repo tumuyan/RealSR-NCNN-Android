@@ -6,10 +6,12 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 public class SettingActivity extends AppCompatActivity {
     SharedPreferences mySharePerferences;
@@ -17,6 +19,7 @@ public class SettingActivity extends AppCompatActivity {
 
     EditText editDefaultCommand;
     EditText editTile;
+    EditText editThread;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,11 +32,14 @@ public class SettingActivity extends AppCompatActivity {
         selectCommand = mySharePerferences.getInt("selectCommand", 0);
         int tileSize = mySharePerferences.getInt("tileSize", 0);
         String defaultCommand = mySharePerferences.getString("defaultCommand", "");
+        String threadCount = mySharePerferences.getString("threadCount","");
 
         editTile = findViewById(R.id.editTile);
         editTile.setText("" + tileSize);
         editDefaultCommand = findViewById(R.id.editDefaultCommand);
         editDefaultCommand.setText(defaultCommand);
+        editThread = findViewById(R.id.editThread);
+        editThread.setText(threadCount);
 
         Spinner spinner = findViewById(R.id.spinner);
         spinner.setSelection(selectCommand);
@@ -49,7 +55,24 @@ public class SettingActivity extends AppCompatActivity {
             }
         });
 
+
         findViewById(R.id.btn_save).setOnClickListener(view -> {
+            save();
+        });
+
+        findViewById(R.id.btn_reset).setOnClickListener(v -> {
+            spinner.setSelection(2);
+            editTile.setText("0");
+            editThread.setText("");
+            editDefaultCommand.setText("./realsr-ncnn -i input.png -o output.png -m models-Real-ESRGANv2-anime -s 2");
+            save();
+        });
+
+        findViewById(R.id.btn_reset_low).setOnClickListener(v -> {
+            spinner.setSelection(9);
+            editTile.setText("32");
+            editThread.setText("1:1:1");
+            editDefaultCommand.setText("");
             save();
         });
 
@@ -64,12 +87,31 @@ public class SettingActivity extends AppCompatActivity {
     }
 
 
+
+
+
     private void save() {
         SharedPreferences.Editor editor = mySharePerferences.edit();
         editor.putInt("selectCommand", selectCommand);
-        editor.putInt("tileSize", Integer.parseInt(editTile.getText().toString()));
-        editor.putString("defaultCommand", editDefaultCommand.getText().toString());
-        editor.apply();
 
+        String tileSize = editTile.getText().toString();
+        if(tileSize.length()<1){
+            tileSize="0";
+            editTile.setText(tileSize);
+        }
+        editor.putInt("tileSize", Integer.parseInt(tileSize));
+        editor.putString("defaultCommand", editDefaultCommand.getText().toString());
+
+        String threadCount = editThread.getText().toString().trim().replaceAll("[\\s/]+",":");
+        if(threadCount.length()>0) {
+            if (!threadCount.matches("(\\d+):(\\d+):(\\d+)")) {
+                editThread.setError(getString(R.string.thread_count_err));
+                return;
+            }
+        }
+        editThread.setText(threadCount);
+        editor.putString("threadCount",threadCount);
+
+        editor.apply();
     }
 }

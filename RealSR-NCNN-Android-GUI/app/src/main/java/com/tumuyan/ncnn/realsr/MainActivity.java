@@ -41,12 +41,14 @@ public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1;
     private static final int MY_PERMISSIONS_REQUEST = 100;
     private int selectCommand = 0;
+    private String threadCount = "";
     private SubsamplingScaleImageView imageView;
     private TextView logTextView;
     private boolean initProcess;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
             + File.separator + "RealSR" + File.separator;
+    private File outputFile;
     private String dir;
     // dir="/data/data/com.tumuyan.ncnn.realsr/cache/realsr";
     private String modelName = "SR";
@@ -54,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     private MenuItem progress;
     private Spinner spinner;
     private Process process;
+    private boolean newTask;
 
 
     private final String[] command = new String[]{
@@ -88,10 +91,7 @@ public class MainActivity extends AppCompatActivity {
             Log.i("onCreateOptionsMenu", "onCreate() done");
         }
         progress.setOnMenuItemClickListener(item -> {
-            if (process != null) {
-                process.destroy();
-                progress.setTitle("");
-            }
+            stopCommand();
             return false;
         });
         return true;
@@ -108,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
 
         SharedPreferences mySharePerferences = getSharedPreferences("config", Activity.MODE_PRIVATE);
         tileSize = mySharePerferences.getInt("tileSize", 0);
-
+        threadCount = mySharePerferences.getString("threadCount", "");
     }
 
     @Override
@@ -137,11 +137,12 @@ public class MainActivity extends AppCompatActivity {
 
         dir = dir + "/realsr";
 
+        outputFile = new File(dir, "output.png");
+
         run_command("chmod 777 " + dir + " -R");
-//        run_command("ls " + dir + " -l");
 
         spinner = findViewById(R.id.spinner);
-        selectCommand = mySharePerferences.getInt("selectCommand", 0);
+        selectCommand = mySharePerferences.getInt("selectCommand", 2);
         spinner.setSelection(selectCommand);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -178,9 +179,7 @@ public class MainActivity extends AppCompatActivity {
                     imageView.setImage(ImageSource.uri(q.replaceFirst("(\\s+)show(\\s+)", "")));
                     logTextView.setText(getString(R.string.show));
                 } else {
-                    if (process != null)
-                        process.destroy();
-                    progress.setTitle("");
+                    stopCommand();
                     new Thread(() -> run20(query)).start();
                 }
                 return false;
@@ -216,31 +215,47 @@ public class MainActivity extends AppCompatActivity {
                 Uri uri = Uri.fromFile(file);
                 intent.setData(uri);
                 sendBroadcast(intent);
-                Toast.makeText(getApplicationContext(), "Saved!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), R.string.save_succeed, Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(getApplicationContext(), "Fail!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), R.string.save_fail, Toast.LENGTH_SHORT).show();
             }
         });
 
         findViewById(R.id.btn_run).setOnClickListener(view -> {
             progress.setTitle("");
             {
-                if (process != null)
-                    process.destroy();
+                stopCommand();
+                outputFile.delete();
                 new Thread(() -> {
                     if (selectCommand >= command.length || selectCommand < 0) {
                         Log.w("btn_run.onClick", "select=" + selectCommand + ", length=" + command.length);
                         selectCommand = 0;
                     }
-                    String cmd = tileSize > 0 ? command[selectCommand] + " -t " + tileSize : command[selectCommand];
-                    if (run20(cmd)) {
-                        runOnUiThread(
-                                () -> {
-                                    imageView.setVisibility(View.VISIBLE);
-                                    imageView.setImage(ImageSource.uri(dir + "/output.png"));
-                                    logTextView.setText(getString(R.string.hr) + "\n" + logTextView.getText());
-                                }
-                        );
+                    StringBuffer cmd = new StringBuffer(command[selectCommand]);
+                    if (tileSize > 0)
+                        cmd.append(" -t ").append(tileSize);
+                    if (threadCount.length() > 0)
+                        cmd.append(" -j ").append(threadCount);
+
+                    if (run20(cmd.toString())) {
+                        if (outputFile.exists()) {
+                            runOnUiThread(
+                                    () -> {
+                                        imageView.setVisibility(View.VISIBLE);
+                                        imageView.setImage(ImageSource.uri(dir + "/output.png"));
+                                        logTextView.setText(getString(R.string.hr) + "\n" + logTextView.getText());
+                                    }
+                            );
+                        } else {
+                            runOnUiThread(
+                                    () -> {
+                                        imageView.setVisibility(View.VISIBLE);
+                                        imageView.setImage(ImageSource.uri(dir + "/input.png"));
+                                        logTextView.setText(getString(R.string.lr) + "\n" + logTextView.getText());
+                                    }
+                            );
+                        }
+
                     }
                 }).start();
             }
@@ -355,6 +370,7 @@ public class MainActivity extends AppCompatActivity {
     private String progressText = "";
 
     public synchronized boolean run20(@NonNull String cmd) {
+        newTask = false;
         Log.i("run20", "cmd = " + cmd);
         final long timeStart = System.currentTimeMillis();
 
@@ -398,6 +414,11 @@ public class MainActivity extends AppCompatActivity {
 
             os.writeBytes("cd " + dir + "\n");
             os.flush();
+
+//            if(run_ncnn){
+//                os.writeBytes("rm output.png\n");
+//                os.flush();
+//            }
 
             Log.i("run20", "write cmd start");
 
@@ -481,7 +502,9 @@ public class MainActivity extends AppCompatActivity {
                 process.destroy();
         } catch (Exception e) {
             e.printStackTrace();
+        }
 
+        if (newTask || process == null) {
             runOnUiThread(() -> {
                 logTextView.setText(result.append("\nbreak"));
                 progress.setTitle("");
@@ -504,6 +527,14 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    private void stopCommand() {
+        if (process != null) {
+            process.destroy();
+            if (progress != null)
+                progress.setTitle("");
+        }
+        newTask = true;
+    }
 
     private boolean saveImage(@NonNull InputStream in) {
 

@@ -44,7 +44,15 @@
     <string name="default_command">主界面输入框内的默认命令</string>
     <string name="save_setting">保存设置</string>
 
-    <string name="lr">显示低分辨率图像</string>
-    <string name="hr">显示高分辨率图像</string>
+    <string name="lr">当前显示低分辨率图像</string>
+    <string name="hr">当前显示高分辨率图像</string>
     <string name="show">显示图像</string>
+
+    <string name="save_succeed">保存成功</string>
+    <string name="save_fail">保存失败</string>
+    <string name="threadCount">预设命令的加载/处理/保存的线程数（其实没什么卵用）</string>
+    <string name="reset">重置为默认配置</string>
+    <string name="reset_low">重置为低配参数</string>
+
+    <string name="thread_count_err">不符合“数字:数字:数字”的格式</string>
 </resources>
