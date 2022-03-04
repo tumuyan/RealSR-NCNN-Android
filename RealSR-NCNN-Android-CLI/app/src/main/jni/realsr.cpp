@@ -59,6 +59,8 @@ RealSR::RealSR(int gpuid, bool _tta_mode)
 
     realsr_preproc = 0;
     realsr_postproc = 0;
+    bicubic_2x = 0;
+    bicubic_3x = 0;
     bicubic_4x = 0;
     tta_mode = _tta_mode;
 }
@@ -70,6 +72,12 @@ RealSR::~RealSR()
         delete realsr_preproc;
         delete realsr_postproc;
     }
+
+    bicubic_2x->destroy_pipeline(net.opt);
+    delete bicubic_2x;
+
+    bicubic_3x->destroy_pipeline(net.opt);
+    delete bicubic_3x;
 
     bicubic_4x->destroy_pipeline(net.opt);
     delete bicubic_4x;
@@ -157,6 +165,32 @@ int RealSR::load(const std::string& parampath, const std::string& modelpath)
                 realsr_postproc->create(realsr_postproc_spv_data, sizeof(realsr_postproc_spv_data), specializations);
         }
     }
+
+   // bicubic 2x/3x/4x for alpha channel
+   {
+       bicubic_2x = ncnn::create_layer("Interp");
+       bicubic_2x->vkdev = net.vulkan_device();
+
+       ncnn::ParamDict pd;
+       pd.set(0, 3);// bicubic
+       pd.set(1, 2.f);
+       pd.set(2, 2.f);
+       bicubic_2x->load_param(pd);
+
+       bicubic_2x->create_pipeline(net.opt);
+   }
+   {
+       bicubic_3x = ncnn::create_layer("Interp");
+       bicubic_3x->vkdev = net.vulkan_device();
+
+       ncnn::ParamDict pd;
+       pd.set(0, 3);// bicubic
+       pd.set(1, 3.f);
+       pd.set(2, 3.f);
+       bicubic_3x->load_param(pd);
+
+       bicubic_3x->create_pipeline(net.opt);
+   }
 
     // bicubic 4x for alpha channel
     {
@@ -351,6 +385,14 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     {
                         out_alpha_tile_gpu = in_alpha_tile_gpu;
                     }
+                    if (scale == 2)
+                    {
+                        bicubic_2x->forward(in_alpha_tile_gpu, out_alpha_tile_gpu, cmd, opt);
+                    }
+                    if (scale == 3)
+                    {
+                        bicubic_3x->forward(in_alpha_tile_gpu, out_alpha_tile_gpu, cmd, opt);
+                    }
                     if (scale == 4)
                     {
                         bicubic_4x->forward(in_alpha_tile_gpu, out_alpha_tile_gpu, cmd, opt);
@@ -461,6 +503,14 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     if (scale == 1)
                     {
                         out_alpha_tile_gpu = in_alpha_tile_gpu;
+                    }
+                    if (scale == 2)
+                    {
+                        bicubic_2x->forward(in_alpha_tile_gpu, out_alpha_tile_gpu, cmd, opt);
+                    }
+                    if (scale == 3)
+                    {
+                        bicubic_3x->forward(in_alpha_tile_gpu, out_alpha_tile_gpu, cmd, opt);
                     }
                     if (scale == 4)
                     {
