@@ -9,6 +9,7 @@
 
 #define _DEMO_PATH  false
 #define _VERBOSE_LOG  true
+#define _MODE 2
 
 #if _WIN32
 // image decoder and encoder with wic
@@ -422,168 +423,209 @@ int main(int argc, char **argv)
 #endif // _WIN32
         }
 
+        int out_w = w * scale, out_h = h * scale, out_line_size = out_w * c;
+        unsigned char *buf = new unsigned char[out_line_size * out_h];
+        fprintf(stderr, "output w/h/s = %d/%d/%d, mode=%s\n", out_w, out_h, scale,
+                model.c_str());
+
         if (pixeldata) {
-            fprintf(stderr, "pixeldata: ");
-            for (int i = 0; i < 32; i++) {
-                fprintf(stderr, " %08X", pixeldata[i]
-                );
-            }
-            fprintf(stderr, "\n");
 
-            int out_w = w * scale, out_h = h * scale, out_line_size = out_w * c;
-            unsigned char *buf = new unsigned char[out_line_size * out_h];
-
-            float nearest1_begin = clock();
-            //row
-            for (int i = 0; i < h; i++) {
-                //line
-                for (int j = 0; j < w; j++) {
-                    int p = (w * i + j) * c;
-                    int q = (out_w * i + j) * c * scale;
-
-                    //sub-pixel
-                    for (int k = 0; k < c; k++) {
-                        int m = pixeldata[p + k];
-
-                        // output x offset
-                        int x_offset = 0;
-                        for (int n = 0; n < scale; n++) {
-                            int h = q + k + x_offset;
-
-                            // output y offset
-                            int y_offset = 0;
-                            for (int g = 0; g < scale; g++) {
-                                buf[h + y_offset] = m;
-                                y_offset += out_line_size;
-                            }
-                            x_offset += c;
-                        }
-
-                        if (verbose) {
-                            fprintf(stderr, "i:%d j:%d :", i, j);
-                            for (int i = 0; i < 32; i++) {
-                                fprintf(stderr, " %02X", buf[i]
-                                );
-                            }
-                            fprintf(stderr, " ,m=%d %d\n", p + k, k + q);
-                        }
-                    }
+            if (verbose) {
+                fprintf(stderr, "pixeldata: ");
+                for (int i = 0; i < 32; i++) {
+                    fprintf(stderr, " %08X", pixeldata[i]);
                 }
+                fprintf(stderr, "\n");
             }
+        }
 
-            float nearest1_end = clock();
-            fprintf(stderr, "nearest1 use time: %.2f\n", (nearest1_end - nearest1_begin) / CLOCKS_PER_SEC);
+        if (model == "nearest") {
 
-            float nearest2_begin = clock();
-            {
-                int p = 0;
-                int q = 0;
-//                unsigned char *pix = new unsigned char[c];
+
+            if (_MODE == 1) {
+                float nearest1_begin = clock();
                 //row
                 for (int i = 0; i < h; i++) {
                     //line
-                    void *l = buf + q;
                     for (int j = 0; j < w; j++) {
-                        //pixel
-                        for (int k = 0; k < scale; k++) {
-                            memcpy(buf + q, pixeldata + p, c);
-                            q += c;
+                        int p = (w * i + j) * c;
+                        int q = (out_w * i + j) * c * scale;
+
+                        //sub-pixel
+                        for (int k = 0; k < c; k++) {
+                            int m = pixeldata[p + k];
+
+                            // output x offset
+                            int x_offset = 0;
+                            for (int n = 0; n < scale; n++) {
+                                int o = q + k + x_offset;
+
+                                // output y offset
+                                int y_offset = 0;
+                                for (int g = 0; g < scale; g++) {
+                                    buf[o + y_offset] = m;
+                                    y_offset += out_line_size;
+                                }
+                                x_offset += c;
+                            }
+
+                            if (verbose) {
+                                fprintf(stderr, "i:%d j:%d :", i, j);
+                                for (int i = 0; i < 32; i++) {
+                                    fprintf(stderr, " %02X", buf[i]
+                                    );
+                                }
+                                fprintf(stderr, " ,m=%d %d\n", p + k, k + q);
+                            }
                         }
-                        p += c;
-                    }
-
-                    // mult-line
-
-                    for (int k = 0; k < scale; k++) {
-                        memcpy(buf + q, l, out_line_size);
-                        q += out_line_size;
                     }
                 }
+                float nearest1_end = clock();
+                fprintf(stderr, "nearest1 use time: %.2f\n",
+                        (nearest1_end - nearest1_begin) / CLOCKS_PER_SEC);
+            } else {
+
+                float nearest2_begin = clock();
+                {
+                    int p = 0;
+                    int q = 0;
+                    //row
+                    for (int i = 0; i < h; i++) {
+
+                        //line
+                        void *l = buf + q;
+                        for (int j = 0; j < w; j++) {
+
+                            //pixel
+                            for (int k = 0; k < scale; k++) {
+                                memcpy(buf + q, pixeldata + p, sizeof(unsigned char) * c);
+                                q += c;
+                            }
+
+                            if (verbose) {
+                                fprintf(stderr, "i:%d j:%d :", i, j);
+                                for (int i = 0; i < 32; i++) {
+                                    fprintf(stderr, " %02X", buf[i]
+                                    );
+                                }
+                                fprintf(stderr, " ,m=%d %d\n", p, q);
+                            }
+
+                            p += c;
+                        }
+
+
+
+                        // mult-line
+                        for (int k = 1; k < scale; k++) {
+                            memcpy(buf + q, l, sizeof(unsigned char) * out_line_size);
+                            q += out_line_size;
+                        }
+
+
+                        /*
+                         * print
+                            w++;
+                            if(w==100){
+                                w=0;
+                                fprintf(stderr, "%.2f%%\n", (i+1)*1e2/h);
+                            }
+                         */
+                    }
+                }
+
+                float nearest2_end = clock();
+                fprintf(stderr, "nearest2 use time: %.2f\n",
+                        (nearest2_end - nearest2_begin) / CLOCKS_PER_SEC);
+
             }
 
-            float nearest2_end = clock();
-            fprintf(stderr, "nearest2 use time: %.2f\n", (nearest2_end - nearest2_begin) / CLOCKS_PER_SEC);
+        }
 
+        if (verbose) {
             fprintf(stderr, "buf data: ");
             for (int i = 0; i < 32; i++) {
                 fprintf(stderr, " %02X", buf[i]
                 );
             }
             fprintf(stderr, "\n");
+        }
 
-            path_t ext = get_file_extension(outputpath);
-            if (c == 4 &&
-                (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") ||
-                 ext == PATHSTR("JPEG"))) {
-                path_t output_filename2 = output_files[i] + PATHSTR(".png");
-                outputpath = output_filename2;
+        path_t ext = get_file_extension(outputpath);
+        if (c == 4 &&
+            (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") ||
+             ext == PATHSTR("JPEG"))) {
+            path_t output_filename2 = output_files[i] + PATHSTR(".png");
+            outputpath = output_filename2;
 #if _WIN32
-                fwprintf(stderr, L"image %ls has alpha channel ! %ls will output %ls\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
+            fwprintf(stderr, L"image %ls has alpha channel ! %ls will output %ls\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
 #else // _WIN32
-                fprintf(stderr, "image %s has alpha channel ! %s will output %s\n",
-                        imagepath.c_str(),
-                        imagepath.c_str(), output_filename2.c_str());
-#endif // _WIN32
-            }
-
-            // save
-            float save_begin = clock();
-            {
-
-
-                int success = 0;
-
-                path_t ext = get_file_extension(imagepath);
-
-                if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP")) {
-                    success = webp_save(outputpath.c_str(), out_w, out_h, c, buf);
-
-                } else if (ext == PATHSTR("png") || ext == PATHSTR("PNG")) {
-#if _WIN32
-                    success = wic_encode_image(outputpath.c_str(), outimage.w, outimage.h, outimage.elempack, outimage.data);
-#else
-//                    success = stbi_write_png(outputpath.c_str(), out_w, out_h, c, buf, out_w * c);
-                    success = stbi_write_png(outputpath.c_str(), out_w, out_h, c, buf, 0);
-
-#endif
-                } else if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") ||
-                           ext == PATHSTR("jpeg") ||
-                           ext == PATHSTR("JPEG")) {
-#if _WIN32
-                    success = wic_encode_jpeg_image(outputpath.c_str(), outimage.w, outimage.h, outimage.elempack, outimage.data);
-#else
-                    success = stbi_write_jpg(outputpath.c_str(), out_w, out_h, c, buf, 100);
-#endif
-                }
-                if (success) {
-                    if (verbose) {
-#if _WIN32
-                        fwprintf(stderr, L"%ls -> %ls done\n", imagepath.c_str(), outputpath.c_str());
-#else
-                        fprintf(stderr, "%s -> %s done\n", imagepath.c_str(), outputpath.c_str());
-#endif
-                    }
-                } else {
-#if _WIN32
-                    fwprintf(stderr, L"encode image %ls failed\n", outputpath.c_str());
-#else
-                    fprintf(stderr, "encode image %s failed\n", outputpath.c_str());
-#endif
-                }
-            }
-
-            float save_end = clock();
-            fprintf(stderr, "save image use time:%.2f \n", (save_end - save_begin) / CLOCKS_PER_SEC);
-
-        } else {
-#if _WIN32
-            fwprintf(stderr, L"decode image %ls failed\n", imagepath.c_str());
-#else // _WIN32
-            fprintf(stderr, "decode image %s failed\n", imagepath.c_str());
+            fprintf(stderr, "image %s has alpha channel ! %s will output %s\n",
+                    imagepath.c_str(),
+                    imagepath.c_str(), output_filename2.c_str());
 #endif // _WIN32
         }
+
+        // save
+        float save_begin = clock();
+        {
+
+
+            int success = 0;
+
+            path_t ext = get_file_extension(imagepath);
+
+            if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP")) {
+                success = webp_save(outputpath.c_str(), out_w, out_h, c, buf);
+
+            } else if (ext == PATHSTR("png") || ext == PATHSTR("PNG")) {
+#if _WIN32
+                success = wic_encode_image(outputpath.c_str(), outimage.w, outimage.h, outimage.elempack, outimage.data);
+#else
+//                    success = stbi_write_png(outputpath.c_str(), out_w, out_h, c, buf, out_w * c);
+                success = stbi_write_png(outputpath.c_str(), out_w, out_h, c, buf, 0);
+
+#endif
+            } else if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") ||
+                       ext == PATHSTR("jpeg") ||
+                       ext == PATHSTR("JPEG")) {
+#if _WIN32
+                success = wic_encode_jpeg_image(outputpath.c_str(), outimage.w, outimage.h, outimage.elempack, outimage.data);
+#else
+                success = stbi_write_jpg(outputpath.c_str(), out_w, out_h, c, buf, 100);
+#endif
+            }
+            if (success) {
+                if (verbose) {
+#if _WIN32
+                    fwprintf(stderr, L"%ls -> %ls done\n", imagepath.c_str(), outputpath.c_str());
+#else
+                    fprintf(stderr, "%s -> %s done\n", imagepath.c_str(), outputpath.c_str());
+#endif
+                }
+            } else {
+#if _WIN32
+                fwprintf(stderr, L"encode image %ls failed\n", outputpath.c_str());
+#else
+                fprintf(stderr, "encode image %s failed\n", outputpath.c_str());
+#endif
+            }
+        }
+
+        float save_end = clock();
+        fprintf(stderr, "save image use time:%.2f \n",
+                (save_end - save_begin) / CLOCKS_PER_SEC);
+
+    } else {
+#if _WIN32
+        fwprintf(stderr, L"decode image %ls failed\n", imagepath.c_str());
+#else // _WIN32
+        fprintf(stderr, "decode image %s failed\n", imagepath.c_str());
+#endif // _WIN32
     }
-    return 0;
+}
+
+return 0;
 }
 
 void pretty_print(ncnn::Mat m) {
