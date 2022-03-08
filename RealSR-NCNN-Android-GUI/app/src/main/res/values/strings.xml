@@ -48,6 +48,7 @@
         <item>real-cugan-x4-conservative</item>
         <item>real-cugan-x4-noise0</item>
         <item>real-cugan-x4-noise3</item>
+        <item>classical-nearest-x4</item>
     </string-array>
 
 </resources>

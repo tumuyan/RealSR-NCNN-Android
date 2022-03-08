@@ -278,6 +278,11 @@ void *load(void *args) {
             v.inimage = ncnn::Mat(w, h, (void *) pixeldata, (size_t) c, c);
             v.outimage = ncnn::Mat(w * scale, h * scale, (size_t) c, c);
 
+            fprintf(stderr, "input&output w/h/c %d/%d/%d %d/%d/%d\n",
+                    v.inimage.w,v.inimage.h,v.inimage.c,
+                    v.outimage.w,v.outimage.h,v.outimage.c
+            );
+
             path_t ext = get_file_extension(v.outpath);
             if (c == 4 &&
                 (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") ||
