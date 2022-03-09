@@ -12,6 +12,8 @@ This repository contains 5 project:
 3. RealCUGAN-NCNN-Android-CLI  can build a program that can be used by the console (for example, Termux) for Android.
 4. SRMD-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
 5. Waifu2x-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android (Not packaged in APK).
+6. Resize-NCNN-Android-CLI  can build a program that can be used by the console (for example, Termux) for Android. use ncnn only to reduce the elf file size. Contains classical interpolation mode `nearest` `bilinear` `bicubic`
+7. Resize-CLI just a demo like the Resize-NCNN-Android-CLI, but it not need ncnn and could build by VS
 
 ### About Real-ESRGAN
 

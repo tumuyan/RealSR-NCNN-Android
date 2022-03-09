@@ -78,7 +78,10 @@ public class MainActivity extends AppCompatActivity {
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n -1",
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n 0",
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n 3",
-            "./resize-ncnn -i input.png -o output.png  -m nearest -s 4"
+            "./resize-ncnn -i input.png -o output.png  -m nearest -s 2",
+            "./resize-ncnn -i input.png -o output.png  -m nearest -s 4",
+            "./resize-ncnn -i input.png -o output.png  -m bilinear -s 2",
+            "./resize-ncnn -i input.png -o output.png  -m bilinear -s 4"
     };
     private int tileSize;
 
@@ -383,7 +386,7 @@ public class MainActivity extends AppCompatActivity {
             if (modelName.matches("(se|nose)")) {
                 modelName = "Real-CUGAN-" + modelName;
             } else if (cmd.matches(".+\\s-m(\\s+)(bicubic|bilinear|nearest).*")) {
-                modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest).*","Classical-$2");
+                modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest).*", "Classical-$2");
             }
 
             runOnUiThread(() -> progress.setTitle(getResources().getString(R.string.busy)));
