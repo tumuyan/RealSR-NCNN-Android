@@ -55,4 +55,5 @@
     <string name="reset_low">重置为低配参数</string>
 
     <string name="thread_count_err">不符合“数字:数字:数字”的格式</string>
+    <string name="keep_screen">工作时保持屏幕常亮</string>
 </resources>

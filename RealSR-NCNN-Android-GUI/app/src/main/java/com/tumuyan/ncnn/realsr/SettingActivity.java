@@ -12,6 +12,7 @@ import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
 public class SettingActivity extends AppCompatActivity {
     SharedPreferences mySharePerferences;
@@ -20,6 +21,7 @@ public class SettingActivity extends AppCompatActivity {
     EditText editDefaultCommand;
     EditText editTile;
     EditText editThread;
+    ToggleButton toggleKeepScreen;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +35,7 @@ public class SettingActivity extends AppCompatActivity {
         int tileSize = mySharePerferences.getInt("tileSize", 0);
         String defaultCommand = mySharePerferences.getString("defaultCommand", "");
         String threadCount = mySharePerferences.getString("threadCount","");
+        boolean keepScreen = mySharePerferences.getBoolean("keepScreen",false);
 
         editTile = findViewById(R.id.editTile);
         editTile.setText("" + tileSize);
@@ -40,6 +43,8 @@ public class SettingActivity extends AppCompatActivity {
         editDefaultCommand.setText(defaultCommand);
         editThread = findViewById(R.id.editThread);
         editThread.setText(threadCount);
+        toggleKeepScreen = findViewById(R.id.toggle_keep_screen);
+        toggleKeepScreen.setChecked(keepScreen);
 
         Spinner spinner = findViewById(R.id.spinner);
         spinner.setSelection(selectCommand);
@@ -111,6 +116,8 @@ public class SettingActivity extends AppCompatActivity {
         }
         editThread.setText(threadCount);
         editor.putString("threadCount",threadCount);
+
+        editor.putBoolean("keepScreen",toggleKeepScreen.isChecked());
 
         editor.apply();
     }

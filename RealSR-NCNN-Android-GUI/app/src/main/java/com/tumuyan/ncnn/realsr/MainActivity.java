@@ -84,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
             "./resize-ncnn -i input.png -o output.png  -m bilinear -s 4"
     };
     private int tileSize;
+    private boolean keepScreen;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -113,6 +114,8 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences mySharePerferences = getSharedPreferences("config", Activity.MODE_PRIVATE);
         tileSize = mySharePerferences.getInt("tileSize", 0);
         threadCount = mySharePerferences.getString("threadCount", "");
+        keepScreen = mySharePerferences.getBoolean("keepScreen", false);
+
     }
 
     @Override
@@ -230,6 +233,9 @@ public class MainActivity extends AppCompatActivity {
             {
                 stopCommand();
                 outputFile.delete();
+                if (keepScreen) {
+                    view.setKeepScreenOn(true);
+                }
                 new Thread(() -> {
                     if (selectCommand >= command.length || selectCommand < 0) {
                         Log.w("btn_run.onClick", "select=" + selectCommand + ", length=" + command.length);
@@ -248,6 +254,9 @@ public class MainActivity extends AppCompatActivity {
                                         imageView.setVisibility(View.VISIBLE);
                                         imageView.setImage(ImageSource.uri(dir + "/output.png"));
                                         logTextView.setText(getString(R.string.hr) + "\n" + logTextView.getText());
+                                        if (keepScreen) {
+                                            view.setKeepScreenOn(false);
+                                        }
                                     }
                             );
                         } else {
@@ -256,6 +265,9 @@ public class MainActivity extends AppCompatActivity {
                                         imageView.setVisibility(View.VISIBLE);
                                         imageView.setImage(ImageSource.uri(dir + "/input.png"));
                                         logTextView.setText(getString(R.string.lr) + "\n" + logTextView.getText());
+                                        if (keepScreen) {
+                                            view.setKeepScreenOn(false);
+                                        }
                                     }
                             );
                         }

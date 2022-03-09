@@ -29,6 +29,7 @@
     <string name="reset">Reset default parameters</string>
     <string name="reset_low">Reset compatible parameters</string>
     <string name="thread_count_err">not number:number:number</string>
+    <string name="keep_screen">Keep screen on when it works</string>
     <string-array name="style_array">
         <item>real-esrgan-anime-x4</item>
         <item>real-esrgan-x4</item>
