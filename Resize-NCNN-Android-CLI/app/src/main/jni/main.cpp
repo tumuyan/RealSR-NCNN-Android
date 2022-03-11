@@ -121,6 +121,7 @@ static void print_usage() {
     fprintf(stderr, "  -o output-path       output image path (jpg/png/webp) or directory\n");
     fprintf(stderr, "  -s scale             upscale ratio (4, default=4)\n");
     fprintf(stderr, "  -m mode        resize mode (bicubic/bilinear/nearest, default=nearest)\n");
+    fprintf(stderr, "  -n not-use-ncnn        bicubic/bilinear not use ncnn\n");
     fprintf(stderr, "  -f format            output image format (jpg/png/webp, default=ext/png)\n");
 }
 
@@ -154,12 +155,13 @@ int main(int argc, char **argv)
     path_t model = PATHSTR("nearest");
 #endif
     int verbose = 0;
+    bool not_use_ncnn = false;
     path_t format = PATHSTR("png");
 
 #if _WIN32
     setlocale(LC_ALL, "");
     wchar_t opt;
-    while ((opt = getopt(argc, argv, L"i:o:s:t:m:g:j:f:vxh")) != (wchar_t)-1)
+    while ((opt = getopt(argc, argv, L"i:o:s:t:m:g:j:f:vxhn")) != (wchar_t)-1)
     {
         switch (opt)
         {
@@ -185,7 +187,9 @@ int main(int argc, char **argv)
         case L'v':
             verbose = 1;
             break;
-
+        case L'n':
+            not_use_ncnn = true;
+            break;
         case L'h':
         default:
             print_usage();
@@ -194,7 +198,7 @@ int main(int argc, char **argv)
     }
 #else // _WIN32
     int opt;
-    while ((opt = getopt(argc, argv, "i:o:s:t:m:g:j:f:vxh")) != -1) {
+    while ((opt = getopt(argc, argv, "i:o:s:t:m:g:j:f:vxhn")) != -1) {
         switch (opt) {
             case 'i':
                 inputpath = optarg;
@@ -213,6 +217,9 @@ int main(int argc, char **argv)
                 break;
             case 'v':
                 verbose = 1;
+                break;
+            case 'n':
+                not_use_ncnn = true;
                 break;
             case 'h':
             default:
@@ -439,11 +446,12 @@ int main(int argc, char **argv)
             }
 
 
-            if (model == "nearest") {
+            float process_begin = clock();
 
+            if (not_use_ncnn && model.find(PATHSTR("nearest")) != path_t::npos) {
 
                 if (_MODE == 1) {
-                    float nearest1_begin = clock();
+
                     //row
                     for (int i = 0; i < h; i++) {
                         //line
@@ -480,12 +488,8 @@ int main(int argc, char **argv)
                             }
                         }
                     }
-                    float nearest1_end = clock();
-                    fprintf(stderr, "nearest1 use time: %.2f\n",
-                            (nearest1_end - nearest1_begin) / CLOCKS_PER_SEC);
                 } else {
 
-                    float nearest2_begin = clock();
                     {
                         int p = 0;
                         int q = 0;
@@ -533,14 +537,9 @@ int main(int argc, char **argv)
                              */
                         }
                     }
-
-                    float nearest2_end = clock();
-                    fprintf(stderr, "nearest2 use time: %.2f\n",
-                            (nearest2_end - nearest2_begin) / CLOCKS_PER_SEC);
-
                 }
 
-            } else if (model == "bilinear") {
+            } else if (not_use_ncnn && model.find(PATHSTR("bilinear")) != path_t::npos) {
                 if (w < 2 && h < 2) {
                     fprintf(stderr, "[Err]image is too small\n");
                     return -1;
@@ -550,7 +549,6 @@ int main(int argc, char **argv)
                     return -1;
                 }
 
-                float begin = clock();
 
                 out_w = out_w - scale + 1;
                 out_h = out_h - scale + 1;
@@ -558,7 +556,7 @@ int main(int argc, char **argv)
                 free(buf);
                 buf = new unsigned char[out_line_size * out_h];
 
-//            子像素a点，b点
+                // 子像素a点，b点
                 unsigned char a, b;
                 int p = 0;
                 int q = 0;
@@ -574,26 +572,34 @@ int main(int argc, char **argv)
 
                             a = pixeldata[p];
                             b = pixeldata[p + c];
-                            float d = ((float) (b - a)) / scale;
-                            float e = 0;
-                            for (int k = 0; k < scale; k++) {
-                                buf[q] = a + (int) (e);
-                                e += d;
-                                q += c;
+                            if (a == b) {
+                                for (int k = 0; k < scale; k++) {
+                                    buf[q] = a;
+                                    q += c;
+                                }
+                            } else {
+                                float d = ((float) (b - a)) / scale;
+                                float e = 0;
+                                for (int k = 0; k < scale; k++) {
+                                    buf[q] = a + (int) (e);
+                                    e += d;
+                                    q += c;
+                                }
                             }
+
                             p += c;
                         }
                         buf[q] = b;
                         p += c;
                         q = q + block_size - out_line_size + c;
-//                        fprintf(stderr, " %d-%d",l,i);
+                        //                        fprintf(stderr, " %d-%d",l,i);
                     }
 
                 }
 
-//                fprintf(stderr, "\n 2nd\n");
-//
-//                fprintf(stderr, "out_line_size=%d block=%d\n", out_line_size, block_size);
+                //                fprintf(stderr, "\n 2nd\n");
+                //
+                //                fprintf(stderr, "out_line_size=%d block=%d\n", out_line_size, block_size);
                 p = 0;
                 for (int i = 0; i < h; i++) {
 
@@ -601,23 +607,55 @@ int main(int argc, char **argv)
                         a = buf[p];
                         q = out_line_size;
                         b = buf[p + block_size];
-                        float d = ((float) (b - a)) / scale;
-                        float e = d;
-                        for (int k = 1; k < scale; k++) {
-                            buf[p + q] = a + (int) (e);
-//                            fprintf(stderr, "i-j:%d-%d p-q-k:%d-%d-%d\n",i,j, p, q,k);
-                            e += d;
-                            q += out_line_size;
+                        if (a == b) {
+                            for (int k = 1; k < scale; k++) {
+                                buf[p + q] = a;
+                                q += out_line_size;
+                            }
+                        } else {
+                            float d = ((float) (b - a)) / scale;
+                            float e = d;
+                            for (int k = 1; k < scale; k++) {
+                                buf[p + q] = a + (int) (e);
+                                //                            fprintf(stderr, "i-j:%d-%d p-q-k:%d-%d-%d\n",i,j, p, q,k);
+                                e += d;
+                                q += out_line_size;
+                            }
+
                         }
+
                         p++;
                     }
                     p = p + block_size - out_line_size;
 
                 }
 
-                float end = clock();
-                fprintf(stderr, "bilinear use time: %.2f\n", (end - begin) / CLOCKS_PER_SEC);
+            } else {
+                ncnn::Mat in, out;
+                if (c == 4) {
+                    in = ncnn::Mat::from_pixels(pixeldata, ncnn::Mat::PIXEL_RGBA, w, h);
+                } else {
+                    in = ncnn::Mat::from_pixels(pixeldata, ncnn::Mat::PIXEL_RGB, w, h);
+                }
+
+                if (model.find(PATHSTR("nearest")) != path_t::npos) {
+                    ncnn::resize_nearest(in, out, out_w, out_h);
+                } else if (model.find(PATHSTR("bilinear")) != path_t::npos) {
+                    ncnn::resize_bilinear(in, out, out_w, out_h);
+                } else {
+                    ncnn::resize_bicubic(in, out, out_w, out_h);
+                }
+
+                if (c == 4) {
+                    out.to_pixels(buf, ncnn::Mat::PIXEL_RGBA);
+                } else {
+                    out.to_pixels(buf, ncnn::Mat::PIXEL_RGB);
+                }
             }
+
+            float process_end = clock();
+            fprintf(stderr, "%s use time: %.2f\n", model.c_str(),
+                    (process_end - process_begin) / CLOCKS_PER_SEC);
 
             if (verbose) {
                 fprintf(stderr, "buf data: ");

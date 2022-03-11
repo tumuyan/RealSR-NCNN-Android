@@ -9,6 +9,8 @@
 
 #define _DEMO_PATH  false
 #define _VERBOSE_LOG  true
+#define _MODE 2
+
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_PSD
 #define STBI_NO_TGA
@@ -18,14 +20,23 @@
 #define STBI_NO_STDIO
 
 #include "stb_image.h"
-
 // image decoder and encoder with stb
 
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb_image_resize.h"
 
+
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+
+
 #include "webp_image.h"
+
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 
 #if _WIN32
 #include <wchar.h>
@@ -412,96 +423,249 @@ int main(int argc, char** argv)
 #endif // _WIN32
 		}
 
+
+		int out_w = w * scale, out_h = h * scale, out_line_size = out_w * c;
+		unsigned char* buf = new unsigned char[out_line_size * out_h];
+		//		fprintf(stderr, "output w/h/s = %d/%d/%d, mode=%s\n", out_w, out_h, scale, model.c_str());
+
 		if (pixeldata) {
-			// todo
 
-			fprintf(stderr, "pixeldata before w/h/c %d/%d/%d \n",
-				w, h, c
-			);
-
-
-			fprintf(stderr, "pix data:");
-			for (int i = 0; i < 32; i++) {
-				fprintf(stderr, " %02X", pixeldata[i]
-				);
+			if (verbose) {
+				fprintf(stderr, "pixeldata: ");
+				for (int i = 0; i < 32; i++) {
+					fprintf(stderr, " %08X", pixeldata[i]);
+				}
+				fprintf(stderr, "\n");
 			}
-			fprintf(stderr, "\n");
-			/*
-
-						fprintf(stderr, "inimage: " );
-						for(int i=0; i<32; i++){
-							fprintf(stderr, " %X" ,inimage.data
-							);
-						}
-			*/
-
-			// fprintf(stderr, "\npretty_print input:\n");
-
-			//            pretty_print(inimage);
 
 
-
-			//            ncnn::Mat outimage = ncnn::Mat(w * scale, h * scale, (size_t)inimage.elemsize, (int)inimage.elemsize*scale*scale);
-			//            ncnn::Mat outimage = ncnn::Mat(w * scale, h * scale, (size_t)c, c);
-			int out_w = w * scale, out_h = h * scale, out_line_size = out_w * c;
+			if (model.find(PATHSTR("nearest")) != path_t::npos) {
 
 
-			//            fprintf(stderr, "input&output before w/h/c %d/%d/%d %d/%d/%d\n",
-			//                    inimage.w,inimage.h,inimage.c,
-			//                    outimage.w,outimage.h,outimage.c
-			//            );
-			//            ncnn::resize_nearest(inimage, outimage, w*scale ,h*scale,opt);
-			//            ncnn::resize_bilinear(inimage, outimage, w,h);
+				if (_MODE == 1) {
+					float nearest1_begin = clock();
+					//row
+					for (int i = 0; i < h; i++) {
+						//line
+						for (int j = 0; j < w; j++) {
+							int p = (w * i + j) * c;
+							int q = (out_w * i + j) * c * scale;
 
-			//            ncnn::Mat r = inimage.channel(0);
-			//            ncnn::Mat outimage = ncnn::Mat(w * scale, h * scale, (size_t)r.elemsize, (int)r.d);
+							//sub-pixel
+							for (int k = 0; k < c; k++) {
+								int m = pixeldata[p + k];
 
-			unsigned char* buf = new unsigned char[out_line_size * out_h];
+								// output x offset
+								int x_offset = 0;
+								for (int n = 0; n < scale; n++) {
+									int o = q + k + x_offset;
 
-			//row
-			for (int i = 0; i < h; i++) {
-			//line
-				for (int j = 0; j < w; j++) {
-					int p = (w * i + j) * c;
-					int q = (out_w * i + j ) * c* scale;
+									// output y offset
+									int y_offset = 0;
+									for (int g = 0; g < scale; g++) {
+										buf[o + y_offset] = m;
+										y_offset += out_line_size;
+									}
+									x_offset += c;
+								}
 
-					//sub-pixel
-					for (int k = 0; k < c; k++) {
-						int m = pixeldata[p + k];
-
-						// output x offset
-						for (int n = 0; n < scale; n++) {
-							int h = q + k + n * c;
-
-							// output y offset
-							for (int g = 0; g < scale; g++) {
-								buf[h + g * out_line_size] = m;
+								if (verbose) {
+									fprintf(stderr, "i:%d j:%d :", i, j);
+									for (int i = 0; i < 32; i++) {
+										fprintf(stderr, " %02X", buf[i]
+										);
+									}
+									fprintf(stderr, " ,m=%d %d\n", p + k, k + q);
+								}
 							}
-						}
-
-						if (verbose) {
-							fprintf(stderr, "i:%d j:%d :", i, j);
-							for (int i = 0; i < 32; i++) {
-								fprintf(stderr, " %02X", buf[i]
-								);
-							}
-							fprintf(stderr, " ,m=%d %d\n", p + k, k + q);
 						}
 					}
+					float nearest1_end = clock();
+					fprintf(stderr, "nearest1 use time: %.2f\n",
+						(nearest1_end - nearest1_begin) / CLOCKS_PER_SEC);
 				}
+				else {
+
+					float nearest2_begin = clock();
+					{
+						int p = 0;
+						int q = 0;
+						//row
+						for (int i = 0; i < h; i++) {
+
+							//line
+							void* l = buf + q;
+							for (int j = 0; j < w; j++) {
+
+								//pixel
+								for (int k = 0; k < scale; k++) {
+									memcpy(buf + q, pixeldata + p, sizeof(unsigned char) * c);
+									q += c;
+								}
+
+								if (verbose) {
+									fprintf(stderr, "i:%d j:%d :", i, j);
+									for (int i = 0; i < 32; i++) {
+										fprintf(stderr, " %02X", buf[i]
+										);
+									}
+									fprintf(stderr, " ,m=%d %d\n", p, q);
+								}
+
+								p += c;
+							}
+
+
+
+							// mult-line
+							for (int k = 1; k < scale; k++) {
+								memcpy(buf + q, l, sizeof(unsigned char) * out_line_size);
+								q += out_line_size;
+							}
+
+
+							/*
+							 * print
+								w++;
+								if(w==100){
+									w=0;
+									fprintf(stderr, "%.2f%%\n", (i+1)*1e2/h);
+								}
+							 */
+						}
+					}
+
+					float nearest2_end = clock();
+					fprintf(stderr, "nearest2 use time: %.2f\n",
+						(nearest2_end - nearest2_begin) / CLOCKS_PER_SEC);
+
+				}
+
 			}
+			else if (model.find(PATHSTR("bilinear")) != path_t::npos) {
+				if (w < 2 && h < 2) {
+					fprintf(stderr, "[Err]image is too small\n");
+					return -1;
+				}
+				if (scale < 2) {
+					fprintf(stderr, "[Err]scale <2\n");
+					return -1;
+				}
 
-			fprintf(stderr, "buf data: ");
-			for (int i = 0; i < 32; i++) {
-				fprintf(stderr, " %02X", buf[i]
-				);
+				float begin = clock();
+
+				out_w = out_w - scale + 1;
+				out_h = out_h - scale + 1;
+				out_line_size = out_w * c;
+				free(buf);
+				buf = new unsigned char[out_line_size * out_h];
+
+				//            子像素a点，b点
+				unsigned char a, b;
+				int p = 0;
+				int q = 0;
+
+				int block_size = scale * out_line_size;
+
+				// channel
+				for (int l = 0; l < c; l++) {
+					p = l;
+					q = l;
+					for (int i = 0; i < h; i++) {
+						for (int j = 1; j < w; j++) {
+
+							a = pixeldata[p];
+							b = pixeldata[p + c];
+							if (a == b) {
+								for (int k = 0; k < scale; k++) {
+									buf[q] = a;
+									q += c;
+								}
+							}
+							else {
+								float d = ((float)(b - a)) / scale;
+								float e = 0;
+								for (int k = 0; k < scale; k++) {
+									buf[q] = a + (int)(e);
+									e += d;
+									q += c;
+								}
+							}
+
+							p += c;
+						}
+						buf[q] = b;
+						p += c;
+						q = q + block_size - out_line_size + c;
+						//                        fprintf(stderr, " %d-%d",l,i);
+					}
+
+				}
+
+				//                fprintf(stderr, "\n 2nd\n");
+				//
+				//                fprintf(stderr, "out_line_size=%d block=%d\n", out_line_size, block_size);
+				p = 0;
+				for (int i = 0; i < h; i++) {
+
+					for (int j = 0; j < out_line_size; j++) {
+						a = buf[p];
+						q = out_line_size;
+						b = buf[p + block_size];
+						if (a == b) {
+							for (int k = 1; k < scale; k++) {
+								buf[p + q] = a;
+								q += out_line_size;
+							}
+						}
+						else {
+							float d = ((float)(b - a)) / scale;
+							float e = d;
+							for (int k = 1; k < scale; k++) {
+								buf[p + q] = a + (int)(e);
+								//                            fprintf(stderr, "i-j:%d-%d p-q-k:%d-%d-%d\n",i,j, p, q,k);
+								e += d;
+								q += out_line_size;
+							}
+
+						}
+
+						p++;
+					}
+					p = p + block_size - out_line_size;
+
+				}
+
+				float end = clock();
+				fprintf(stderr, "bilinear use time: %.2f\n", (end - begin) / CLOCKS_PER_SEC);
 			}
-			fprintf(stderr, "\n");
+			else {
+				fprintf(stderr, "stbir_resize by stb_image\n");
+				// 实测证明其实是nearest 无法正确处理png
+				if (c == 4) {
+					stbir_resize(pixeldata, w, h, 0, buf, out_w, out_h, 0, STBIR_TYPE_UINT8, c, 1, 0,
+						STBIR_EDGE_CLAMP, STBIR_EDGE_CLAMP,
+						STBIR_FILTER_BOX, STBIR_FILTER_BOX,
+						STBIR_COLORSPACE_SRGB, nullptr);
+				}
+				else {
+					stbir_resize(pixeldata, w, h, 0, buf, out_w, out_h, 0, STBIR_TYPE_UINT8, c, STBIR_ALPHA_CHANNEL_NONE, 0,
+						STBIR_EDGE_CLAMP, STBIR_EDGE_CLAMP,
+						STBIR_FILTER_BOX, STBIR_FILTER_BOX,
+						STBIR_COLORSPACE_SRGB, nullptr);
 
-			fprintf(stderr, "\np buf size=%d\n", out_w * out_h * c);
+				}
 
 
-	//		fprintf(stderr, "\npretty_print output:\n");
+			}
+			if (verbose) {
+				fprintf(stderr, "buf data: ");
+				for (int i = 0; i < 32; i++) {
+					fprintf(stderr, " %02X", buf[i]
+					);
+				}
+				fprintf(stderr, "\n");
+			}
 
 
 			path_t ext = get_file_extension(outputpath);
@@ -517,7 +681,23 @@ int main(int argc, char** argv)
 					imagepath.c_str(),
 					imagepath.c_str(), output_filename2.c_str());
 #endif // _WIN32
-			}
+		}
+
+#if _WIN32
+			size_t outputpathlen = wcslen(outputpath.c_str()) + 1;
+
+			size_t converted = 0;
+
+			char* outputpathstr;
+
+			outputpathstr = (char*)malloc(outputpathlen * sizeof(char));
+
+			wcstombs_s(&converted, outputpathstr, outputpathlen, outputpath.c_str(), _TRUNCATE);
+
+			fwprintf(stderr, L"image will output %s\n", outputpathstr);
+
+#endif
+
 
 			// save
 			{
@@ -533,18 +713,18 @@ int main(int argc, char** argv)
 
 					//success = stbi_write_png(outputpath.c_str(), out_w,out_h, outimage.elempack, outimage.data, out_w);
 #if _WIN32
-					success = stbi_write_png((char*)outputpath.c_str(), out_w, out_h, c, buf,out_w);
+					success = stbi_write_png(outputpathstr, out_w, out_h, c, buf, out_w);
 #else
 					success = stbi_write_png(outputpath.c_str(), out_w, out_h, c, buf, out_w * c);
 #endif
-				}
+			}
 				else if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") ||
 					ext == PATHSTR("JPEG")) {
 
 #if _WIN32
-					success = stbi_write_jpg((char*)outputpath.c_str(), out_w, out_h, c, buf, 100);
+					success = stbi_write_jpg(outputpathstr, out_w, out_h, c, buf, 100);
 #else
-					success = stbi_write_jpg(outputpath.c_str(), out_w, out_h,  c,buf, 100,out_w * c);
+					success = stbi_write_jpg(outputpath.c_str(), out_w, out_h, c, buf, 100, out_w * c);
 #endif
 
 				}
@@ -564,7 +744,7 @@ int main(int argc, char** argv)
 					fprintf(stderr, "encode image %s failed\n", outputpath.c_str());
 #endif
 				}
-			}
+					}
 		}
 		else {
 #if _WIN32
@@ -573,8 +753,8 @@ int main(int argc, char** argv)
 #else // _WIN32
 			fprintf(stderr, "decode image %s failed\n", imagepath.c_str());
 #endif // _WIN32
-		}
 	}
+}
 
 
 	return 0;

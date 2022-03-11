@@ -53,6 +53,8 @@
         <item>classical-nearest-x4</item>
         <item>classical-bilinear-x2</item>
         <item>classical-bilinear-x4</item>
+        <item>classical-bicubic-x2</item>
+        <item>classical-bicubic-x4</item>
     </string-array>
 
 </resources>

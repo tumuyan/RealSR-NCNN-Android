@@ -23,8 +23,8 @@
 3. RealCUGAN-NCNN-Android-CLI 可以编译出SRMD-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。
 4. SRMD-NCNN-Android-CLI 可以编译出SRMD-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。
 5. Waifu2x-NCNN-Android-CLI 可以编译出Waifu2x-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用(由于技术和效果相对落后，考虑到应用的体积，这个程序未加入到GUI中)。
-6. Resize-NCNN-Android-CLI 可以编译出resize-ncnn命令行程序，可以在安卓设备的Termux等虚拟终端中使用(使用ncnn仅仅是为了共用动态库，降低编译体积，并没用利用ncnn进行运算)。包含了`nearest/邻近`、`bilinear/两次线性`、`bicubic/两次立方`三种经典放大（interpolation/差值）算法。特别的是，这个程序所产生的结果与输入参数的倍数实际略有差异。
-7. Resize-CLI 同上，但是不需要ncnn，编译体积较大。此工程除Android使用外，也可使用VS2019编译，在PC端快速验证。
+6. Resize-NCNN-Android-CLI 可以编译出resize-ncnn命令行程序，可以在安卓设备的Termux等虚拟终端中使用，包含了`nearest/最邻近`、`bilinear/两次线性`、`bicubic/两次立方`三种经典放大（interpolation/差值）算法。特别的是，nearest和bilinear可以通过`-n`参数，不使用ncnn进行运算，得到点对点放大的结果（但是bilinear的输出结果与输入参数的倍数略有差异）。
+7. Resize-CLI 可以编译出resize命令行程序，包含`nearest/最邻近`、`bilinear/两次线性`两种算法，不需要ncnn，编译体积较大。此工程除Android使用外，也可使用VS2019编译，在PC端快速验证。
 
 ## 关于 Real-ESRGAN
 

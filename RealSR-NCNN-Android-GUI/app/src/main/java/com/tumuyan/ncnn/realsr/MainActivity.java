@@ -78,10 +78,12 @@ public class MainActivity extends AppCompatActivity {
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n -1",
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n 0",
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n 3",
-            "./resize-ncnn -i input.png -o output.png  -m nearest -s 2",
-            "./resize-ncnn -i input.png -o output.png  -m nearest -s 4",
-            "./resize-ncnn -i input.png -o output.png  -m bilinear -s 2",
-            "./resize-ncnn -i input.png -o output.png  -m bilinear -s 4"
+            "./resize-ncnn -i input.png -o output.png  -m nearest  -n -s 2",
+            "./resize-ncnn -i input.png -o output.png  -m nearest  -n -s 4",
+            "./resize-ncnn -i input.png -o output.png  -m bilinear -n  -s 2",
+            "./resize-ncnn -i input.png -o output.png  -m bilinear -n  -s 4",
+            "./resize-ncnn -i input.png -o output.png  -m bicubic -s 2",
+            "./resize-ncnn -i input.png -o output.png  -m bicubic -s 4"
     };
     private int tileSize;
     private boolean keepScreen;
