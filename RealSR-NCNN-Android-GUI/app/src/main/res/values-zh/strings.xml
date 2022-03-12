@@ -17,19 +17,29 @@
         -o 输出的图片路径（jpg/png/webp文件路径或者目录路径）\n
         -m 模型所在目录的路径\n
         -x 开启tta模式\n
-        \n其中srmd-ncnn额外支持：\n
+         \n其中srmd-ncnn额外支持：\n
         -n 降噪等级，可选(-1/0/1/2/3/4/5/6/7/8/9/10, default=3)\n
         -s 放大倍数，可选(2/3/4, default=2)\n
          \n其中realcugan-ncnn额外支持：\n
         -n 降噪等级，可选(default=-1，2xse模型支持-1/0/1/2/3, 3x和4xse模型支持-1/0/3)\n
         -s 放大倍数，可选(2/3/4, default=2)\n
         -c sync gap mode，可选(0/1/2/3, default=3)\n
-        \n\n二、显示指定信息
+
+        \n\n二、调用经典插值算法：
+        \n./resize-ncnn -i 输入的图片路径 -o 输出的图片路径 [其他可选参数]...
+        \n主要参数有：\n
+        -i 输入的图片路径（jpg/png/webp文件路径或者目录路径）\n
+        -o 输出的图片路径（jpg/png/webp文件路径或者目录路径）\n
+        -m 插值算法（nearest/bilinear/bicubic/avir/avir-lancir）\n
+        -n 不使用ncnn来完成nearest和bilinear插值，得到点对点放大的结果（但是bilinear的输出结果会与s参数略有差异）\n
+        -s 放大倍数，不带-n时可以使用小数(default=4)\n
+
+        \n\n三、显示指定信息
         \n lr 显示高分辨率图像
         \n hr 显示低分辨率图像
         \n show （跟随图像的路径作为参数）显示指定路径的图像
         \n help 显示帮助信息
-        \n\n三、调用shell命令
+        \n\n四、调用shell命令
         \n 如ls head cp rm等等
         </string>
     <string name="input_command">输入shell命令,如 ./realsr-ncnn -i input.png -o output.png</string>
@@ -44,8 +54,8 @@
     <string name="default_command">主界面输入框内的默认命令</string>
     <string name="save_setting">保存设置</string>
 
-    <string name="lr">当前显示低分辨率图像</string>
-    <string name="hr">当前显示高分辨率图像</string>
+    <string name="lr">当前显示处理前的图像</string>
+    <string name="hr">当前显示处理后的图像</string>
     <string name="show">显示图像</string>
 
     <string name="save_succeed">保存成功</string>
@@ -56,4 +66,5 @@
 
     <string name="thread_count_err">不符合“数字:数字:数字”的格式</string>
     <string name="keep_screen">工作时保持屏幕常亮</string>
+    <string name="extra_command">为自定义主界面的列表增加自定义命令</string>
 </resources>

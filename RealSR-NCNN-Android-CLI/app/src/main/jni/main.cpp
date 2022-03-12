@@ -367,6 +367,8 @@ void *save(void *args) {
             }
         }
 
+        float begin = clock();
+
         int success = 0;
 
         path_t ext = get_file_extension(v.outpath);
@@ -391,6 +393,10 @@ void *save(void *args) {
 #endif
         }
         if (success) {
+            float end = clock();
+            fprintf(stderr, "save use time: %.2f\n",
+                    (end - begin) / CLOCKS_PER_SEC);
+
             if (verbose) {
 #if _WIN32
                 fwprintf(stderr, L"%ls -> %ls done\n", v.inpath.c_str(), v.outpath.c_str());

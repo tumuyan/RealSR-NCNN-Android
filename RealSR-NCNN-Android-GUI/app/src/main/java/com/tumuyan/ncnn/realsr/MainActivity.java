@@ -19,6 +19,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -80,10 +81,15 @@ public class MainActivity extends AppCompatActivity {
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n 3",
             "./resize-ncnn -i input.png -o output.png  -m nearest  -n -s 2",
             "./resize-ncnn -i input.png -o output.png  -m nearest  -n -s 4",
-            "./resize-ncnn -i input.png -o output.png  -m bilinear -n  -s 2",
-            "./resize-ncnn -i input.png -o output.png  -m bilinear -n  -s 4",
+            "./resize-ncnn -i input.png -o output.png  -m bilinear -n -s 2",
+            "./resize-ncnn -i input.png -o output.png  -m bilinear -n -s 4",
             "./resize-ncnn -i input.png -o output.png  -m bicubic -s 2",
-            "./resize-ncnn -i input.png -o output.png  -m bicubic -s 4"
+            "./resize-ncnn -i input.png -o output.png  -m bicubic -s 4",
+            "./resize-ncnn -i input.png -o output.png  -m avir -s 0.5",
+            "./resize-ncnn -i input.png -o output.png  -m avir -s 2",
+            "./resize-ncnn -i input.png -o output.png  -m avir -s 4",
+            "./resize-ncnn -i input.png -o output.png  -m avir-lancir -s 2",
+            "./resize-ncnn -i input.png -o output.png  -m avir-lancir -s 4"
     };
     private int tileSize;
     private boolean keepScreen;
@@ -118,6 +124,23 @@ public class MainActivity extends AppCompatActivity {
         threadCount = mySharePerferences.getString("threadCount", "");
         keepScreen = mySharePerferences.getBoolean("keepScreen", false);
 
+        String[] extraCommand = mySharePerferences.getString("extraCommand", "").split("\n");
+        if (extraCommand.length > 0) {
+            String[] cmds = new String[extraCommand.length + command.length];
+
+            String[] presetCommand = getResources().getStringArray(R.array.style_array);
+
+            for (int i = 0; i < command.length; i++) {
+                cmds[i] = presetCommand[i];
+            }
+
+            for (int i = 0; i < extraCommand.length; i++) {
+                cmds[command.length + i] = extraCommand[i];
+            }
+
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, cmds);
+            spinner.setAdapter(adapter);
+        }
     }
 
     @Override
@@ -239,11 +262,13 @@ public class MainActivity extends AppCompatActivity {
                     view.setKeepScreenOn(true);
                 }
                 new Thread(() -> {
-                    if (selectCommand >= command.length || selectCommand < 0) {
-                        Log.w("btn_run.onClick", "select=" + selectCommand + ", length=" + command.length);
-                        selectCommand = 0;
-                    }
-                    StringBuffer cmd = new StringBuffer(command[selectCommand]);
+                    StringBuffer cmd;
+                    if (selectCommand >= command.length) {
+                        cmd = new StringBuffer(spinner.getSelectedItem().toString());
+                        Log.w("btn_run.onClick", "select=" + selectCommand + ", length=" + command.length + " text=" + cmd);
+                    } else
+                        cmd = new StringBuffer(command[selectCommand]);
+
                     if (tileSize > 0)
                         cmd.append(" -t ").append(tileSize);
                     if (threadCount.length() > 0)
@@ -392,15 +417,21 @@ public class MainActivity extends AppCompatActivity {
         Log.i("run20", "cmd = " + cmd);
         final long timeStart = System.currentTimeMillis();
 
-        if (cmd.startsWith("./realsr-ncnn") || cmd.startsWith("./srmd-ncnn") || cmd.startsWith("./realcugan-ncnn") || cmd.startsWith("./resize-ncnn")) {
+        if (cmd.startsWith("./realsr-ncnn")
+                || cmd.startsWith("./srmd-ncnn")
+                || cmd.startsWith("./realcugan-ncnn")
+                || cmd.startsWith("./resize-ncnn")
+                || cmd.startsWith("./waifu2x-ncnn")) {
             modelName = "Real-ESRGAN-anime";
             if (cmd.matches(".+\\s-m(\\s+)models-.+")) {
                 modelName = cmd.replaceFirst(".+\\s-m(\\s+)models-([^\\s]+).*", "$2");
             }
             if (modelName.matches("(se|nose)")) {
                 modelName = "Real-CUGAN-" + modelName;
-            } else if (cmd.matches(".+\\s-m(\\s+)(bicubic|bilinear|nearest).*")) {
-                modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest).*", "Classical-$2");
+            } else if (cmd.matches(".+\\s-m(\\s+)(bicubic|bilinear|nearest|avir).*")) {
+                modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest|avir).*", "Classical-$2");
+            } else if (cmd.matches(".*waifu2x.+models-(cugan|cunet|upconv).*")) {
+                modelName = cmd.replaceFirst(".*waifu2x.+models-(cugan|cunet|upconv_7_photo|upconv_7_anime).*", "Waifu2x-$1");
             }
 
             runOnUiThread(() -> progress.setTitle(getResources().getString(R.string.busy)));

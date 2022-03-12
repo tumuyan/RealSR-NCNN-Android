@@ -46,6 +46,23 @@
             android:padding="5dp"
             android:textAlignment="center" />
 
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/extra_command"
+            android:textSize="18sp" />
+
+        <EditText
+            android:id="@+id/editExtraCommand"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:gravity="start|top"
+            android:inputType="textMultiLine"
+            android:padding="5dp" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -92,7 +109,6 @@
             android:ems="10"
             android:gravity="start|top"
             android:inputType="textMultiLine"
-            android:maxLines="3"
             android:padding="5dp" />
 
 

@@ -12,7 +12,7 @@ This repository contains 5 project:
 3. RealCUGAN-NCNN-Android-CLI  can build a program that can be used by the console (for example, Termux) for Android.
 4. SRMD-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
 5. Waifu2x-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android (Not packaged in APK).
-6. Resize-NCNN-Android-CLI  can build a program that can be used by the console (for example, Termux) for Android. use ncnn only to reduce the elf file size. Contains classical interpolation mode `nearest` `bilinear` `bicubic`
+6. Resize-NCNN-Android-CLI  can build a program that can be used by the console (for example, Termux) for Android. use ncnn only to reduce the elf file size. Contains classical interpolation mode `nearest` `bilinear` `bicubic` and `avir` `lancir`
 7. Resize-CLI just a demo like the Resize-NCNN-Android-CLI, but it not need ncnn and could build by VS
 
 ### About Real-ESRGAN
@@ -204,3 +204,4 @@ Most of the C code is copied from Nihui, cause of the directory structure had to
 -   [https://github.com/nothings/stb](https://github.com/nothings/stb)  for decoding and encoding image on Linux / MacOS
 -   [https://github.com/tronkko/dirent](https://github.com/tronkko/dirent)  for listing files in directory on Windows
 -   [https://github.com/webmproject/libwebp](https://github.com/webmproject/libwebp) for encoding and decoding Webp images on ALL PLATFORMS
+-   [https://github.com/avaneev/avir](https://github.com/avaneev/avir) AVIR image resizing algorithm designed by Aleksey Vaneev

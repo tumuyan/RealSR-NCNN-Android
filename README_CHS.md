@@ -23,7 +23,7 @@
 3. RealCUGAN-NCNN-Android-CLI 可以编译出SRMD-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。
 4. SRMD-NCNN-Android-CLI 可以编译出SRMD-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。
 5. Waifu2x-NCNN-Android-CLI 可以编译出Waifu2x-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用(由于技术和效果相对落后，考虑到应用的体积，这个程序未加入到GUI中)。
-6. Resize-NCNN-Android-CLI 可以编译出resize-ncnn命令行程序，可以在安卓设备的Termux等虚拟终端中使用，包含了`nearest/最邻近`、`bilinear/两次线性`、`bicubic/两次立方`三种经典放大（interpolation/差值）算法。特别的是，nearest和bilinear可以通过`-n`参数，不使用ncnn进行运算，得到点对点放大的结果（但是bilinear的输出结果与输入参数的倍数略有差异）。
+6. Resize-NCNN-Android-CLI 可以编译出resize-ncnn命令行程序，可以在安卓设备的Termux等虚拟终端中使用，包含了`nearest/最邻近`、`bilinear/两次线性`、`bicubic/两次立方`三种经典放大（interpolation/插值）算法，以及Lanczos插值算法相似的`avir/lancir`。特别的，nearest和bilinear可以通过`-n`参数，不使用ncnn进行运算，得到点对点放大的结果;当不使用`-n`。参数时，`-s`参数可以使用小数
 7. Resize-CLI 可以编译出resize命令行程序，包含`nearest/最邻近`、`bilinear/两次线性`两种算法，不需要ncnn，编译体积较大。此工程除Android使用外，也可使用VS2019编译，在PC端快速验证。
 
 ## 关于 Real-ESRGAN
@@ -207,3 +207,4 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
 -   [https://github.com/nothings/stb](https://github.com/nothings/stb)  for decoding and encoding image on Linux / MacOS
 -   [https://github.com/tronkko/dirent](https://github.com/tronkko/dirent)  for listing files in directory on Windows
 -   [https://github.com/webmproject/libwebp](https://github.com/webmproject/libwebp) for encoding and decoding Webp images on ALL PLATFORMS
+-   [https://github.com/avaneev/avir](https://github.com/avaneev/avir) AVIR image resizing algorithm designed by Aleksey Vaneev

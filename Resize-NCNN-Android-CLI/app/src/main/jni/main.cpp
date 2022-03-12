@@ -37,6 +37,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include "avir.h"
+#include "lancir.h"
 
 #if _WIN32
 #include <wchar.h>
@@ -148,6 +150,7 @@ int main(int argc, char **argv)
     path_t inputpath;
     path_t outputpath;
     int scale = 4;
+    double scale_d = 4;
     std::vector<int> tilesize;
 #if _DEMO_PATH
     path_t model = optarg_mo;
@@ -208,6 +211,9 @@ int main(int argc, char **argv)
                 break;
             case 's':
                 scale = atoi(optarg);
+                char *endptr;
+                scale_d = strtod(optarg, &endptr);
+                // printf("scale endptr=%s=,arg=%s=,scale=%f\n", endptr ,optarg,scale_d);
                 break;
             case 'm':
                 model = optarg;
@@ -328,7 +334,9 @@ int main(int argc, char **argv)
 
     if (model.find(PATHSTR("bicubic")) != path_t::npos ||
         model.find(PATHSTR("bilinear")) != path_t::npos ||
-        model.find(PATHSTR("nearest")) != path_t::npos) {
+        model.find(PATHSTR("nearest")) != path_t::npos ||
+        model.find(PATHSTR("avir")) != path_t::npos
+            ) {
         prepadding = 10;
     } else {
         fprintf(stderr, "unknown mode type\n");
@@ -430,9 +438,18 @@ int main(int argc, char **argv)
 #endif // _WIN32
         }
 
-        int out_w = w * scale, out_h = h * scale, out_line_size = out_w * c;
+        int out_w, out_h;
+        if (scale != scale_d || !not_use_ncnn) {
+//            fprintf(stderr, "reset scale\n");
+            out_w = (int) (w * scale_d);
+            out_h = (int) (h * scale_d);
+        } else {
+            out_w = w * scale;
+            out_h = h * scale;
+        }
+        int out_line_size = out_w * c;
         unsigned char *buf = new unsigned char[out_line_size * out_h];
-        fprintf(stderr, "output w/h/s = %d/%d/%d, mode=%s\n", out_w, out_h, scale,
+        fprintf(stderr, "output w/h/s/s = %d/%d/%d/%f, mode=%s\n", out_w, out_h, scale, scale_d,
                 model.c_str());
 
         if (pixeldata) {
@@ -630,6 +647,12 @@ int main(int argc, char **argv)
 
                 }
 
+            } else if (model.find(PATHSTR("lancir")) != path_t::npos) {
+                avir::CLancIR ImageResizer;
+                ImageResizer.resizeImage(pixeldata, w, h, 0, buf, out_w, out_h, 0, c);
+            } else if (model.find(PATHSTR("avir")) != path_t::npos) {
+                avir::CImageResizer<> ImageResizer(8);
+                ImageResizer.resizeImage(pixeldata, w, h, 0, buf, out_w, out_h, c, 0);
             } else {
                 ncnn::Mat in, out;
                 if (c == 4) {

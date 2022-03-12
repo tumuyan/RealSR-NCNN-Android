@@ -20,8 +20,8 @@
     <string name="tile_size">Tile size for default command</string>
     <string name="default_command">Preset command in the TextEditor</string>
     <string name="save_setting">Save Setting</string>
-    <string name="lr">▲ low resolution image</string>
-    <string name="hr">▲ high resolution image</string>
+    <string name="lr">▲ input image</string>
+    <string name="hr">▲ output image</string>
     <string name="show">Show image</string>
     <string name="save_succeed">Save Succeed!</string>
     <string name="save_fail">Save Fail!</string>
@@ -30,6 +30,7 @@
     <string name="reset_low">Reset compatible parameters</string>
     <string name="thread_count_err">not number:number:number</string>
     <string name="keep_screen">Keep screen on when it works</string>
+    <string name="extra_command">Extra command in the command list</string>
     <string-array name="style_array">
         <item>real-esrgan-anime-x4</item>
         <item>real-esrgan-x4</item>
@@ -55,6 +56,11 @@
         <item>classical-bilinear-x4</item>
         <item>classical-bicubic-x2</item>
         <item>classical-bicubic-x4</item>
+        <item>classical-avir-x0.5</item>
+        <item>classical-avir-x2</item>
+        <item>classical-avir-x4</item>
+        <item>classical-avir-lancir-x2</item>
+        <item>classical-avir-lancir-x4</item>
     </string-array>
 
 </resources>
