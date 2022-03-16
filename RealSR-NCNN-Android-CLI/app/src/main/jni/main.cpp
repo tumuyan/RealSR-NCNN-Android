@@ -781,6 +781,8 @@ int main(int argc, char** argv)
         {
             jobs_proc[i] = std::min(jobs_proc[i], cpu_count);
             total_jobs_proc += 1;
+
+            fprintf(stderr, "use CPU\n");
         }
         else
         {
@@ -793,8 +795,6 @@ int main(int argc, char** argv)
     for (int i = 0; i < use_gpu_count; i++) {
 
 
-        uint32_t heap_budget = ncnn::get_gpu_device(gpuid[i])->get_heap_budget();
-
         if (tilesize[i] != 0)
             continue;
 
@@ -802,9 +802,12 @@ int main(int argc, char** argv)
         {
             // cpu only
             tilesize[i] = 200;
+            if (verbose)
+                fprintf(stderr, "init cpu tilesize %d/%d = %d\n", i,tilesize.size(),tilesize[i]);
             continue;
         }
 
+        uint32_t heap_budget = ncnn::get_gpu_device(gpuid[i])->get_heap_budget();
 
         // more fine-grained tilesize policy here
         if (model.find(PATHSTR("models-Real")) != path_t::npos ||
@@ -818,6 +821,10 @@ int main(int argc, char** argv)
             else
                 tilesize[i] = 32;
         }
+
+
+    if (verbose)
+        fprintf(stderr, "init gpu tilesize %d/%d = %d\n", i,tilesize.size(),tilesize[i]);
     }
     if (verbose)
         fprintf(stderr, "init realsr\n");

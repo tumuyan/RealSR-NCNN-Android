@@ -9,8 +9,8 @@ android {
         applicationId "com.tumuyan.ncnn.realsr"
         minSdk 24
         targetSdk 28
-        versionCode 12
-        versionName "1.6.1"
+        versionCode 13
+        versionName "1.7"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -39,7 +39,6 @@ dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.3.0'
     implementation 'com.google.android.material:material:1.4.0'
-    implementation 'com.android.car.ui:car-ui-lib:+'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'

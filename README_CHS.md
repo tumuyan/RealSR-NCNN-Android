@@ -22,7 +22,7 @@
 2. RealSR-NCNN-Android-CLI 可以编译出RealSR-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。这个程序可以使用RealSR和Real-ESRGAN的模型。
 3. RealCUGAN-NCNN-Android-CLI 可以编译出SRMD-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。
 4. SRMD-NCNN-Android-CLI 可以编译出SRMD-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。
-5. Waifu2x-NCNN-Android-CLI 可以编译出Waifu2x-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用(由于技术和效果相对落后，考虑到应用的体积，这个程序未加入到GUI中)。
+5. Waifu2x-NCNN-Android-CLI 可以编译出Waifu2x-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用(考虑到应用的体积，程序本体已经内置到App内置了waifu2x可执行文件，但是没有内置对应模型，UI上也没有预设命令。可以参考[教程](https://note.youdao.com/s/BwDPRoZf))。
 6. Resize-NCNN-Android-CLI 可以编译出resize-ncnn命令行程序，可以在安卓设备的Termux等虚拟终端中使用，包含了`nearest/最邻近`、`bilinear/两次线性`、`bicubic/两次立方`三种经典放大（interpolation/插值）算法，以及Lanczos插值算法相似的`avir/lancir`。特别的，nearest和bilinear可以通过`-n`参数，不使用ncnn进行运算，得到点对点放大的结果;当不使用`-n`。参数时，`-s`参数可以使用小数
 7. Resize-CLI 可以编译出resize命令行程序，包含`nearest/最邻近`、`bilinear/两次线性`两种算法，不需要ncnn，编译体积较大。此工程除Android使用外，也可使用VS2019编译，在PC端快速验证。
 
@@ -81,15 +81,15 @@ https://github.com/webmproject/libwebp
 
   -h                   显示帮助
   -v                   显示更多输出内容
-  -i input-path        输入的图片路径（jpg/png路径或者目录路径）
-  -o output-path       输出的图片路径（jpg/png路径或者目录路径）
+  -i input-path        输入的图片路径（jpg/png/webp路径或者目录路径）
+  -o output-path       输出的图片路径（jpg/png/webp路径或者目录路径）
   -s scale             缩放系数(默认4，即放大4倍)
   -t tile-size         tile size (>=32/0=auto, default=0) can be 0,0,0 for multi-gpu
   -m model-path        模型路径 (默认模型 models-Real-ESRGAN-anime)
-  -g gpu-id            gpu设备序号 (默认0) 多GPU可选 0,1,2 但是应该不会有吧
+  -g gpu-id            gpu，-1使用CPU，默认0 多GPU可选 0,1,2
   -j load:proc:save    解码/处理/保存的线程数 (默认1:2:2) 多GPU可以设 1:2,2,2:2
   -x                   开启tta模式
-  -f format            输出格式(jpg/png, 默认ext/png)
+  -f format            输出格式(jpg/png/webp, 默认ext/png)
 ```
 
 ## 如何编译 RealSR-NCNN-Android-GUI
@@ -208,3 +208,4 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
 -   [https://github.com/tronkko/dirent](https://github.com/tronkko/dirent)  for listing files in directory on Windows
 -   [https://github.com/webmproject/libwebp](https://github.com/webmproject/libwebp) for encoding and decoding Webp images on ALL PLATFORMS
 -   [https://github.com/avaneev/avir](https://github.com/avaneev/avir) AVIR image resizing algorithm designed by Aleksey Vaneev
+-   [https://github.com/ImageMagick/ImageMagick6](https://github.com/ImageMagick/ImageMagick6) Use ImageMagick® to resize/convert images.

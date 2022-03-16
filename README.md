@@ -75,15 +75,15 @@ Usage: realsr-ncnn -i infile -o outfile [options]...
 
   -h                   show this help
   -v                   verbose output
-  -i input-path        input image path (jpg/png) or directory
-  -o output-path       output image path (jpg/png) or directory
+  -i input-path        input image path (jpg/png/webp) or directory
+  -o output-path       output image path (jpg/png/webp) or directory
   -s scale             upscale ratio (4, default=4)
   -t tile-size         tile size (>=32/0=auto, default=0) can be 0,0,0 for multi-gpu
   -m model-path        realsr model path (default=models-DF2K_JPEG)
-  -g gpu-id            gpu device to use (default=0) can be 0,1,2 for multi-gpu
+  -g gpu-id            gpu device to use (default=0) can be 0,1,2 for multi-gpu, -1 use cpu
   -j load:proc:save    thread count for load/proc/save (default=1:2:2) can be 1:2,2,2:2 for multi-gpu
   -x                   enable tta mode
-  -f format            output image format (jpg/png, default=ext/png)
+  -f format            output image format (jpg/png/webp, default=ext/png)
 ```
 
 - `input-path` and `output-path` accept either file path or directory path
@@ -205,3 +205,4 @@ Most of the C code is copied from Nihui, cause of the directory structure had to
 -   [https://github.com/tronkko/dirent](https://github.com/tronkko/dirent)  for listing files in directory on Windows
 -   [https://github.com/webmproject/libwebp](https://github.com/webmproject/libwebp) for encoding and decoding Webp images on ALL PLATFORMS
 -   [https://github.com/avaneev/avir](https://github.com/avaneev/avir) AVIR image resizing algorithm designed by Aleksey Vaneev
+-   [https://github.com/ImageMagick/ImageMagick6](https://github.com/ImageMagick/ImageMagick6) Use ImageMagick® to resize/convert images.

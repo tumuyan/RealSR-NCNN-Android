@@ -7,12 +7,10 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import java.io.File;
@@ -26,6 +24,8 @@ public class SettingActivity extends AppCompatActivity {
     EditText editThread;
     EditText editExtraCommand;
     ToggleButton toggleKeepScreen;
+    ToggleButton toggleCPU;
+    Spinner spinnerFormat;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
             + File.separator + "RealSR" + File.separator;
@@ -44,6 +44,8 @@ public class SettingActivity extends AppCompatActivity {
         String threadCount = mySharePerferences.getString("threadCount", "");
         boolean keepScreen = mySharePerferences.getBoolean("keepScreen", false);
         String extraCommand = mySharePerferences.getString("extraCommand", "");
+        boolean useCPU = mySharePerferences.getBoolean("useCPU", false);
+        int format = mySharePerferences.getInt("format", 0);
 
         editTile = findViewById(R.id.editTile);
         editTile.setText("" + tileSize);
@@ -51,11 +53,16 @@ public class SettingActivity extends AppCompatActivity {
         editDefaultCommand.setText(defaultCommand);
         editExtraCommand = findViewById(R.id.editExtraCommand);
         editExtraCommand.setText(extraCommand);
-        editExtraCommand.setHint("./waifu2x-ncnn -i input.png -o output.png -m "+galleryPath+"cunet");
+        editExtraCommand.setHint("./waifu2x-ncnn -i input.png -o output.png -m " + galleryPath + "cunet");
         editThread = findViewById(R.id.editThread);
         editThread.setText(threadCount);
         toggleKeepScreen = findViewById(R.id.toggle_keep_screen);
         toggleKeepScreen.setChecked(keepScreen);
+        toggleCPU = findViewById(R.id.toggle_cpu);
+        toggleCPU.setChecked(useCPU);
+
+        spinnerFormat = findViewById(R.id.spinner_format);
+        spinnerFormat.setSelection(format);
 
         Spinner spinner = findViewById(R.id.spinner);
         spinner.setSelection(selectCommand);
@@ -78,6 +85,8 @@ public class SettingActivity extends AppCompatActivity {
 
         findViewById(R.id.btn_reset).setOnClickListener(v -> {
             spinner.setSelection(2);
+            spinnerFormat.setSelection(0);
+            toggleCPU.setChecked(false);
             editTile.setText("0");
             editThread.setText("");
             editDefaultCommand.setText("./realsr-ncnn -i input.png -o output.png -m models-Real-ESRGANv2-anime -s 2");
@@ -86,6 +95,8 @@ public class SettingActivity extends AppCompatActivity {
 
         findViewById(R.id.btn_reset_low).setOnClickListener(v -> {
             spinner.setSelection(9);
+            spinnerFormat.setSelection(0);
+            toggleCPU.setChecked(false);
             editTile.setText("32");
             editThread.setText("1:1:1");
             editDefaultCommand.setText("");
@@ -131,6 +142,8 @@ public class SettingActivity extends AppCompatActivity {
         editor.putString("threadCount", threadCount);
 
         editor.putBoolean("keepScreen", toggleKeepScreen.isChecked());
+        editor.putBoolean("useCPU", toggleCPU.isChecked());
+        editor.putInt("format", (int) spinnerFormat.getSelectedItemId());
 
         editor.apply();
     }

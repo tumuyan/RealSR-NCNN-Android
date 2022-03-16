@@ -39,6 +39,7 @@ import java.io.OutputStream;
 import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
+    private static final int NCNN_CMD_SIZE = 18;
     private static final int SELECT_IMAGE = 1;
     private static final int MY_PERMISSIONS_REQUEST = 100;
     private int selectCommand = 0;
@@ -58,7 +59,10 @@ public class MainActivity extends AppCompatActivity {
     private Spinner spinner;
     private Process process;
     private boolean newTask;
+    private int format;
+    private String BUSY;
 
+    private String[] formats;
 
     private final String[] command = new String[]{
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-anime",
@@ -89,10 +93,28 @@ public class MainActivity extends AppCompatActivity {
             "./resize-ncnn -i input.png -o output.png  -m avir -s 2",
             "./resize-ncnn -i input.png -o output.png  -m avir -s 4",
             "./resize-ncnn -i input.png -o output.png  -m avir-lancir -s 2",
-            "./resize-ncnn -i input.png -o output.png  -m avir-lancir -s 4"
+            "./resize-ncnn -i input.png -o output.png  -m avir-lancir -s 4",
+            "./magick input.png -resize 50% output.png",
+            "./magick input.png -filter Hermite   -resize 200%   output.png",
+            "./magick input.png -filter Hermite   -resize 400%   output.png",
+            "./magick input.png -filter Hermite   -resize 1000%  output.png",
+            "./magick input.png -filter Hamming   -resize 200%   output.png",
+            "./magick input.png -filter Hamming   -resize 400%   output.png",
+            "./magick input.png -filter Hamming   -resize 1000%  output.png",
+            "./magick input.png -filter Lanczos2  -resize 200%   output.png",
+            "./magick input.png -filter Lanczos2  -resize 400%   output.png",
+            "./magick input.png -filter Lanczos2  -resize 1000%  output.png",
+            "./magick input.png -filter Lagrange  -resize 200%   output.png",
+            "./magick input.png -filter Lagrange  -resize 400%   output.png",
+            "./magick input.png -filter Lagrange  -resize 1000%  output.png",
+            "./magick input.png -filter Mitchell  -resize 200%   output.png",
+            "./magick input.png -filter Mitchell  -resize 400%   output.png",
+            "./magick input.png -filter Mitchell  -resize 1000%  output.png",
+
     };
     private int tileSize;
     private boolean keepScreen;
+    private boolean useCPU;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -119,13 +141,21 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
 
+        formats = getResources().getStringArray(R.array.format);
+        BUSY = getResources().getString(R.string.busy);
+
         SharedPreferences mySharePerferences = getSharedPreferences("config", Activity.MODE_PRIVATE);
         tileSize = mySharePerferences.getInt("tileSize", 0);
         threadCount = mySharePerferences.getString("threadCount", "");
         keepScreen = mySharePerferences.getBoolean("keepScreen", false);
+        useCPU = mySharePerferences.getBoolean("useCPU", false);
+        format = mySharePerferences.getInt("format", 0);
 
-        String[] extraCommand = mySharePerferences.getString("extraCommand", "").split("\n");
-        if (extraCommand.length > 0) {
+        String extra = mySharePerferences.getString("extraCommand", "").trim();
+        if (extra.length() > 0) {
+            String[] extraCommand = extra.split("\n");
+            Log.i("extraCommand", "length=" + extraCommand.length);
+
             String[] cmds = new String[extraCommand.length + command.length];
 
             String[] presetCommand = getResources().getStringArray(R.array.style_array);
@@ -141,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
             ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, cmds);
             spinner.setAdapter(adapter);
         }
+        spinner.setSelection(selectCommand);
     }
 
     @Override
@@ -174,8 +205,6 @@ public class MainActivity extends AppCompatActivity {
         run_command("chmod 777 " + dir + " -R");
 
         spinner = findViewById(R.id.spinner);
-        selectCommand = mySharePerferences.getInt("selectCommand", 2);
-        spinner.setSelection(selectCommand);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
@@ -188,6 +217,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        selectCommand = mySharePerferences.getInt("selectCommand", 2);
+//        spinner.setSelection(selectCommand);
+//        Log.i("selectCommand ","getconfig r="+selectCommand);
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -239,8 +271,32 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btn_save).setOnClickListener(view -> {
 
             SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");
-            String filePath = galleryPath + modelName + "_" + f.format(new Date()) + ".png";
-            run_command("cp " + dir + "/output.png " + filePath);
+            String filePath = null;
+            if (format == 0) {
+                filePath = galleryPath + modelName + "_" + f.format(new Date()) + ".png";
+                run_command("cp " + dir + "/output.png " + filePath);
+            } else {
+                // 其他格式需要使用image magic进行转换，会额外消耗时间。但是为了方便，没有写到新线程上。
+                // progress.setTitle(BUSY);
+                if (format == 1) {
+                    filePath = galleryPath + modelName + "_" + f.format(new Date()) + ".webp";
+                    run20("./magick output.png " + filePath);
+                } else if (format == 2) {
+                    filePath = galleryPath + modelName + "_" + f.format(new Date()) + ".gif";
+                    run20("./magick output.png " + filePath);
+                } else if (format == 3) {
+                    filePath = galleryPath + modelName + "_" + f.format(new Date()) + ".heic";
+                    run20("./magick output.png " + filePath);
+                } else {
+                    filePath = galleryPath + modelName + "_" + f.format(new Date()) + ".jpg";
+                    String q = formats[format].replaceAll("[a-z%\\s]+", "");
+                    if (q.length() > 0) {
+                        run20("./magick output.png -quality " + q + " " + filePath);
+                    } else
+                        run20("./magick output.png " + filePath);
+                }
+            }
+
             File file = new File(filePath);
             if (file.exists()) {
                 Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
@@ -266,13 +322,17 @@ public class MainActivity extends AppCompatActivity {
                     if (selectCommand >= command.length) {
                         cmd = new StringBuffer(spinner.getSelectedItem().toString());
                         Log.w("btn_run.onClick", "select=" + selectCommand + ", length=" + command.length + " text=" + cmd);
-                    } else
+                    } else {
                         cmd = new StringBuffer(command[selectCommand]);
-
-                    if (tileSize > 0)
-                        cmd.append(" -t ").append(tileSize);
-                    if (threadCount.length() > 0)
-                        cmd.append(" -j ").append(threadCount);
+                        if (selectCommand < NCNN_CMD_SIZE) {
+                            if (tileSize > 0)
+                                cmd.append(" -t ").append(tileSize);
+                            if (threadCount.length() > 0)
+                                cmd.append(" -j ").append(threadCount);
+                            if (useCPU && !cmd.toString().startsWith("./srmd"))
+                                cmd.append(" -g -1");
+                        }
+                    }
 
                     if (run20(cmd.toString())) {
                         if (outputFile.exists()) {
@@ -421,7 +481,10 @@ public class MainActivity extends AppCompatActivity {
                 || cmd.startsWith("./srmd-ncnn")
                 || cmd.startsWith("./realcugan-ncnn")
                 || cmd.startsWith("./resize-ncnn")
-                || cmd.startsWith("./waifu2x-ncnn")) {
+                || cmd.startsWith("./waifu2x-ncnn")
+                || cmd.startsWith("./magick input.png -")
+        ) {
+            runOnUiThread(() -> progress.setTitle(BUSY));
             modelName = "Real-ESRGAN-anime";
             if (cmd.matches(".+\\s-m(\\s+)models-.+")) {
                 modelName = cmd.replaceFirst(".+\\s-m(\\s+)models-([^\\s]+).*", "$2");
@@ -429,12 +492,12 @@ public class MainActivity extends AppCompatActivity {
             if (modelName.matches("(se|nose)")) {
                 modelName = "Real-CUGAN-" + modelName;
             } else if (cmd.matches(".+\\s-m(\\s+)(bicubic|bilinear|nearest|avir).*")) {
-                modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest|avir).*", "Classical-$2");
+                modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest|lancir|avir).*", "Classical-$2");
             } else if (cmd.matches(".*waifu2x.+models-(cugan|cunet|upconv).*")) {
                 modelName = cmd.replaceFirst(".*waifu2x.+models-(cugan|cunet|upconv_7_photo|upconv_7_anime).*", "Waifu2x-$1");
+            } else if (cmd.startsWith("./magick input.png -")) {
+                modelName = cmd.replaceFirst(".*-filter\\s+(\\w+).+", "Magick-$1");
             }
-
-            runOnUiThread(() -> progress.setTitle(getResources().getString(R.string.busy)));
 
         } else
             modelName = "SR";
@@ -466,10 +529,10 @@ public class MainActivity extends AppCompatActivity {
             os.writeBytes("cd " + dir + "\n");
             os.flush();
 
-//            if(run_ncnn){
-//                os.writeBytes("rm output.png\n");
-//                os.flush();
-//            }
+            if (cmd.startsWith("./magick")) {
+                os.writeBytes("export LD_LIBRARY_PATH=" + dir + "\n");
+                os.flush();
+            }
 
             Log.i("run20", "write cmd start");
 
@@ -489,6 +552,8 @@ public class MainActivity extends AppCompatActivity {
             // 读取错误输出
             try {
                 while ((line = errorResult.readLine()) != null) {
+                    if (line.contains("unused DT entry"))
+                        continue;
 
                     result.append(line).append("\n");
                     boolean p = run_ncnn && line.matches("\\d([0-9.]*)%");
@@ -516,6 +581,8 @@ public class MainActivity extends AppCompatActivity {
 
             try {
                 while ((line = successResult.readLine()) != null) {
+                    if (line.contains("unused DT entry"))
+                        continue;
 
                     result.append(line).append("\n");
 

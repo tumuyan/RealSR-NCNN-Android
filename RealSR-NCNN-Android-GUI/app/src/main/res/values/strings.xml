@@ -31,6 +31,24 @@
     <string name="thread_count_err">not number:number:number</string>
     <string name="keep_screen">Keep screen on when it works</string>
     <string name="extra_command">Extra command in the command list</string>
+    <string name="partners_for_preset_command">Partners for preset command</string>
+    <string name="custom_command">Custom command</string>
+    <string name="use_cpu">Try to use CPU</string>
+    <string name="save_format">Save format</string>
+    <string-array name="format">
+        <item>PNG</item>
+        <item>WebP</item>
+        <item>GIF</item>
+        <item>HEIF</item>
+        <item>JPEG 100%</item>
+        <item>JPEG 98%</item>
+        <item>JPEG 95%</item>
+        <item>JPEG 90%</item>
+        <item>JPEG 85%</item>
+        <item>JPEG 80%</item>
+        <item>JPEG 75%</item>
+        <item>JPEG 60%</item>
+    </string-array>
     <string-array name="style_array">
         <item>real-esrgan-anime-x4</item>
         <item>real-esrgan-x4</item>
@@ -61,6 +79,22 @@
         <item>classical-avir-x4</item>
         <item>classical-avir-lancir-x2</item>
         <item>classical-avir-lancir-x4</item>
+        <item>magick-x0.5</item>
+        <item>magick-Hermite-x2</item>
+        <item>magick-Hermite-x4</item>
+        <item>magick-Hermite-x10</item>
+        <item>magick-Hamming-x2</item>
+        <item>magick-Hamming-x4</item>
+        <item>magick-Hamming-x10</item>
+        <item>magick-Lanczos2-x2</item>
+        <item>magick-Lanczos2-x4</item>
+        <item>magick-Lanczos2-x10</item>
+        <item>magick-Lagrange-x2</item>
+        <item>magick-Lagrange-x4</item>
+        <item>magick-Lagrange-x10</item>
+        <item>magick-Mitchell-x2</item>
+        <item>magick-Mitchell-x4</item>
+        <item>magick-Mitchell-x10</item>
     </string-array>
 
 </resources>

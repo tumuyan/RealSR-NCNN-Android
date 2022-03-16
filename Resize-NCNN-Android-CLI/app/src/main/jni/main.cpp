@@ -122,7 +122,7 @@ static void print_usage() {
     fprintf(stderr, "  -i input-path        input image path (jpg/png/webp) or directory\n");
     fprintf(stderr, "  -o output-path       output image path (jpg/png/webp) or directory\n");
     fprintf(stderr, "  -s scale             upscale ratio (4, default=4)\n");
-    fprintf(stderr, "  -m mode        resize mode (bicubic/bilinear/nearest, default=nearest)\n");
+    fprintf(stderr, "  -m mode        resize mode (bicubic/bilinear/nearest/avir/avir-lancir, default=nearest)\n");
     fprintf(stderr, "  -n not-use-ncnn        bicubic/bilinear not use ncnn\n");
     fprintf(stderr, "  -f format            output image format (jpg/png/webp, default=ext/png)\n");
 }
@@ -193,6 +193,9 @@ int main(int argc, char **argv)
         case L'n':
             not_use_ncnn = true;
             break;
+        case L't':
+        case L'g':
+            break;
         case L'h':
         default:
             print_usage();
@@ -226,6 +229,9 @@ int main(int argc, char **argv)
                 break;
             case 'n':
                 not_use_ncnn = true;
+                break;
+            case 'g':
+            case 't':
                 break;
             case 'h':
             default:

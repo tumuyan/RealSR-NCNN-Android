@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="5dp">
+        android:padding="10dp">
 
         <TextView
             android:layout_width="match_parent"
@@ -46,22 +46,49 @@
             android:padding="5dp"
             android:textAlignment="center" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/save_format"
+            android:textSize="18sp" />
+
+        <Spinner
+            android:id="@+id/spinner_format"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:entries="@array/format"
+            android:padding="5dp"
+            android:textAlignment="center" />
+
+
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="15dp"
+            android:text="@string/partners_for_preset_command"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="16sp" />
+
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="@string/extra_command"
+            android:text="@string/use_cpu"
             android:textSize="18sp" />
 
-        <EditText
-            android:id="@+id/editExtraCommand"
+        <ToggleButton
+            android:id="@+id/toggle_cpu"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ems="10"
-            android:gravity="start|top"
-            android:inputType="textMultiLine"
-            android:padding="5dp" />
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:padding="5dp"
+            android:text="ToggleButton" />
 
         <TextView
             android:layout_width="match_parent"
@@ -74,6 +101,7 @@
             android:id="@+id/editTile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/round_corner_bg"
             android:ems="10"
             android:inputType="number"
             android:padding="5dp" />
@@ -90,10 +118,38 @@
             android:id="@+id/editThread"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/round_corner_bg"
             android:ems="10"
             android:hint="1:2:2"
             android:padding="5dp"
             android:singleLine="true" />
+
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="15dp"
+            android:text="@string/custom_command"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="16sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/extra_command"
+            android:textSize="18sp" />
+
+        <EditText
+            android:id="@+id/editExtraCommand"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/round_corner_bg"
+            android:ems="10"
+            android:gravity="start|top"
+            android:inputType="textMultiLine"
+            android:padding="5dp" />
+
 
         <TextView
             android:layout_width="match_parent"
@@ -106,6 +162,7 @@
             android:id="@+id/editDefaultCommand"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/round_corner_bg"
             android:ems="10"
             android:gravity="start|top"
             android:inputType="textMultiLine"
