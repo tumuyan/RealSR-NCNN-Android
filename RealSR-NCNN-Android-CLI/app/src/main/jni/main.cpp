@@ -711,7 +711,8 @@ int main(int argc, char** argv)
     int prepadding = 0;
 
     if (model.find(PATHSTR("models-DF2K")) != path_t::npos ||
-        model.find(PATHSTR("models-Real")) != path_t::npos) {
+        model.find(PATHSTR("models-Real")) != path_t::npos ||
+        model.find(PATHSTR("models-ESRGAN")) != path_t::npos) {
         prepadding = 10;
     }
     else
@@ -810,8 +811,7 @@ int main(int argc, char** argv)
         uint32_t heap_budget = ncnn::get_gpu_device(gpuid[i])->get_heap_budget();
 
         // more fine-grained tilesize policy here
-        if (model.find(PATHSTR("models-Real")) != path_t::npos ||
-            model.find(PATHSTR("models-DF2K")) != path_t::npos) {
+         {
             if (heap_budget > 1900)
                 tilesize[i] = 200;
             else if (heap_budget > 550)

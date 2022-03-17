@@ -230,11 +230,11 @@ public class MainActivity extends AppCompatActivity {
 
                 if (q.equals("help")) {
                     logTextView.setText(getString(R.string.default_log));
-                } else if (q.equals("lr")) {
+                } else if (q.equals("in")) {
                     imageView.setVisibility(View.VISIBLE);
                     imageView.setImage(ImageSource.uri(dir + "/input.png"));
                     logTextView.setText(getString(R.string.lr));
-                } else if (q.equals("hr")) {
+                } else if (q.equals("out")) {
                     imageView.setVisibility(View.VISIBLE);
                     imageView.setImage(ImageSource.uri(dir + "/output.png"));
                     logTextView.setText(getString(R.string.hr));
@@ -270,6 +270,11 @@ public class MainActivity extends AppCompatActivity {
 
         findViewById(R.id.btn_save).setOnClickListener(view -> {
 
+            if (!outputFile.exists()) {
+                Toast.makeText(getApplicationContext(), R.string.output_not_exits, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");
             String filePath = null;
             if (format == 0) {
@@ -289,7 +294,7 @@ public class MainActivity extends AppCompatActivity {
                     run20("./magick output.png " + filePath);
                 } else {
                     filePath = galleryPath + modelName + "_" + f.format(new Date()) + ".jpg";
-                    String q = formats[format].replaceAll("[a-z%\\s]+", "");
+                    String q = formats[format].replaceAll("[a-zA-Z%\\s]+", "");
                     if (q.length() > 0) {
                         run20("./magick output.png -quality " + q + " " + filePath);
                     } else
@@ -486,8 +491,8 @@ public class MainActivity extends AppCompatActivity {
         ) {
             runOnUiThread(() -> progress.setTitle(BUSY));
             modelName = "Real-ESRGAN-anime";
-            if (cmd.matches(".+\\s-m(\\s+)models-.+")) {
-                modelName = cmd.replaceFirst(".+\\s-m(\\s+)models-([^\\s]+).*", "$2");
+            if (cmd.matches(".+\\s-m(\\s+)[^\\s]*models-.+")) {
+                modelName = cmd.replaceFirst(".+\\s-m(\\s+)[^\\s]*models-([^\\s]+).*", "$2");
             }
             if (modelName.matches("(se|nose)")) {
                 modelName = "Real-CUGAN-" + modelName;

@@ -3,18 +3,21 @@
     <string name="app_name">RealSR 图片放大</string>
     <string name="default_log">
         \n这是一个使用人工智能技术和传统插值算法兼备的图片放大的应用。
-        \n项目地址：https://github.com/tumuyan/RealSR-NCNN-Android
-        \n酷安下载：https://www.coolapk.com/apk/292197
-        \n算法说明：https://note.youdao.com/s/6XlIFbWt
-        \nWaifu2x使用教程：https://note.youdao.com/s/BwDPRoZf
-        \n\n最初使用了Real ESRGAN和RealSR NCNN的成果实现安卓本地超分，后来又添加了SRMD NCNN和Real CUGAN NCNN，再往后又加入了传统插值缩放算法nearest/bilinear/bicubic和sinc类型插值算法avir/avir-lancir，在最后更是直接加入了强大的图标处理工具ImageMagick，逐步成为一个算法完善的图片放大的工具。
+        \n\n最初使用了Real ESRGAN和RealSR NCNN的成果实现安卓本地超分，后来又添加了SRMD NCNN和Real CUGAN NCNN，再往后又加入了传统插值缩放算法nearest/bilinear/bicubic和sinc类型插值算法avir/avir-lancir，最后更是直接加入了强大的图标处理工具ImageMagick，逐步成为一个算法完善的图片放大的工具。
         \n在内置的超分模型中，本人对其中的Real ESRGAN最为推崇。Real ESRGAN所实现的放大和修复做到了一定程度上化腐朽为神奇。
 
         \n\n与借助云计算的商业服务相比，图片处理过程完全在本地运行，处理耗时取决于图片大小以及设备的性能；但正因此，本应用可以提供可靠稳定的运算，并且没有被收集隐私的隐忧。
 
+        \n项目地址：https://github.com/tumuyan/RealSR-NCNN-Android
+        \n酷安下载：https://www.coolapk.com/apk/292197
+        \n常见错误：https://note.youdao.com/s/3xv6h5iv
+        \n算法说明：https://note.youdao.com/s/6XlIFbWt
+        \nWaifu2x使用教程: https://note.youdao.com/s/BwDPRoZf
+        \n添加更多ESRGAN模型: https://note.youdao.com/s/XEv68sBU (欢迎在酷安、github或者这篇笔记的评论区讨论这些额外的模型)
+
 
         \n\n\n本应用除使用下拉选项中的预设参数外，还支持在输入框内输入命令。
-        \n一、调用超分辨率程序:
+        \n一、调用超分辨率程序
         \n./realsr-ncnn或./srmd-ncnn或./realcugan-ncnn -i 输入的图片路径 -o 输出的图片路径 [其他可选参数]…
         \n主要参数有：\n
         -i 输入的图片路径（jpg/png/webp文件路径或者目录路径）\n
@@ -29,7 +32,7 @@
         -s 放大倍数，可选(2/3/4, default=2)\n
         -c sync gap mode，可选(0/1/2/3, default=3)\n
 
-        \n\n二、调用经典插值算法：
+        \n\n二、调用经典插值算法
         \n./resize-ncnn -i 输入的图片路径 -o 输出的图片路径 [其他可选参数]...
         \n主要参数有：\n
         -i 输入的图片路径（jpg/png/webp文件路径或者目录路径）\n
@@ -39,17 +42,17 @@
         -s 放大倍数，不带-n时可以使用小数(default=4)\n
 
         \n\n三、图片处理工具ImageMagick
-        \n./magick 输入图片路径 -resize 宽x高 -filter 算法  输出图片路径
-        \n./magick 输入图片路径 -resize n% -filter 算法  输出图片路径
-        \n算法包含但不限于不限于Box Cubic Hamming Jinc Lanczos Lagrange Mitchell Sinc，可以通过命令./magick -list filter查看支持的全部算法。
+        \n./magick 输入图片路径 -filter 算法 -resize 宽x高 输出图片路径
+        \n./magick 输入图片路径 -filter 算法 -resize n% 输出图片路径
+        \n算法包含但不限于不限于Box Cubic Hamming Jinc Lanczos Lagrange Mitchell Sinc，可以通过命令./magick -list filter查看支持的全部算法。也可以参阅说明 https://legacy.imagemagick.org/Usage/filter
         \nImageMagick的功能非常强大，示例命令仅仅是缩放图片的调用。
 
-        \n\n三、显示指定信息
-        \n lr 显示高分辨率图像
-        \n hr 显示低分辨率图像
+        \n\n四、显示指定信息
+        \n in 显示输入的图像
+        \n out 显示输出的图像
         \n show （跟随图像的路径作为参数）显示指定路径的图像
         \n help 显示帮助信息
-        \n\n四、调用shell命令
+        \n\n五、调用shell命令
         \n 如ls head cp rm等等
         </string>
     <string name="input_command">输入shell命令,如 ./realsr-ncnn -i input.png -o output.png</string>
@@ -81,6 +84,8 @@
     <string name="custom_command">自定义命令</string>
     <string name="use_cpu">尝试使用CPU完成运算(CPU和GPU哪个更稳定是不确定的，但是CPU运算一定更慢)</string>
     <string name="save_format">导出时使用的格式</string>
+    <string name="general">通用</string>
+    <string name="output_not_exits">错误：没有待导出的文件</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>

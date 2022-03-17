@@ -2,12 +2,46 @@
     <string name="app_name">RealSR BigImage</string>
     <string name="default_log">\n
         Real-ESRGAN is a Practical Algorithms for General Image Restoration.\n
-        This is a simple Android application that uses Realsr-NCNN, SRMD-NCNN, Real-CUGAN-NCNN &amp; Real-ESRGAN.
-        Project url: https://github.com/tumuyan/RealSR-NCNN-Android\n\n
-        The application does not collect any private information from your device.
+        This is a simple Android application that uses Realsr-NCNN, SRMD-NCNN, Real-CUGAN-NCNN, Real-ESRGAN, Waifu2x-NCNN and ImageMagicK.
+
+        \nThe application does not collect any private information from your device.
+        \nGithub: https://github.com/tumuyan/RealSR-NCNN-Android
+        \nCoolApk:https://www.coolapk.com/apk/292197
+        \n
+        \nYou can run these programs:
+        \n1.Super resolution -i input.png -o output.png
+        \n./realsr-ncnn -i input.png -o output.png
+        \n./srmd-ncnn -i input.png -o output.png
+        \n./realcugan-ncnn  -i input.png -o output.png
 
 
-     \n
+        \n\n2.Classical interpolation
+        \n./resize-ncnn -i input.png -o output.png [-m mode] [-n] [-s scale]\n
+        -m mode（nearest/bilinear/bicubic/avir/avir-lancir）\n
+        -n not use ncnn for nearest和bilinear\n
+        -s scale(default=4), could be float without -n\n
+
+        \n\n3.ImageMagick
+        \n./magick input.png -filter filter -resize widthxheight output.png
+        \n./magick input.png -filter filter -resize n% output.png
+        \nfilter could be Box Cubic Hamming Jinc Lanczos Lagrange Mitchell Sinc, etc，intpu ./magick -list filter and see more filter, or visit https://legacy.imagemagick.org/Usage/filter
+
+
+        \n\n4.Show image/info
+        \n in
+        \n out
+        \n show
+        \n help
+        \n\n5.Shell command
+        \nls head cp rm etc.
+     \n\n
+        Tips.
+\n1. The App supports waifu2x, but does not include the model and preset commands.
+If you need to use waifu2x, please download and unzip to get the model and add waifu2x commands in the extra command, such as ./realsr-ncnn -i input.png -o output.png -m /sdcard/10086/models-upconv_7_photo (/sdcard/10086/models-upconv_7_photo is the path where the model you placed)
+\n2. you can download other esrgan models and use them yourself.
+https://upscale.wiki/wiki/Model_Database There are many models here, download the .pth models and convert it to ncnn models in Windows. The conversion steps are as follows: download cupscal https://github.com/n00mkrad/cupscale/releases , unzip cupscal, open CupscaleData\bin\pth2ncnn, use pth2ncnn.exe to convert pth files to ncnn file. Rename the models folder with a suffix of models-Real- or models-ESRGAN-, copy the folder to your phone, add add extra commands in the settings Activity and save. Command just like ./realsr-ncnn -i input.png -o output.png -m /sdcard/10086/models-Real-4x-UltraSharp
+(/sdcard/10086/models-Real-4x-UltraSharp is the path to the folder where you save your models)
+
     </string>
     <string name="input_command">Input console command, for example: ./realsr-ncnn -i input.png -o output.png</string>
     <string name="open">Open</string>
@@ -35,6 +69,8 @@
     <string name="custom_command">Custom command</string>
     <string name="use_cpu">Try to use CPU</string>
     <string name="save_format">Save format</string>
+    <string name="general">General</string>
+    <string name="output_not_exits">Error: there is no file to export</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>
