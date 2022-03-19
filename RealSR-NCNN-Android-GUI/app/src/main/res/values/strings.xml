@@ -37,7 +37,7 @@
      \n\n
         Tips.
 \n1. The App supports waifu2x, but does not include the model and preset commands.
-If you need to use waifu2x, please download and unzip to get the model and add waifu2x commands in the extra command, such as ./realsr-ncnn -i input.png -o output.png -m /sdcard/10086/models-upconv_7_photo (/sdcard/10086/models-upconv_7_photo is the path where the model you placed)
+If you need to use waifu2x, please download and unzip to get the model and add waifu2x commands in the extra command, such as ./waifu2x-ncnn -i input.png -o output.png -m /sdcard/10086/models-upconv_7_photo (/sdcard/10086/models-upconv_7_photo is the path where the model you placed)
 \n2. you can download other esrgan models and use them yourself.
 https://upscale.wiki/wiki/Model_Database There are many models here, download the .pth models and convert it to ncnn models in Windows. The conversion steps are as follows: download cupscal https://github.com/n00mkrad/cupscale/releases , unzip cupscal, open CupscaleData\bin\pth2ncnn, use pth2ncnn.exe to convert pth files to ncnn file. Rename the models folder with a suffix of models-Real- or models-ESRGAN-, copy the folder to your phone, add add extra commands in the settings Activity and save. Command just like ./realsr-ncnn -i input.png -o output.png -m /sdcard/10086/models-Real-4x-UltraSharp
 (/sdcard/10086/models-Real-4x-UltraSharp is the path to the folder where you save your models)

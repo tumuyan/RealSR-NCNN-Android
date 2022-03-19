@@ -20,7 +20,7 @@ This repository contains 5 project:
 ![realesrgan_logo](https://github.com/xinntao/Real-ESRGAN/raw/master/assets/realesrgan_logo.png)  
 Real-ESRGAN is a Practical Algorithms for General Image Restoration.
 
-> [[Paper](https://arxiv.org/abs/2107.10833)] &emsp; [[Project Page]](https://github.com/xinntao/Real-ESRGAN) &emsp; [[YouTube Video](https://www.youtube.com/watch?v=fxHWoDSSvSc)] &emsp; [[Bilibili](https://www.bilibili.com/video/BV1H34y1m7sS/)] &emsp; [[Poster](https://xinntao.github.io/projects/RealESRGAN_src/RealESRGAN_poster.pdf)] &emsp; [[PPT slides](https://docs.google.com/presentation/d/1QtW6Iy8rm8rGLsJ0Ldti6kP-7Qyzy6XL/edit?usp=sharing&ouid=109799856763657548160&rtpof=true&sd=true)]<br>
+> [[Paper](https://arxiv.org/abs/2107.10833)] [[Project Page]](https://github.com/xinntao/Real-ESRGAN) &emsp; [[YouTube Video](https://www.youtube.com/watch?v=fxHWoDSSvSc)] [[Bilibili](https://www.bilibili.com/video/BV1H34y1m7sS/)] &emsp; [[Poster](https://xinntao.github.io/projects/RealESRGAN_src/RealESRGAN_poster.pdf)] [[PPT slides](https://docs.google.com/presentation/d/1QtW6Iy8rm8rGLsJ0Ldti6kP-7Qyzy6XL/edit?usp=sharing&ouid=109799856763657548160&rtpof=true&sd=true)]<br>
 > [Xintao Wang](https://xinntao.github.io/), Liangbin Xie, [Chao Dong](https://scholar.google.com.hk/citations?user=OSDCB0UAAAAJ), [Ying Shan](https://scholar.google.com/citations?user=4oXBp9UAAAAJ&hl=en) <br>
 > Tencent ARC Lab; Shenzhen Institutes of Advanced Technology, Chinese Academy of Sciences
 
@@ -36,7 +36,7 @@ Real-ESRGAN is a Practical Algorithms for General Image Restoration.
 ![demo](https://github.com/cszn/SRMD/raw/master/figs/realSR2.png)
 
 ## About Real-CUGAN
-[[project]](https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
+[[project]](https://github.com/bilibili/ailab/tree/main/Real-CUGAN)  
 Real-CUGAN is an AI super resolution model for anime images, trained in a million scale anime dataset, using the same architecture as Waifu2x-CUNet. 
 
 ## How to build RealSR-NCNN-Android-CLI

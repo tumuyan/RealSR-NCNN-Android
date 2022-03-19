@@ -721,20 +721,63 @@ int main(int argc, char** argv)
         return -1;
     }
 
+
+    int scales[] = {4, 2, 1, 8};
+    int sp = 0;
+
 #if _WIN32
-    wchar_t parampath[256];
     wchar_t modelpath[256];
-    swprintf(parampath, 256, L"%s/x%d.param", model.c_str(), scale);
     swprintf(modelpath, 256, L"%s/x%d.bin", model.c_str(), scale);
+
+    path_t modelfullpath = sanitize_filepath(modelpath);
+    FILE* mp = _wfopen(modelfullpath.c_str(), L"rb");
 #else
-    char parampath[256];
     char modelpath[256];
-    sprintf(parampath, "%s/x%d.param", model.c_str(), scale);
     sprintf(modelpath, "%s/x%d.bin", model.c_str(), scale);
+
+    path_t modelfullpath = sanitize_filepath(modelpath);
+    FILE *mp = fopen(modelfullpath.c_str(), "rb");
 #endif
 
+    while (!mp && sp < 4) {
+        int s = scales[sp];
+#if _WIN32
+        swprintf(modelpath, 256, L"%s/x%d.bin", model.c_str(), s);
+
+        modelfullpath = sanitize_filepath(modelpath);
+        mp = _wfopen(modelfullpath.c_str(), L"rb");
+#else
+        sprintf(modelpath, "%s/x%d.bin", model.c_str(), s);
+
+        modelfullpath = sanitize_filepath(modelpath);
+        mp = fopen(modelfullpath.c_str(), "rb");
+#endif
+        if (mp) {
+            fprintf(stderr, "Fix scale: %d -> %d\n", scale, s);
+            scale = s;
+            break;
+        } else {
+            fprintf(stderr, "Fix scale fail -> %d\n", s);
+            sp++;
+        }
+    };
+
+    if (!mp) {
+        fprintf(stderr, "Unknow scale for the model (%s)\n",modelfullpath.c_str());
+        return -1;
+    }
+
+#if _WIN32
+    wchar_t parampath[256];
+    swprintf(parampath, 256, L"%s/x%d.param", model.c_str(), scale);
+#else
+    char parampath[256];
+    sprintf(parampath, "%s/x%d.param", model.c_str(), scale);
+#endif
     path_t paramfullpath = sanitize_filepath(parampath);
-    path_t modelfullpath = sanitize_filepath(modelpath);
+
+
+
 
 #if _WIN32
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
