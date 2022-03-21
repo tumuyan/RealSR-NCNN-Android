@@ -365,6 +365,9 @@ void* save(void* args)
         if (v.id == -233)
             break;
 
+        fprintf(stderr, "save result...\n");
+        float begin = clock();
+
         // free input pixel data
         {
             unsigned char* pixeldata = (unsigned char*)v.inimage.data;
@@ -408,6 +411,9 @@ void* save(void* args)
         }
         if (success)
         {
+            float end = clock();
+            fprintf(stderr, "save result use time: %.3f\n", (end - begin) / CLOCKS_PER_SEC);
+
             if (verbose)
             {
 #if _WIN32
@@ -420,9 +426,9 @@ void* save(void* args)
         else
         {
 #if _WIN32
-            fwprintf(stderr, L"encode image %ls failed\n", v.outpath.c_str());
+            fwprintf(stderr, L"save result failed: %ls\n", v.outpath.c_str());
 #else
-            fprintf(stderr, "encode image %s failed\n", v.outpath.c_str());
+            fprintf(stderr, "save result failed: %s\n", v.outpath.c_str());
 #endif
         }
     }

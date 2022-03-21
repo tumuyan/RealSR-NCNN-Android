@@ -369,6 +369,8 @@ void* save(void* args)
         if (v.id == -233)
             break;
 
+        fprintf(stderr, "save result...\n");
+        float begin = clock();
         // free input pixel data
         {
             unsigned char* pixeldata = (unsigned char*)v.inimage.data;
@@ -385,8 +387,6 @@ void* save(void* args)
 #endif
             }
         }
-
-        float begin = clock();
 
         int success = 0;
 
@@ -412,25 +412,26 @@ void* save(void* args)
             success = stbi_write_jpg(v.outpath.c_str(), v.outimage.w, v.outimage.h, v.outimage.elempack, v.outimage.data, 100);
 #endif
         }
-        if (success) {
+        if (success)
+        {
             float end = clock();
-            fprintf(stderr, "save use time: %.2f\n",
-                    (end - begin) / CLOCKS_PER_SEC);
+            fprintf(stderr, "save result use time: %.3f\n", (end - begin) / CLOCKS_PER_SEC);
 
-            if (verbose) {
+            if (verbose)
+            {
 #if _WIN32
-                fwprintf(stderr, L"%ls -> %ls done\n", v.inpath.c_str(), v.outpath.c_str());
+                fwprintf(stdout, L"%ls -> %ls done\n", v.inpath.c_str(), v.outpath.c_str());
 #else
-                fprintf(stderr, "%s -> %s done\n", v.inpath.c_str(), v.outpath.c_str());
+                fprintf(stdout, "%s -> %s done\n", v.inpath.c_str(), v.outpath.c_str());
 #endif
             }
         }
         else
         {
 #if _WIN32
-            fwprintf(stderr, L"encode image %ls failed\n", v.outpath.c_str());
+            fwprintf(stderr, L"save result failed: %ls\n", v.outpath.c_str());
 #else
-            fprintf(stderr, "encode image %s failed\n", v.outpath.c_str());
+            fprintf(stderr, "save result failed: %s\n", v.outpath.c_str());
 #endif
         }
     }
