@@ -88,6 +88,7 @@ static std::vector<int> parse_optarg_int_array(const wchar_t* optarg)
 #else // _WIN32
 
 #include <unistd.h> // getopt()
+#include <limits>
 
 static std::vector<int> parse_optarg_int_array(const char *optarg) {
     std::vector<int> array;
@@ -122,7 +123,7 @@ static void print_usage() {
     fprintf(stderr, "  -i input-path        input image path (jpg/png/webp) or directory\n");
     fprintf(stderr, "  -o output-path       output image path (jpg/png/webp) or directory\n");
     fprintf(stderr, "  -s scale             upscale ratio (4, default=4)\n");
-    fprintf(stderr, "  -m mode        resize mode (bicubic/bilinear/nearest/avir/avir-lancir, default=nearest)\n");
+    fprintf(stderr, "  -m mode        resize mode (bicubic/bilinear/nearest/avir/avir-lancir/de-nearest, default=nearest)\n");
     fprintf(stderr, "  -n not-use-ncnn        bicubic/bilinear not use ncnn\n");
     fprintf(stderr, "  -f format            output image format (jpg/png/webp, default=ext/png)\n");
 }
@@ -443,6 +444,115 @@ int main(int argc, char **argv)
             fprintf(stderr, "fopen failed\n");
 #endif // _WIN32
         }
+
+
+        // 计算降采样的倍率
+        if (pixeldata) {
+            if (model.find(PATHSTR("de-nearest")) != path_t::npos) {
+                double lost_y[h - 1], lost_x[w - 1];
+                double avg_y, avg_x;
+                double scale_y = 1, scale_x = 1;
+                int line_size = w * c;
+
+                double **lost_x0 = new double *[h];
+                for (int i = 0; i < h; i++) {
+                    lost_x0[i] = new double[w - 1];
+                }
+
+//                fprintf(stderr, "de-nearest:");
+
+                //row
+                int p = line_size;
+                int q = 0;
+                for (int i = 0; i < h - 1; i++) {
+                    //line
+                    double l = 0;
+                    for (int j = 0; j < line_size; j++) {
+                        l += pow(pixeldata[p] - pixeldata[q], 2);
+                        p++;
+                        q++;
+                        //   fprintf(stderr," [%d,%d]",i ,j);
+                    }
+
+                    double m = l / line_size;
+                    lost_y[i] = m;
+                    avg_y += m;
+                }
+
+                avg_y = avg_y / (h - 1);
+
+                for (int i = 0; i < h - 1; i++) {
+                    if (lost_y[i] > avg_y) {
+//                         fprintf(stderr," [%.2f]", lost_y[i]);
+                        scale_y++;
+                    } //else
+//                         fprintf(stderr," %.2f", lost_y[i]);
+                }
+                fprintf(stderr, "scale_y: %d/%f", h, scale_y);
+                scale_y = h / scale_y;
+                fprintf(stderr, " = %f; avg_lost_y=[%f]\n", scale_y, avg_y);
+
+                for (int i = 0; i < h; i++) {
+                    p = i * line_size;
+                    for (int j = 0; j < w - 1; j++) {
+                        double l = 0;
+                        for (int k = 0; k < c; k++) {
+//                            l += pow(pixeldata[p] - pixeldata[p + c], 2);
+                            l = fmax(l, pow(pixeldata[p] - pixeldata[p + c], 2));
+                            p++;
+                        }
+                        lost_x0[i][j] = l;
+
+                        // fprintf(stderr," [%d,%d]",i ,j);
+                    }
+//                    fprintf(stderr, " %d", i);
+                }
+
+                for (int j = 0; j < w - 1; j++) {
+                    double l = 0;
+                    for (int i = 0; i < h; i++) {
+                        l += lost_x0[i][j];
+                    }
+                    double m = l / h;
+                    lost_x[j] = m;
+                    avg_x += m;
+                }
+
+                avg_x = avg_x / (w - 1);
+
+                for (int i = 0; i < w - 1; i++) {
+                    if (lost_x[i] > avg_x) {
+//                    fprintf(stderr," [%.2f]", lost_x[i]);
+                        scale_x++;
+                    } // else
+//                    fprintf(stderr," %.2f", lost_x[i]);
+                }
+                fprintf(stderr, "scale_x: %d/%f", w, scale_x);
+                scale_x = w / scale_x;
+                fprintf(stderr, " = %f; avg_lost_x=[%f]\n", scale_x, avg_x);
+
+                for (int i = 0; i < h - 1; i++) {
+                    delete[] lost_x0[i];
+                }
+                delete[] lost_x0;
+
+                if (scale_x < 1.5 || scale_y < 1.5) {
+                    fprintf(stderr, "image is not interpolated by nearest\n");
+                } else {
+                    not_use_ncnn = false;
+                    if (abs(scale_y - scale_x) < 1)
+                        scale_d = round((scale_x + scale_y) / 2);
+                    else if (scale_x > scale_y)
+                        scale_d = round(scale_y);
+                    else
+                        scale_d = round(scale_x);
+
+                    fprintf(stderr, "image might be interpolated by nearest x%.0f\n", scale_d);
+                    scale_d = 1 / scale_d;
+                }
+            }
+        }
+
 
         int out_w, out_h;
         if (scale != scale_d || !not_use_ncnn) {

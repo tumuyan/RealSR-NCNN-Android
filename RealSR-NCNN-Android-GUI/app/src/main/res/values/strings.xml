@@ -71,6 +71,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="save_format">Save format</string>
     <string name="general">General</string>
     <string name="output_not_exits">Error: there is no file to export</string>
+    <string name="image_not_exists">Image not exists</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>
@@ -115,7 +116,10 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
         <item>classical-avir-x4</item>
         <item>classical-avir-lancir-x2</item>
         <item>classical-avir-lancir-x4</item>
-        <item>magick-x0.5</item>
+        <item>classical-de-nearest</item>
+        <item>magick-25%</item>
+        <item>magick-33%</item>
+        <item>magick-50%</item>
         <item>magick-Hermite-x2</item>
         <item>magick-Hermite-x4</item>
         <item>magick-Hermite-x10</item>

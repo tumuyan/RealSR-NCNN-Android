@@ -37,7 +37,7 @@
         \n主要参数有：\n
         -i 输入的图片路径（jpg/png/webp文件路径或者目录路径）\n
         -o 输出的图片路径（jpg/png/webp文件路径或者目录路径）\n
-        -m 插值算法（nearest/bilinear/bicubic/avir/avir-lancir）\n
+        -m 插值算法（nearest/bilinear/bicubic/avir/avir-lancir/de-nearest）\n
         -n 不使用ncnn来完成nearest和bilinear插值，得到点对点放大的结果（但是bilinear的输出结果会与s参数略有差异）\n
         -s 放大倍数，不带-n时可以使用小数(default=4)\n
 
@@ -86,6 +86,7 @@
     <string name="save_format">导出时使用的格式</string>
     <string name="general">通用</string>
     <string name="output_not_exits">错误：没有待导出的文件</string>
+    <string name="image_not_exists">图片不存在</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>

@@ -39,7 +39,6 @@ import java.io.OutputStream;
 import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
-    private static final int NCNN_CMD_SIZE = 18;
     private static final int SELECT_IMAGE = 1;
     private static final int MY_PERMISSIONS_REQUEST = 100;
     private int selectCommand = 0;
@@ -94,6 +93,9 @@ public class MainActivity extends AppCompatActivity {
             "./resize-ncnn -i input.png -o output.png  -m avir -s 4",
             "./resize-ncnn -i input.png -o output.png  -m avir-lancir -s 2",
             "./resize-ncnn -i input.png -o output.png  -m avir-lancir -s 4",
+            "./resize-ncnn -i input.png -o output.png  -m de-nearest",
+            "./magick input.png -resize 25% output.png",
+            "./magick input.png -resize 33.33% output.png",
             "./magick input.png -resize 50% output.png",
             "./magick input.png -filter Hermite   -resize 200%   output.png",
             "./magick input.png -filter Hermite   -resize 400%   output.png",
@@ -113,8 +115,9 @@ public class MainActivity extends AppCompatActivity {
 
     };
     private int tileSize;
-    private boolean keepScreen;
     private boolean useCPU;
+    private boolean keepScreen;
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -227,22 +230,7 @@ public class MainActivity extends AppCompatActivity {
 
                 String q = searchView.getQuery().toString().trim();
 
-
-                if (q.equals("help")) {
-                    logTextView.setText(getString(R.string.default_log));
-                } else if (q.equals("in")) {
-                    imageView.setVisibility(View.VISIBLE);
-                    imageView.setImage(ImageSource.uri(dir + "/input.png"));
-                    logTextView.setText(getString(R.string.lr));
-                } else if (q.equals("out")) {
-                    imageView.setVisibility(View.VISIBLE);
-                    imageView.setImage(ImageSource.uri(dir + "/output.png"));
-                    logTextView.setText(getString(R.string.hr));
-                } else if (q.startsWith("show ")) {
-                    imageView.setVisibility(View.VISIBLE);
-                    imageView.setImage(ImageSource.uri(q.replaceFirst("(\\s+)show(\\s+)", "")));
-                    logTextView.setText(getString(R.string.show));
-                } else {
+                if (!run_fake_command(q)) {
                     stopCommand();
                     new Thread(() -> run20(query)).start();
                 }
@@ -318,26 +306,34 @@ public class MainActivity extends AppCompatActivity {
             progress.setTitle("");
             {
                 stopCommand();
+                StringBuffer cmd;
+
+                if (selectCommand >= command.length) {
+
+                    cmd = new StringBuffer(spinner.getSelectedItem().toString());
+                    Log.w("btn_run.onClick", "select=" + selectCommand + ", length=" + command.length + " text=" + cmd);
+
+                    if (run_fake_command(cmd.toString()))
+                        return;
+                } else {
+                    cmd = new StringBuffer(command[selectCommand]);
+
+                    if (command[selectCommand].matches("./(realsr|srmd|waifu2x|realcugan)-ncnn.+")) {
+                        if (tileSize > 0)
+                            cmd.append(" -t ").append(tileSize);
+                        if (threadCount.length() > 0)
+                            cmd.append(" -j ").append(threadCount);
+                        if (useCPU && !cmd.toString().startsWith("./srmd"))
+                            cmd.append(" -g -1");
+                    }
+                }
+
                 outputFile.delete();
                 if (keepScreen) {
                     view.setKeepScreenOn(true);
                 }
+
                 new Thread(() -> {
-                    StringBuffer cmd;
-                    if (selectCommand >= command.length) {
-                        cmd = new StringBuffer(spinner.getSelectedItem().toString());
-                        Log.w("btn_run.onClick", "select=" + selectCommand + ", length=" + command.length + " text=" + cmd);
-                    } else {
-                        cmd = new StringBuffer(command[selectCommand]);
-                        if (selectCommand < NCNN_CMD_SIZE) {
-                            if (tileSize > 0)
-                                cmd.append(" -t ").append(tileSize);
-                            if (threadCount.length() > 0)
-                                cmd.append(" -j ").append(threadCount);
-                            if (useCPU && !cmd.toString().startsWith("./srmd"))
-                                cmd.append(" -g -1");
-                        }
-                    }
 
                     if (run20(cmd.toString())) {
                         if (outputFile.exists()) {
@@ -363,7 +359,6 @@ public class MainActivity extends AppCompatActivity {
                                     }
                             );
                         }
-
                     }
                 }).start();
             }
@@ -496,12 +491,15 @@ public class MainActivity extends AppCompatActivity {
             }
             if (modelName.matches("(se|nose)")) {
                 modelName = "Real-CUGAN-" + modelName;
-            } else if (cmd.matches(".+\\s-m(\\s+)(bicubic|bilinear|nearest|avir).*")) {
-                modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest|lancir|avir).*", "Classical-$2");
+            } else if (cmd.matches(".+\\s-m(\\s+)(bicubic|bilinear|nearest|avir|de-nearest).*")) {
+                modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest|lancir|avir|de-nearest).*", "Classical-$2");
             } else if (cmd.matches(".*waifu2x.+models-(cugan|cunet|upconv).*")) {
                 modelName = cmd.replaceFirst(".*waifu2x.+models-(cugan|cunet|upconv_7_photo|upconv_7_anime).*", "Waifu2x-$1");
             } else if (cmd.startsWith("./magick input.png -")) {
-                modelName = cmd.replaceFirst(".*-filter\\s+(\\w+).+", "Magick-$1");
+                if (cmd.contains("-filter"))
+                    modelName = cmd.replaceFirst(".*-filter\\s+(\\w+).+", "Magick-$1");
+                else
+                    modelName = "Magick";
             }
 
         } else
@@ -702,6 +700,39 @@ public class MainActivity extends AppCompatActivity {
         );
 
         Log.i("saveImage", "finish");
+        return true;
+    }
+
+    private boolean run_fake_command(String q) {
+        if (q.equals("help")) {
+            logTextView.setText(getString(R.string.default_log));
+        } else if (q.equals("in")) {
+            imageView.setVisibility(View.VISIBLE);
+            imageView.setImage(ImageSource.uri(dir + "/input.png"));
+            logTextView.setText(getString(R.string.lr));
+        } else if (q.equals("out")) {
+            imageView.setVisibility(View.VISIBLE);
+            imageView.setImage(ImageSource.uri(dir + "/output.png"));
+            logTextView.setText(getString(R.string.hr));
+        } else if (q.startsWith("show ")) {
+            String path = q.replaceFirst("\\s*show\\s+([^\\s]+)\\s*", "$1");
+            File file = new File(path);
+            if (!file.exists()) {
+                path = dir + "/" + path;
+                file = new File(path);
+            }
+
+            if (file.exists()) {
+                imageView.setVisibility(View.VISIBLE);
+                imageView.setImage(ImageSource.uri(path));
+                logTextView.setText(getString(R.string.show) + path);
+            } else {
+                imageView.setVisibility(View.GONE);
+                logTextView.setText(getString(R.string.image_not_exists));
+            }
+
+        } else
+            return false;
         return true;
     }
 }
