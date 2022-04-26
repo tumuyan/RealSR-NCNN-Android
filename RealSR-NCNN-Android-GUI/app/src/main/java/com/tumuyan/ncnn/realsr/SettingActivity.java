@@ -89,7 +89,7 @@ public class SettingActivity extends AppCompatActivity {
             toggleCPU.setChecked(false);
             editTile.setText("0");
             editThread.setText("");
-            editDefaultCommand.setText("./realsr-ncnn -i input.png -o output.png -m models-Real-ESRGANv2-anime -s 2");
+            editDefaultCommand.setText("./realsr-ncnn -i input.png -o output.png -m models-Real-ESRGANv3-anime -s 2");
             save();
         });
 

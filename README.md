@@ -6,13 +6,13 @@ RealSR-NCNN-Android is a simple Android application that based on [RealSR-NCNN](
 The application does not collect any private information from your device.  
 Download: Github [Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases) or [CoolApk](https://www.coolapk.com/apk/292197)
 
-This repository contains 5 project:  
+This repository contains 7 project:  
 1. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell of the follow programs.
 2. RealSR-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android. This program can use realsr models and real-esrgan models.
 3. RealCUGAN-NCNN-Android-CLI  can build a program that can be used by the console (for example, Termux) for Android.
 4. SRMD-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
-5. Waifu2x-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android (Not packaged in APK).
-6. Resize-NCNN-Android-CLI  can build a program that can be used by the console (for example, Termux) for Android. use ncnn only to reduce the elf file size. Contains classical interpolation mode `nearest` `bilinear` `bicubic` and `avir` `lancir`
+5. Waifu2x-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android (models not packaged in APK).
+6. Resize-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android. use ncnn only to reduce the elf file size. Contains classical interpolation mode `nearest` `bilinear` `bicubic` and `avir` `lancir`
 7. Resize-CLI just a demo like the Resize-NCNN-Android-CLI, but it not need ncnn and could build by VS
 
 ### About Real-ESRGAN

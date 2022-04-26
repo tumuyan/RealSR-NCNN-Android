@@ -785,6 +785,7 @@ int main(int argc, char** argv)
 #endif
 
     ncnn::create_gpu_instance();
+//    ncnn::set_cpu_powersave(0);
 
     if (gpuid.empty())
     {
