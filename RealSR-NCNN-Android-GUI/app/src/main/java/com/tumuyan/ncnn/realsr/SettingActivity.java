@@ -25,6 +25,7 @@ public class SettingActivity extends AppCompatActivity {
     EditText editExtraCommand;
     ToggleButton toggleKeepScreen;
     ToggleButton toggleCPU;
+    ToggleButton togglePrePng;
     Spinner spinnerFormat;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
@@ -43,6 +44,7 @@ public class SettingActivity extends AppCompatActivity {
         String defaultCommand = mySharePerferences.getString("defaultCommand", "");
         String threadCount = mySharePerferences.getString("threadCount", "");
         boolean keepScreen = mySharePerferences.getBoolean("keepScreen", false);
+        boolean prePng = mySharePerferences.getBoolean("PrePng", true);
         String extraCommand = mySharePerferences.getString("extraCommand", "");
         boolean useCPU = mySharePerferences.getBoolean("useCPU", false);
         int format = mySharePerferences.getInt("format", 0);
@@ -58,6 +60,8 @@ public class SettingActivity extends AppCompatActivity {
         editThread.setText(threadCount);
         toggleKeepScreen = findViewById(R.id.toggle_keep_screen);
         toggleKeepScreen.setChecked(keepScreen);
+        togglePrePng = findViewById(R.id.toggle_pre_png);
+        togglePrePng.setChecked(prePng);
         toggleCPU = findViewById(R.id.toggle_cpu);
         toggleCPU.setChecked(useCPU);
 
@@ -142,6 +146,7 @@ public class SettingActivity extends AppCompatActivity {
         editor.putString("threadCount", threadCount);
 
         editor.putBoolean("keepScreen", toggleKeepScreen.isChecked());
+        editor.putBoolean("PrePng",togglePrePng.isChecked());
         editor.putBoolean("useCPU", toggleCPU.isChecked());
         editor.putInt("format", (int) spinnerFormat.getSelectedItemId());
 

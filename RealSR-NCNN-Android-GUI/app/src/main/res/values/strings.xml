@@ -72,6 +72,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="general">General</string>
     <string name="output_not_exits">Error: there is no file to export</string>
     <string name="image_not_exists">Image not exists</string>
+    <string name="preprocess_to_png">Preprocess input image (not webp/png/jpg/bmp) to png</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>

@@ -10,6 +10,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
 import android.os.Bundle;
@@ -31,6 +33,7 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -120,6 +123,7 @@ public class MainActivity extends AppCompatActivity {
     private int tileSize;
     private boolean useCPU;
     private boolean keepScreen;
+    private boolean prePng;
 
 
     @Override
@@ -154,6 +158,7 @@ public class MainActivity extends AppCompatActivity {
         tileSize = mySharePerferences.getInt("tileSize", 0);
         threadCount = mySharePerferences.getString("threadCount", "");
         keepScreen = mySharePerferences.getBoolean("keepScreen", false);
+        prePng = mySharePerferences.getBoolean("PrePng", true);
         useCPU = mySharePerferences.getBoolean("useCPU", false);
         format = mySharePerferences.getInt("format", 0);
 
@@ -669,17 +674,53 @@ public class MainActivity extends AppCompatActivity {
             file.delete();
         }
         try {
-            file.createNewFile();
-            OutputStream outStream = new FileOutputStream(file);
 
             byte[] buffer = new byte[4112];
             int read;
+
+            int match = -1;
+
+            if ((read = in.read(buffer)) != -1) {
+                if (prePng) {
+                    match = PreprocessToPng.match(buffer);
+                    if (match>=0) {
+                        file = new File(dir + "/tmp");
+                        if (file.exists()) {
+                            file.delete();
+                        }
+                    }
+                }
+            }
+
+            file.createNewFile();
+            OutputStream outStream = new FileOutputStream(file);
+            outStream.write(buffer, 0, read);
+
             while ((read = in.read(buffer)) != -1) {
                 outStream.write(buffer, 0, read);
             }
 
             outStream.flush();
             outStream.close();
+
+            if (match >= 0) {
+                if (PreprocessToPng.isHeif(match)) {
+                    Bitmap bitmap = BitmapFactory.decodeFile(dir + "/tmp");
+
+                    try {
+                        FileOutputStream out = new FileOutputStream(dir + "/input.png");
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+                        out.flush();
+                        out.close();
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else
+                    run20("./magick tmp input.png");
+//                run_command("."+dir+"/magick " + dir + "/tmp "+dir + "/input.png");
+            }
 
         } catch (IOException e) {
             e.printStackTrace();

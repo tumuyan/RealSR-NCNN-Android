@@ -245,6 +245,9 @@ void* load(void* args)
                     pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 0);
                     if (pixeldata)
                     {
+                        if (_VERBOSE_LOG) {
+                            fprintf(stderr, "stbi_load_from_memory get channel %d\n", c);
+                        }
                         // stb_image auto channel
                         if (c == 1)
                         {
@@ -260,6 +263,8 @@ void* load(void* args)
                             pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 4);
                             c = 4;
                         }
+                    } else if (_VERBOSE_LOG) {
+                        fprintf(stderr, "no pixeldata 2\n");
                     }
 #endif // _WIN32
                 }
@@ -267,7 +272,7 @@ void* load(void* args)
 #if _WIN32
                 fwprintf(stderr, L"no filedata\n");
 #else // _WIN32
-                fprintf(stderr, "no filedata\n");
+                fprintf(stderr, "no filedata 1\n");
 #endif // _WIN32
             }
 
