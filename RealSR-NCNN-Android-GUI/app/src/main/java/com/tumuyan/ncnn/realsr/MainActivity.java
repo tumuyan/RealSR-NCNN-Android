@@ -70,7 +70,8 @@ public class MainActivity extends AppCompatActivity {
 
     private String[] formats;
 
-    private final String[] command = new String[]{
+    private String[] command = null;
+    private final String[] command_0 = new String[]{
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-anime",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 2",
@@ -182,20 +183,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * 生成用户自定义命令
+     * 生成用户自定义命令. 自定义模型路径的命令与App预设命令有一样的外观和特性
      * @param extraPath 自定义模型路径
      * @param extraCommand     用户预设命令
      * @return          全部扩展命令
      */
-    private static List<String> getExtraCommands(String  extraPath, String extraCommand) {
+    private List<String> getExtraCommands(String  extraPath, String extraCommand) {
 
-        // 解析外置模型的路径
-        List<String> list = new ArrayList<>();
+        // 解析结果，包含模型目录、用户自定义命令（命令列表）
+        List<String> cmdList = new ArrayList<>();
 
-        if (!extraCommand.isEmpty()) {
-            String[] cmds = extraCommand.split("\n");
-            list.addAll(Arrays.asList(cmds));
-        }
+        // 解析模型目录的结果（下拉列表中的label）
+        List<String> cmdLabel = new ArrayList<>();
+
 
         if (!extraPath.isEmpty()) {
             File[] folders = new File(extraPath).listFiles();
@@ -204,25 +204,48 @@ public class MainActivity extends AppCompatActivity {
                 if (folder.isDirectory() && name.startsWith("models")) {
 
                     // 匹配realsr模型
+                    String model = name.replace("models-","");
                     String scaleMatcher = ".*x(\\d+).*";
                     String noiseMatcher = "";
                     String command = "./realsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
 
                     // 匹配waifu2x模型
                     if (name.matches("models-(cugan|cunet|upconv).*")) {
+                        model =name.replace("models-","Waifu2x-") ;
                         scaleMatcher = ".*scale(\\d+).*";
                         command = "./waifu2x-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
                         noiseMatcher = "noise(\\d+).*";
                     }
 
-                    List<String> scales = genCmdFromModel(folder, scaleMatcher, noiseMatcher);
-                    for (String s : scales) {
-                        list.add(command + s);
+                    List<String> suffix = genCmdFromModel(folder, scaleMatcher, noiseMatcher);
+                    for (String s : suffix) {
+                        cmdList.add(command + s);
+                        cmdLabel.add(model + "-x" + s.replace(" -n ","-noise"));
                     }
                 }
             }
         }
-        return list;
+
+        // 模型目录显示label
+        if (cmdList.size() > 0) {
+            int l = command_0.length;
+            command = new String[cmdList.size() + l];
+
+            for (int i = 0; i < l; i++)
+                command[i] = command_0[i];
+            for (int i = 0; i < cmdList.size(); i++)
+                command[l + i] = cmdList.get(i);
+        } else {
+            command = command_0.clone();
+        }
+
+        // 预设命令显示命令
+        if (!extraCommand.isEmpty()) {
+            String[] cmds = extraCommand.split("\n");
+            cmdLabel.addAll(Arrays.asList(cmds));
+        }
+
+        return cmdLabel;
     }
 
 

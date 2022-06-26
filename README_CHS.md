@@ -188,14 +188,14 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
 
 首先，你可以在设置中设置预设命令，或者直接输入shell命令，调用存放在任意路径的模型，但是：
 
-**ver 1.7.6 RealSR-NCNN-Android-GUI 可以自动加载 waifu2x模型了！🎉**
+**ver 1.7.6 RealSR-NCNN-Android-GUI 可以自动加载 waifu2x模型了！🎉**  
 1. 在文件管理器里新建一个目录
 2. 在App的设置中，自定义模型路径的选项里填入刚才新建目录的路径，点击保存
 3. 下载 [waifu2x-ncnn](https://github.com/nihui/waifu2x-ncnn-vulkan/releases) 并解压
 4. 复制`models-cunet` `models-upconv_7_anime_style_art_rgb` `models-upconv_7_photo`到刚才新建的目录里
 5. 返回App，可以看到下拉菜单增加了waifu2x-ncnn的命令
 
-**ver 1.7.6 RealSR-NCNN-Android-GUI 可以自动加载 ESRGAN 模型了！🎉**
+**ver 1.7.6 RealSR-NCNN-Android-GUI 可以自动加载 ESRGAN 模型了！🎉**  
 由于大部分模型都是pytorch而非ncnn，所以需要先使用电脑转换模型的格式.
 1. 从 [https://upscale.wiki/wiki/Model_Database](https://upscale.wiki/wiki/Model_Database) 下载模型并解压
 2. 下载  [cupscale](https://github.com/n00mkrad/cupscale) 并解压

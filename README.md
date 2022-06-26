@@ -180,14 +180,14 @@ Also the app could input shell command. (You can input `help` and get more info)
 ## Add more models to RealSR-NCNN-Android-GUI
 First of all , you could use preset commands or input command as shell, but
 
-**RealSR-NCNN-Android-GUI could load waifu2x models from sdcard automatily in ver 1.7.6🎉.**
-1. You should make a  directory in sdcard.
+**RealSR-NCNN-Android-GUI could load waifu2x models from sdcard automatily in ver 1.7.6🎉.**  
+1. Make a  directory in sdcard.
 2. Open setting, input the directory path to `Path for custom models (RealSR/ESRGAN/Waifu2x)` and save.
 3. Download [waifu2x-ncnn](https://github.com/nihui/waifu2x-ncnn-vulkan/releases) and unzip it to somewhere.
 4. Copy`models-cunet` `models-upconv_7_anime_style_art_rgb` `models-upconv_7_photo` to the directory you make.
-5. Open the App, then you could select new commands for waifu2x-ncnn
+5. Open the App, then you could select new commands for waifu2x-ncnn.
 
-**RealSR-NCNN-Android-GUI could load esrgan models from sdcard automatily in ver 1.7.6 🎉.**
+**RealSR-NCNN-Android-GUI could load esrgan models from sdcard automatily in ver 1.7.6 🎉.**  
 Cause of most models is pytorch not ncnn, you should convert moddls in your PC.
 1. Download ESRGAN pytorch models from [https://upscale.wiki/wiki/Model_Database](https://upscale.wiki/wiki/Model_Database) and unzip it to somewhere.
 2. Download  [cupscale](https://github.com/n00mkrad/cupscale) and unzip it
@@ -202,7 +202,7 @@ models-Real-ESRGAN-AnimeSharp  // directory should have a suffix of models-Real-
 1. You should make a  directory in sdcard.
 2. Open setting, input the directory path to `Path for custom models (RealSR/ESRGAN/Waifu2x)` and save.
 4. Copy models to the directory you make.
-5. Open the App, then you could select new commands for realsr-ncnn
+5. Open the App, then you could select new commands for realsr-ncnn.
 
 ## Screenshot
 
