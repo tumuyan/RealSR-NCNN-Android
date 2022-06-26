@@ -23,6 +23,7 @@ public class SettingActivity extends AppCompatActivity {
     EditText editTile;
     EditText editThread;
     EditText editExtraCommand;
+    EditText editExtraPath;
     ToggleButton toggleKeepScreen;
     ToggleButton toggleCPU;
     ToggleButton togglePrePng;
@@ -46,6 +47,7 @@ public class SettingActivity extends AppCompatActivity {
         boolean keepScreen = mySharePerferences.getBoolean("keepScreen", false);
         boolean prePng = mySharePerferences.getBoolean("PrePng", true);
         String extraCommand = mySharePerferences.getString("extraCommand", "");
+        String extraPath = mySharePerferences.getString("extraPath","");
         boolean useCPU = mySharePerferences.getBoolean("useCPU", false);
         int format = mySharePerferences.getInt("format", 0);
 
@@ -56,6 +58,8 @@ public class SettingActivity extends AppCompatActivity {
         editExtraCommand = findViewById(R.id.editExtraCommand);
         editExtraCommand.setText(extraCommand);
         editExtraCommand.setHint("./waifu2x-ncnn -i input.png -o output.png -m " + galleryPath + "cunet");
+        editExtraPath = findViewById(R.id.editExtraPath);
+        editExtraPath.setText(extraPath);
         editThread = findViewById(R.id.editThread);
         editThread.setText(threadCount);
         toggleKeepScreen = findViewById(R.id.toggle_keep_screen);
@@ -93,6 +97,7 @@ public class SettingActivity extends AppCompatActivity {
             toggleCPU.setChecked(false);
             editTile.setText("0");
             editThread.setText("");
+            editExtraPath.setText("");
             editDefaultCommand.setText("./realsr-ncnn -i input.png -o output.png -m models-Real-ESRGANv3-anime -s 2");
             save();
         });
@@ -103,6 +108,7 @@ public class SettingActivity extends AppCompatActivity {
             toggleCPU.setChecked(false);
             editTile.setText("32");
             editThread.setText("1:1:1");
+            editExtraPath.setText("");
             editDefaultCommand.setText("");
             save();
         });
@@ -142,6 +148,21 @@ public class SettingActivity extends AppCompatActivity {
                 return;
             }
         }
+
+        String extraPath = editExtraPath.getText().toString().trim();
+        if(!extraPath.isEmpty()){
+            File file = new File(extraPath);
+            if(!file.exists()){
+                editExtraPath.setError(getString(R.string.path_not_exist));
+                return;
+            }
+            if(!file.isDirectory()){
+                editExtraPath.setError(getString(R.string.path_not_exist));
+                return;
+            }
+        }
+        editor.putString("extraPath", extraPath);
+
         editThread.setText(threadCount);
         editor.putString("threadCount", threadCount);
 

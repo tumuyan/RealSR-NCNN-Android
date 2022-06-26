@@ -88,6 +88,8 @@
     <string name="output_not_exits">错误：没有待导出的文件</string>
     <string name="image_not_exists">图片不存在</string>
     <string name="preprocess_to_png">预处理webp/png/jpg/bmp以外的图片为png</string>
+    <string name="extra_path">自定义模型的路径(RealSR/ESRGAN/Waifu2x)</string>
+    <string name="path_not_exist">不存在此目录</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>

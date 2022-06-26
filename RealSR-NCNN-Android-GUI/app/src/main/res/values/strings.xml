@@ -36,9 +36,10 @@
         \nls head cp rm etc.
      \n\n
         Tips.
-\n1. The App supports waifu2x, but does not include the model and preset commands.
+\n1. Pleas visit https://github.com/tumuyan/RealSR-NCNN-Android#how-to-use-realsr-ncnn-android-gui for more information.
+\n2. The App supports waifu2x, but does not include the model and preset commands.
 If you need to use waifu2x, please download and unzip to get the model and add waifu2x commands in the extra command, such as ./waifu2x-ncnn -i input.png -o output.png -m /sdcard/10086/models-upconv_7_photo (/sdcard/10086/models-upconv_7_photo is the path where the model you placed)
-\n2. you can download other esrgan models and use them yourself.
+\n3. You can download other esrgan models and use them yourself.
 https://upscale.wiki/wiki/Model_Database There are many models here, download the .pth models and convert it to ncnn models in Windows. The conversion steps are as follows: download cupscal https://github.com/n00mkrad/cupscale/releases , unzip cupscal, open CupscaleData\bin\pth2ncnn, use pth2ncnn.exe to convert pth files to ncnn file. Rename the models folder with a suffix of models-Real- or models-ESRGAN-, copy the folder to your phone, add add extra commands in the settings Activity and save. Command just like ./realsr-ncnn -i input.png -o output.png -m /sdcard/10086/models-Real-4x-UltraSharp
 (/sdcard/10086/models-Real-4x-UltraSharp is the path to the folder where you save your models)
 
@@ -73,6 +74,8 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="output_not_exits">Error: there is no file to export</string>
     <string name="image_not_exists">Image not exists</string>
     <string name="preprocess_to_png">Preprocess input image (not webp/png/jpg/bmp) to png</string>
+    <string name="extra_path">Path for custom models (RealSR/ESRGAN/Waifu2x)</string>
+    <string name="path_not_exist">Not exist this directory</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>

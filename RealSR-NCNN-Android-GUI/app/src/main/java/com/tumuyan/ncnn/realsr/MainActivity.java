@@ -39,7 +39,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1;
@@ -162,27 +166,91 @@ public class MainActivity extends AppCompatActivity {
         useCPU = mySharePerferences.getBoolean("useCPU", false);
         format = mySharePerferences.getInt("format", 0);
 
-        String extra = mySharePerferences.getString("extraCommand", "").trim();
-        if (extra.length() > 0) {
-            String[] extraCommand = extra.split("\n");
-            Log.i("extraCommand", "length=" + extraCommand.length);
+        List<String> extraCmd = getExtraCommands(
+                mySharePerferences.getString("extraPath", "").trim()
+                ,mySharePerferences.getString("extraCommand", "").trim()
+        );
 
-            String[] cmds = new String[extraCommand.length + command.length];
-
+        if(extraCmd.size()>0){
             String[] presetCommand = getResources().getStringArray(R.array.style_array);
-
-            for (int i = 0; i < command.length; i++) {
-                cmds[i] = presetCommand[i];
-            }
-
-            for (int i = 0; i < extraCommand.length; i++) {
-                cmds[command.length + i] = extraCommand[i];
-            }
-
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, cmds);
+            extraCmd.addAll(0, Arrays.asList(presetCommand));
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, extraCmd);
             spinner.setAdapter(adapter);
         }
+
         spinner.setSelection(selectCommand);
+    }
+
+    /**
+     * 生成用户自定义命令
+     * @param extraPath 自定义模型路径
+     * @param extraCommand     用户预设命令
+     * @return          全部扩展命令
+     */
+    private static List<String> getExtraCommands(String  extraPath, String extraCommand) {
+
+        // 解析外置模型的路径
+        List<String> list = new ArrayList<>();
+
+        if (!extraCommand.isEmpty()) {
+            String[] cmds = extraCommand.split("\n");
+            list.addAll(Arrays.asList(cmds));
+        }
+
+        if (!extraPath.isEmpty()) {
+            File[] folders = new File(extraPath).listFiles();
+            for (File folder : folders) {
+                String name = folder.getName();
+                if (folder.isDirectory() && name.startsWith("models")) {
+
+                    // 匹配realsr模型
+                    String scaleMatcher = ".*x(\\d+).*";
+                    String noiseMatcher = "";
+                    String command = "./realsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
+
+                    // 匹配waifu2x模型
+                    if (name.matches("models-(cugan|cunet|upconv).*")) {
+                        scaleMatcher = ".*scale(\\d+).*";
+                        command = "./waifu2x-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
+                        noiseMatcher = "noise(\\d+).*";
+                    }
+
+                    List<String> scales = genCmdFromModel(folder, scaleMatcher, noiseMatcher);
+                    for (String s : scales) {
+                        list.add(command + s);
+                    }
+                }
+            }
+        }
+        return list;
+    }
+
+
+    /**
+     * 从用户自定义模型路径加载文件，自动列出可用命令
+     * @param folder        自定义模型目录
+     * @param scaleMatcher  缩放倍率抓取规则
+     * @param noiseMatcher  降噪系数抓取规则
+     * @return
+     */
+    private static List<String> genCmdFromModel(File folder, String scaleMatcher, String noiseMatcher){
+        List<String> list = new ArrayList<>();
+        File[] files = folder.listFiles();
+        for(File f:files){
+            // 只解析整数倍缩放
+            String s = (f.getName().toLowerCase(Locale.ROOT).replaceFirst(scaleMatcher,"$1"));
+
+            if(!noiseMatcher.isEmpty()) {
+                String noise = f.getName().toLowerCase(Locale.ROOT).replaceFirst(noiseMatcher, "$1");
+                if (noise.matches("\\d+")) {
+                    int n = Integer.parseInt(noise);
+                    s = s + " -n " + n;
+                }
+            }
+            if(!list.contains(s))
+                list.add(s);
+        }
+        return list;
     }
 
     @Override

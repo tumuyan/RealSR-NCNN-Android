@@ -88,6 +88,21 @@
             android:textAlignment="center" />
 
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/extra_path"
+            android:textSize="18sp" />
+
+        <EditText
+            android:id="@+id/editExtraPath"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/round_corner_bg"
+            android:ems="10"
+            android:padding="5dp" />
+
 
         <TextView
             android:layout_width="match_parent"
