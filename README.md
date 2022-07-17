@@ -212,7 +212,7 @@ input & output
 ## Others project in this Repository
 Building and usage is same as RealSR-NCNN-Android-CLI
 
-## Thanks to
+## Acknowledgement
 ### original super-resolution projects
 - https://github.com/xinntao/Real-ESRGAN
 - https://github.com/jixiaozhong/RealSR

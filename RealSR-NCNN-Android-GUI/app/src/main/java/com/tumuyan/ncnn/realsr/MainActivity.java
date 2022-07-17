@@ -79,8 +79,6 @@ public class MainActivity extends AppCompatActivity {
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 4",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime -s 2",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime",
-            "./realsr-ncnn -i input.png -o output.png  -m models-DF2K_JPEG",
-            "./realsr-ncnn -i input.png -o output.png  -m models-DF2K",
             "./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 4",
             "./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 3",
             "./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 2",
@@ -108,21 +106,6 @@ public class MainActivity extends AppCompatActivity {
             "./magick input.png -resize 25% output.png",
             "./magick input.png -resize 33.33% output.png",
             "./magick input.png -resize 50% output.png",
-            "./magick input.png -filter Hermite   -resize 200%   output.png",
-            "./magick input.png -filter Hermite   -resize 400%   output.png",
-            "./magick input.png -filter Hermite   -resize 1000%  output.png",
-            "./magick input.png -filter Hamming   -resize 200%   output.png",
-            "./magick input.png -filter Hamming   -resize 400%   output.png",
-            "./magick input.png -filter Hamming   -resize 1000%  output.png",
-            "./magick input.png -filter Lanczos2  -resize 200%   output.png",
-            "./magick input.png -filter Lanczos2  -resize 400%   output.png",
-            "./magick input.png -filter Lanczos2  -resize 1000%  output.png",
-            "./magick input.png -filter Lagrange  -resize 200%   output.png",
-            "./magick input.png -filter Lagrange  -resize 400%   output.png",
-            "./magick input.png -filter Lagrange  -resize 1000%  output.png",
-            "./magick input.png -filter Mitchell  -resize 200%   output.png",
-            "./magick input.png -filter Mitchell  -resize 400%   output.png",
-            "./magick input.png -filter Mitchell  -resize 1000%  output.png",
 
     };
     private int tileSize;
@@ -169,10 +152,10 @@ public class MainActivity extends AppCompatActivity {
 
         List<String> extraCmd = getExtraCommands(
                 mySharePerferences.getString("extraPath", "").trim()
-                ,mySharePerferences.getString("extraCommand", "").trim()
+                , mySharePerferences.getString("extraCommand", "").trim()
         );
 
-        if(extraCmd.size()>0){
+        if (extraCmd.size() > 0) {
             String[] presetCommand = getResources().getStringArray(R.array.style_array);
             extraCmd.addAll(0, Arrays.asList(presetCommand));
             ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, extraCmd);
@@ -184,11 +167,12 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * 生成用户自定义命令. 自定义模型路径的命令与App预设命令有一样的外观和特性
-     * @param extraPath 自定义模型路径
-     * @param extraCommand     用户预设命令
-     * @return          全部扩展命令
+     *
+     * @param extraPath    自定义模型路径
+     * @param extraCommand 用户预设命令
+     * @return 全部扩展命令
      */
-    private List<String> getExtraCommands(String  extraPath, String extraCommand) {
+    private List<String> getExtraCommands(String extraPath, String extraCommand) {
 
         // 解析结果，包含模型目录、用户自定义命令（命令列表）
         List<String> cmdList = new ArrayList<>();
@@ -204,27 +188,54 @@ public class MainActivity extends AppCompatActivity {
                 if (folder.isDirectory() && name.startsWith("models")) {
 
                     // 匹配realsr模型
-                    String model = name.replace("models-","");
+                    String model = name.replace("models-", "");
                     String scaleMatcher = ".*x(\\d+).*";
                     String noiseMatcher = "";
                     String command = "./realsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
 
                     // 匹配waifu2x模型
                     if (name.matches("models-(cugan|cunet|upconv).*")) {
-                        model =name.replace("models-","Waifu2x-") ;
+                        model = name.replace("models-", "Waifu2x-");
                         scaleMatcher = ".*scale(\\d+).*";
                         command = "./waifu2x-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
                         noiseMatcher = "noise(\\d+).*";
+                    } else if (name.startsWith("models-DF2K")) {
+                        model = name.replace("models-", "RealSR-");
                     }
 
                     List<String> suffix = genCmdFromModel(folder, scaleMatcher, noiseMatcher);
                     for (String s : suffix) {
                         cmdList.add(command + s);
-                        cmdLabel.add(model + "-x" + s.replace(" -n ","-noise"));
+                        cmdLabel.add(model + "-x" + s.replace(" -n ", "-noise"));
                     }
                 }
             }
         }
+
+        String[] magickFilters = {
+                "Hermite",
+                "Hermite",
+                "Hamming",
+                "Lanczos",
+                "LanczosRadius",
+                "Lanczos2",
+                "LanczosSharp",
+                "Lanczos2Sharp",
+                "Lagrange",
+                "Mitchell",
+                "Blackman",
+        };
+
+        String[] magickResize = {
+                "200%", "400%", "1000%"
+        };
+        for (String f : magickFilters) {
+            for (String s : magickResize) {
+                cmdList.add("./magick input.png -filter " + f + " -resize " + s + " output.png");
+                cmdLabel.add("Magick-" + f + "-x" + s.replaceFirst("(\\d+)00%", "$1"));
+            }
+        }
+
 
         // 模型目录显示label
         if (cmdList.size() > 0) {
@@ -251,26 +262,27 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * 从用户自定义模型路径加载文件，自动列出可用命令
-     * @param folder        自定义模型目录
-     * @param scaleMatcher  缩放倍率抓取规则
-     * @param noiseMatcher  降噪系数抓取规则
+     *
+     * @param folder       自定义模型目录
+     * @param scaleMatcher 缩放倍率抓取规则
+     * @param noiseMatcher 降噪系数抓取规则
      * @return
      */
-    private static List<String> genCmdFromModel(File folder, String scaleMatcher, String noiseMatcher){
+    private static List<String> genCmdFromModel(File folder, String scaleMatcher, String noiseMatcher) {
         List<String> list = new ArrayList<>();
         File[] files = folder.listFiles();
-        for(File f:files){
+        for (File f : files) {
             // 只解析整数倍缩放
-            String s = (f.getName().toLowerCase(Locale.ROOT).replaceFirst(scaleMatcher,"$1"));
+            String s = (f.getName().toLowerCase(Locale.ROOT).replaceFirst(scaleMatcher, "$1"));
 
-            if(!noiseMatcher.isEmpty()) {
+            if (!noiseMatcher.isEmpty()) {
                 String noise = f.getName().toLowerCase(Locale.ROOT).replaceFirst(noiseMatcher, "$1");
                 if (noise.matches("\\d+")) {
                     int n = Integer.parseInt(noise);
                     s = s + " -n " + n;
                 }
             }
-            if(!list.contains(s))
+            if (!list.contains(s))
                 list.add(s);
         }
         return list;
@@ -774,7 +786,7 @@ public class MainActivity extends AppCompatActivity {
             if ((read = in.read(buffer)) != -1) {
                 if (prePng) {
                     match = PreprocessToPng.match(buffer);
-                    if (match>=0) {
+                    if (match >= 0) {
                         file = new File(dir + "/tmp");
                         if (file.exists()) {
                             file.delete();

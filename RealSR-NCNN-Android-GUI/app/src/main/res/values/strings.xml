@@ -98,8 +98,6 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
         <item>real-esrganv3-anime-x4</item>
         <item>real-esrganv2-anime-x2</item>
         <item>real-esrganv2-anime-x4 (fast but oversharpening)</item>
-        <item>realsr-df2k-jpeg-x4</item>
-        <item>realsr-df2k-x4</item>
         <item>srmd-x4</item>
         <item>srmd-x3</item>
         <item>srmd-x2</item>
@@ -127,21 +125,6 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
         <item>magick-25%</item>
         <item>magick-33%</item>
         <item>magick-50%</item>
-        <item>magick-Hermite-x2</item>
-        <item>magick-Hermite-x4</item>
-        <item>magick-Hermite-x10</item>
-        <item>magick-Hamming-x2</item>
-        <item>magick-Hamming-x4</item>
-        <item>magick-Hamming-x10</item>
-        <item>magick-Lanczos2-x2</item>
-        <item>magick-Lanczos2-x4</item>
-        <item>magick-Lanczos2-x10</item>
-        <item>magick-Lagrange-x2</item>
-        <item>magick-Lagrange-x4</item>
-        <item>magick-Lagrange-x10</item>
-        <item>magick-Mitchell-x2</item>
-        <item>magick-Mitchell-x4</item>
-        <item>magick-Mitchell-x10</item>
     </string-array>
 
 </resources>
