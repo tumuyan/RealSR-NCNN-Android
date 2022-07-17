@@ -289,12 +289,27 @@ public class MainActivity extends AppCompatActivity {
         List<String> list = new ArrayList<>();
         File[] files = folder.listFiles();
 
-        for (File f : files) {
+        List<String> names = new ArrayList<>();
+        for(File f: files){
+            String name = f.getName().toLowerCase(Locale.ROOT);
+            if(name.endsWith("bin"))
+                names.add(name);
+        }
+
+        String[] fileNames = names.toArray(new String[0]);
+
+        Arrays.sort(fileNames);
+
+        for (String name:fileNames) {
             // 只解析整数倍缩放
-            String s = (f.getName().toLowerCase(Locale.ROOT).replaceFirst(scaleMatcher, "$1"));
+            String s;
+            if (name.matches(scaleMatcher))
+                s = (name.replaceFirst(scaleMatcher, "$1"));
+            else
+                s = "1";
 
             if (!noiseMatcher.isEmpty()) {
-                String noise = f.getName().toLowerCase(Locale.ROOT).replaceFirst(noiseMatcher, "$1");
+                String noise = name.replaceFirst(noiseMatcher, "$1");
                 if (noise.matches("\\d+")) {
                     int n = Integer.parseInt(noise);
                     s = s + " -n " + n;
