@@ -114,13 +114,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
         <item>classical-nearest-x4</item>
         <item>classical-bilinear-x2</item>
         <item>classical-bilinear-x4</item>
-        <item>classical-bicubic-x2</item>
-        <item>classical-bicubic-x4</item>
         <item>classical-avir-x0.5</item>
-        <item>classical-avir-x2</item>
-        <item>classical-avir-x4</item>
-        <item>classical-avir-lancir-x2</item>
-        <item>classical-avir-lancir-x4</item>
         <item>classical-de-nearest</item>
         <item>magick-25%</item>
         <item>magick-33%</item>

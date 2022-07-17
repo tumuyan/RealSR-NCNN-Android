@@ -41,6 +41,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -95,18 +96,11 @@ public class MainActivity extends AppCompatActivity {
             "./resize-ncnn -i input.png -o output.png  -m nearest  -n -s 4",
             "./resize-ncnn -i input.png -o output.png  -m bilinear -n -s 2",
             "./resize-ncnn -i input.png -o output.png  -m bilinear -n -s 4",
-            "./resize-ncnn -i input.png -o output.png  -m bicubic -s 2",
-            "./resize-ncnn -i input.png -o output.png  -m bicubic -s 4",
             "./resize-ncnn -i input.png -o output.png  -m avir -s 0.5",
-            "./resize-ncnn -i input.png -o output.png  -m avir -s 2",
-            "./resize-ncnn -i input.png -o output.png  -m avir -s 4",
-            "./resize-ncnn -i input.png -o output.png  -m avir-lancir -s 2",
-            "./resize-ncnn -i input.png -o output.png  -m avir-lancir -s 4",
             "./resize-ncnn -i input.png -o output.png  -m de-nearest",
             "./magick input.png -resize 25% output.png",
             "./magick input.png -resize 33.33% output.png",
             "./magick input.png -resize 50% output.png",
-
     };
     private int tileSize;
     private boolean useCPU;
@@ -180,9 +174,59 @@ public class MainActivity extends AppCompatActivity {
         // 解析模型目录的结果（下拉列表中的label）
         List<String> cmdLabel = new ArrayList<>();
 
+        // 增加resize-ncnn经典插值放大的命令
+        String[] classicalFilters = {
+                "bicubic",
+                "avir",
+                "avir-lancir",
+        };
+
+        String[] classicalResize = {
+                "2", "4"
+        };
+
+        for (String f : classicalFilters) {
+            for (String s : classicalResize) {
+                cmdList.add("./resize-ncnn -i input.png -o output.png  -m " + f + " -s " + s);
+                cmdLabel.add("Classical-" + f + "-x" + s);
+            }
+        }
+
+        // 增加magick插值放大的命令
+        String[] magickFilters = {
+                "Hermite",
+                "Hermite",
+                "Hamming",
+                "Lanczos",
+                "LanczosRadius",
+                "Lanczos2",
+                "LanczosSharp",
+                "Lanczos2Sharp",
+                "Lagrange",
+                "Mitchell",
+                "Blackman",
+        };
+
+        String[] magickResize = {
+                "200%", "400%", "1000%"
+        };
+
+        for (String f : magickFilters) {
+            for (String s : magickResize) {
+                cmdList.add("./magick input.png -filter " + f + " -resize " + s + " output.png");
+                cmdLabel.add("Magick-" + f + "-x" + s.replaceFirst("(\\d+)00%", "$1"));
+            }
+        }
+
 
         if (!extraPath.isEmpty()) {
             File[] folders = new File(extraPath).listFiles();
+            Arrays.sort(folders, new Comparator() {
+                @Override
+                public int compare(Object a, Object b) {
+                    return ((File) a).getName().compareTo(((File) b).getName());
+                }
+            });
             for (File folder : folders) {
                 String name = folder.getName();
                 if (folder.isDirectory() && name.startsWith("models")) {
@@ -212,43 +256,16 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        String[] magickFilters = {
-                "Hermite",
-                "Hermite",
-                "Hamming",
-                "Lanczos",
-                "LanczosRadius",
-                "Lanczos2",
-                "LanczosSharp",
-                "Lanczos2Sharp",
-                "Lagrange",
-                "Mitchell",
-                "Blackman",
-        };
-
-        String[] magickResize = {
-                "200%", "400%", "1000%"
-        };
-        for (String f : magickFilters) {
-            for (String s : magickResize) {
-                cmdList.add("./magick input.png -filter " + f + " -resize " + s + " output.png");
-                cmdLabel.add("Magick-" + f + "-x" + s.replaceFirst("(\\d+)00%", "$1"));
-            }
-        }
-
 
         // 模型目录显示label
-        if (cmdList.size() > 0) {
-            int l = command_0.length;
-            command = new String[cmdList.size() + l];
+        int l = command_0.length;
+        command = new String[cmdList.size() + l];
 
-            for (int i = 0; i < l; i++)
-                command[i] = command_0[i];
-            for (int i = 0; i < cmdList.size(); i++)
-                command[l + i] = cmdList.get(i);
-        } else {
-            command = command_0.clone();
-        }
+        for (int i = 0; i < l; i++)
+            command[i] = command_0[i];
+        for (int i = 0; i < cmdList.size(); i++)
+            command[l + i] = cmdList.get(i);
+
 
         // 预设命令显示命令
         if (!extraCommand.isEmpty()) {
@@ -271,6 +288,7 @@ public class MainActivity extends AppCompatActivity {
     private static List<String> genCmdFromModel(File folder, String scaleMatcher, String noiseMatcher) {
         List<String> list = new ArrayList<>();
         File[] files = folder.listFiles();
+
         for (File f : files) {
             // 只解析整数倍缩放
             String s = (f.getName().toLowerCase(Locale.ROOT).replaceFirst(scaleMatcher, "$1"));
