@@ -76,6 +76,15 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="preprocess_to_png">Preprocess input image (not webp/png/jpg/bmp) to png</string>
     <string name="extra_path">Path for custom models (RealSR/ESRGAN/Waifu2x)</string>
     <string name="path_not_exist">Not exist this directory</string>
+    <string name="menu_out2in" translatable="false"><![CDATA[Output -> Input]]></string>
+    <string name="menu_de_nearest" >De Nearest</string>
+    <string name="menu_magick4" >Magick 25%</string>
+    <string name="menu_magick3">Magick 33.3%</string>
+    <string name="menu_magick2" >Magick 50%</string>
+    <string name="menu_avir2" >Avir 50%</string>
+    <string name="menu_in">Show input image</string>
+    <string name="menu_out">Show output image</string>
+    <string name="menu_help">Help</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>
@@ -114,11 +123,6 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
         <item>classical-nearest-x4</item>
         <item>classical-bilinear-x2</item>
         <item>classical-bilinear-x4</item>
-        <item>classical-avir-x0.5</item>
-        <item>classical-de-nearest</item>
-        <item>magick-25%</item>
-        <item>magick-33%</item>
-        <item>magick-50%</item>
     </string-array>
 
 </resources>

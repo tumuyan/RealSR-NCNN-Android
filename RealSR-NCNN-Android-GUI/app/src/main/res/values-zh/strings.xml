@@ -12,8 +12,7 @@
         \n酷安下载：https://www.coolapk.com/apk/292197
         \n常见错误：https://note.youdao.com/s/3xv6h5iv
         \n模型和算法的说明：https://note.youdao.com/s/6XlIFbWt
-        \nWaifu2x使用教程: https://note.youdao.com/s/BwDPRoZf
-        \n添加更多ESRGAN模型: https://note.youdao.com/s/XEv68sBU (欢迎在酷安、github或者这篇笔记的评论区讨论这些额外的模型)
+        \n添加更多模型: https://note.youdao.com/s/XEv68sBU (包含waifu2x realsr real-esrgan模型，欢迎在酷安、github或者这篇笔记的评论区讨论这些额外的模型)
 
 
         \n\n\n本应用除使用下拉选项中的预设参数外，还支持在输入框内输入命令。
@@ -90,6 +89,14 @@
     <string name="preprocess_to_png">预处理webp/png/jpg/bmp以外的图片为png</string>
     <string name="extra_path">自定义模型的路径(RealSR/ESRGAN/Waifu2x)</string>
     <string name="path_not_exist">不存在此目录</string>
+    <string name="menu_help">帮助</string>
+    <string name="menu_out">显示处理后的图片</string>
+    <string name="menu_in">显示处理前的图片</string>
+    <string name="menu_de_nearest">DeNearest缩小</string>
+    <string name="menu_magick4">Magick缩小到1/4</string>
+    <string name="menu_magick3">Magick缩小到1/3</string>
+    <string name="menu_magick2">Magick缩小到1/2</string>
+    <string name="menu_avir2">Avir缩小到1/2</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>

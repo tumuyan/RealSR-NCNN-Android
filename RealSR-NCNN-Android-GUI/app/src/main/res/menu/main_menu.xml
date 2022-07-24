@@ -6,4 +6,42 @@
         android:id="@+id/progress"
         android:title="@string/busy"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/menu_out2in"
+        android:title="@string/menu_out2in"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_avir2"
+        android:title="@string/menu_avir2"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_magick2"
+        android:title="@string/menu_magick2"
+        app:showAsAction="never" />
+    <item
+    android:id="@+id/menu_magick3"
+    android:title="@string/menu_magick3"
+    app:showAsAction="never" />
+    <item
+    android:id="@+id/menu_magick4"
+    android:title="@string/menu_magick4"
+    app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_de_nearest"
+        android:title="@string/menu_de_nearest"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_in"
+        android:title="@string/menu_in"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_out"
+        android:title="@string/menu_out"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_help"
+        android:title="@string/menu_help"
+        app:showAsAction="never" />
 </menu>

@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
     // dir="/data/data/com.tumuyan.ncnn.realsr/cache/realsr";
     private String modelName = "SR";
     private SearchView searchView;
-    private MenuItem progress;
+    private MenuItem menuProgress;
     private Spinner spinner;
     private Process process;
     private boolean newTask;
@@ -96,11 +96,6 @@ public class MainActivity extends AppCompatActivity {
             "./resize-ncnn -i input.png -o output.png  -m nearest  -n -s 4",
             "./resize-ncnn -i input.png -o output.png  -m bilinear -n -s 2",
             "./resize-ncnn -i input.png -o output.png  -m bilinear -n -s 4",
-            "./resize-ncnn -i input.png -o output.png  -m avir -s 0.5",
-            "./resize-ncnn -i input.png -o output.png  -m de-nearest",
-            "./magick input.png -resize 25% output.png",
-            "./magick input.png -resize 33.33% output.png",
-            "./magick input.png -resize 50% output.png",
     };
     private int tileSize;
     private boolean useCPU;
@@ -111,17 +106,72 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
-        progress = menu.findItem(R.id.progress);
+        menuProgress = menu.findItem(R.id.progress);
         if (initProcess) {
             initProcess = false;
-            progress.setTitle("");
+            menuProgress.setTitle("");
             Log.i("onCreateOptionsMenu", "onCreate() done");
         }
-        progress.setOnMenuItemClickListener(item -> {
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+
+        final String q;
+        String imageName = "/output.png";
+        int v = item.getItemId();
+        if (v == R.id.progress) {
             stopCommand();
             return false;
-        });
-        return true;
+        } else if (v == R.id.menu_avir2) {
+            q = "./resize-ncnn -i input.png -o output.png  -m avir -s 0.5";
+        } else if (v == R.id.menu_de_nearest) {
+            q = "./resize-ncnn -i input.png -o output.png  -m de-nearest";
+        } else if (v == R.id.menu_magick2) {
+            q = "./magick input.png -resize 50% output.png";
+        } else if (v == R.id.menu_magick3) {
+            q = "./magick input.png -resize 33.33% output.png";
+        } else if (v == R.id.menu_magick4) {
+            q = "./magick input.png -resize 25% output.png";
+        } else if (v == R.id.menu_out2in) {
+            q = "cp output.png input.png";
+            imageName = "/input.png";
+        } else if (v == R.id.menu_in) {
+            q = "in";
+        } else if (v == R.id.menu_out) {
+            q = "out";
+        } else if (v == R.id.menu_help) {
+            q = "help";
+        } else
+            q = "";
+
+        if (!run_fake_command(q)) {
+            stopCommand();
+            String finalImageName = imageName;
+            new Thread(
+                    () -> {
+                        run20(q);
+                        final File finalfile = new File(dir + finalImageName);
+                        if (finalfile.exists()) {
+                            runOnUiThread(
+                                    () -> {
+                                        imageView.setVisibility(View.VISIBLE);
+                                        imageView.setImage(ImageSource.uri(finalfile.getAbsolutePath()));
+                                    }
+                            );
+                        } else {
+                            runOnUiThread(
+                                    () -> {
+                                        imageView.setVisibility(View.GONE);
+                                    }
+                            );
+                        }
+                    }
+            ).start();
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -290,9 +340,9 @@ public class MainActivity extends AppCompatActivity {
         File[] files = folder.listFiles();
 
         List<String> names = new ArrayList<>();
-        for(File f: files){
+        for (File f : files) {
             String name = f.getName().toLowerCase(Locale.ROOT);
-            if(name.endsWith("bin"))
+            if (name.endsWith("bin"))
                 names.add(name);
         }
 
@@ -300,7 +350,7 @@ public class MainActivity extends AppCompatActivity {
 
         Arrays.sort(fileNames);
 
-        for (String name:fileNames) {
+        for (String name : fileNames) {
             // 只解析整数倍缩放
             String s;
             if (name.matches(scaleMatcher))
@@ -385,8 +435,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (newText.trim().length() < 2) {
-                    if (progress != null)
-                        progress.setTitle("");
+                    if (menuProgress != null)
+                        menuProgress.setTitle("");
                     return true;
                 }
                 if (imageView.getVisibility() == View.VISIBLE)
@@ -447,7 +497,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btn_run).setOnClickListener(view -> {
-            progress.setTitle("");
+            menuProgress.setTitle("");
             {
                 stopCommand();
                 StringBuffer cmd;
@@ -520,8 +570,8 @@ public class MainActivity extends AppCompatActivity {
 
         requirePremision();
 
-        if (progress != null)
-            progress.setTitle("");
+        if (menuProgress != null)
+            menuProgress.setTitle("");
         else
             initProcess = true;
     }
@@ -628,7 +678,7 @@ public class MainActivity extends AppCompatActivity {
                 || cmd.startsWith("./waifu2x-ncnn")
                 || cmd.startsWith("./magick input.png -")
         ) {
-            runOnUiThread(() -> progress.setTitle(BUSY));
+            runOnUiThread(() -> menuProgress.setTitle(BUSY));
             modelName = "Real-ESRGAN-anime";
             if (cmd.matches(".+\\s-m(\\s+)[^\\s]*models-.+")) {
                 modelName = cmd.replaceFirst(".+\\s-m(\\s+)[^\\s]*models-([^\\s]+).*", "$2");
@@ -709,7 +759,7 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         logTextView.setText(result);
                         if (p)
-                            progress.setTitle(progressText);
+                            menuProgress.setTitle(progressText);
                     });
 
                     Log.d("run20 errorResult", line);
@@ -739,7 +789,7 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         logTextView.setText(result);
                         if (p)
-                            progress.setTitle(progressText);
+                            menuProgress.setTitle(progressText);
                     });
 
                     Log.d("run20 successResult", line);
@@ -772,7 +822,7 @@ public class MainActivity extends AppCompatActivity {
         if (newTask || process == null) {
             runOnUiThread(() -> {
                 logTextView.setText(result.append("\nbreak"));
-                progress.setTitle("");
+                menuProgress.setTitle("");
             });
             return false;
         }
@@ -785,7 +835,7 @@ public class MainActivity extends AppCompatActivity {
                 logTextView.setText(result.append(", ").append(modelName));
             else
                 logTextView.setText(result);
-            progress.setTitle(getResources().getString(R.string.done));
+            menuProgress.setTitle(getResources().getString(R.string.done));
         });
 
         Log.i("run20", "finish");
@@ -795,8 +845,8 @@ public class MainActivity extends AppCompatActivity {
     private void stopCommand() {
         if (process != null) {
             process.destroy();
-            if (progress != null)
-                progress.setTitle("");
+            if (menuProgress != null)
+                menuProgress.setTitle("");
         }
         newTask = true;
     }
@@ -884,16 +934,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean run_fake_command(String q) {
+        if (q == null)
+            return true;
+        if (q.isEmpty())
+            return true;
         if (q.equals("help")) {
             logTextView.setText(getString(R.string.default_log));
         } else if (q.equals("in")) {
-            imageView.setVisibility(View.VISIBLE);
-            imageView.setImage(ImageSource.uri(dir + "/input.png"));
-            logTextView.setText(getString(R.string.lr));
+            File file = new File(dir + "/input.png");
+            showImage(file, getString(R.string.lr));
         } else if (q.equals("out")) {
-            imageView.setVisibility(View.VISIBLE);
-            imageView.setImage(ImageSource.uri(dir + "/output.png"));
-            logTextView.setText(getString(R.string.hr));
+            File file = new File(dir + "/output.png");
+            showImage(file, getString(R.string.hr));
         } else if (q.startsWith("show ")) {
             String path = q.replaceFirst("\\s*show\\s+([^\\s]+)\\s*", "$1");
             File file = new File(path);
@@ -901,19 +953,22 @@ public class MainActivity extends AppCompatActivity {
                 path = dir + "/" + path;
                 file = new File(path);
             }
-
-            if (file.exists()) {
-                imageView.setVisibility(View.VISIBLE);
-                imageView.setImage(ImageSource.uri(path));
-                logTextView.setText(getString(R.string.show) + path);
-            } else {
-                imageView.setVisibility(View.GONE);
-                logTextView.setText(getString(R.string.image_not_exists));
-            }
+            showImage(file, getString(R.string.show) + path);
 
         } else
             return false;
         return true;
+    }
+
+    private void showImage(File file, String info) {
+        if (file.exists()) {
+            imageView.setVisibility(View.VISIBLE);
+            imageView.setImage(ImageSource.uri(file.getAbsolutePath()));
+            logTextView.setText(info);
+        } else {
+            imageView.setVisibility(View.GONE);
+            logTextView.setText(getString(R.string.image_not_exists));
+        }
     }
 }
 
