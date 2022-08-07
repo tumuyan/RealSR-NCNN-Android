@@ -241,6 +241,29 @@ public class MainActivity extends AppCompatActivity {
         }
 
         spinner.setSelection(selectCommand);
+
+    }
+
+
+    public boolean readFileFromShare() {
+        Intent intent = getIntent();
+        String type = intent.getType();
+        if (intent.getAction().equalsIgnoreCase(Intent.ACTION_SEND)) {
+            Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+            if (uri != null) {
+                try {
+                    InputStream in = getContentResolver().openInputStream(uri);
+                    if (null != in)
+                        saveImage(in);
+                    else
+                        Toast.makeText(this, R.string.share_is_null, Toast.LENGTH_SHORT).show();
+                    return true;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -608,6 +631,9 @@ public class MainActivity extends AppCompatActivity {
             menuProgress.setTitle("");
         else
             initProcess = true;
+
+
+        readFileFromShare();
     }
 
     private void requirePremision() {
