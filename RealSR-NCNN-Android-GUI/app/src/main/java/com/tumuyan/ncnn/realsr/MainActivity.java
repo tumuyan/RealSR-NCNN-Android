@@ -55,9 +55,9 @@ public class MainActivity extends AppCompatActivity {
     private SubsamplingScaleImageView imageView;
     private TextView logTextView;
     private boolean initProcess;
-    private final String galleryPath = Environment.getExternalStorageDirectory()
-            + File.separator + Environment.DIRECTORY_DCIM
-            + File.separator + "RealSR" + File.separator;
+    private final String galleryPath =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
+                    + File.separator + "RealSR" + File.separator;
     private File outputFile;
     private String dir;
     // dir="/data/data/com.tumuyan.ncnn.realsr/cache/realsr";
@@ -185,19 +185,49 @@ public class MainActivity extends AppCompatActivity {
         Intent share_intent = new Intent();
         ArrayList<Uri> imageUris = new ArrayList<Uri>();
 
-        File file = new File(dir, path);
-        if (file.exists()) {
+        Uri contentUri = null;
+        File file = null;
+        if (!outputSavePath.isEmpty()) {
+            file = new File(outputSavePath);
+            if (file.exists()) {
+                contentUri = FileProvider.getUriForFile(this,
+                        BuildConfig.APPLICATION_ID + ".fileprovider",
+                        file);
+            }
+        }
 
-            Uri contentUri = FileProvider.getUriForFile(this,
-                    BuildConfig.APPLICATION_ID + ".fileprovider",
-                    file);
+        if (contentUri == null) {
+            file = new File(dir, path);
+            if (file.exists()) {
+                contentUri = FileProvider.getUriForFile(this,
+                        BuildConfig.APPLICATION_ID + ".fileprovider",
+                        file);
+            }
+        }
+
+        if (contentUri != null) {
+
             imageUris.add(contentUri);
+            String suffix = file.getName().replaceFirst(".+\\.([^.]+)$", "$1").toLowerCase(Locale.ROOT);
+            if (suffix.equals("png"))
+                share_intent.setType("image/png");
+            else if (suffix.equals("jpg"))
+                share_intent.setType("image/jpg");
+            else if (suffix.equals("webp"))
+                share_intent.setType("image/webp");
+            else if (suffix.equals("heif"))
+                share_intent.setType("image/heif");
+            else if (suffix.equals("gif"))
+                share_intent.setType("image/gif");
+            else
+                share_intent.setType("image/*");
 
-            share_intent.setAction(Intent.ACTION_SEND_MULTIPLE);//设置分享行为
-            share_intent.setType("image/png");//设置分享内容的类型
+            share_intent.setAction(Intent.ACTION_SEND);//设置分享行为
             share_intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            share_intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, imageUris);
+            share_intent.putExtra(Intent.EXTRA_STREAM, contentUri);
+            Log.i("shareImage()", "uri = " + contentUri.toString());
             startActivity(Intent.createChooser(share_intent, "Share"));
+
         } else {
             Toast.makeText(getApplicationContext(), R.string.output_not_exits, Toast.LENGTH_SHORT).show();
         }
@@ -661,19 +691,23 @@ public class MainActivity extends AppCompatActivity {
             Log.d("run_command", "command=" + command + "; break");
             return false;
         }
+        String cmd[];
+        if (command.startsWith("./magick")) {
+            cmd = new String[]{"/bin/sh", "-c", "cd " + dir + "; export LD_LIBRARY_PATH=" + dir + " ; " + command};
+        } else cmd = new String[]{"/bin/sh", "-c", command};
 
         StringBuilder con = new StringBuilder();
         String result;
 
         try {
-            Process process = Runtime.getRuntime().exec(command);
+            Process process = Runtime.getRuntime().exec(cmd);
             BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
             while ((result = br.readLine()) != null) {
                 con.append(result);
                 con.append('\n');
             }
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
 
@@ -748,7 +782,7 @@ public class MainActivity extends AppCompatActivity {
             os.writeBytes("cd " + dir + "\n");
             os.flush();
 
-            if (cmd.startsWith("./magick")) {
+            if (cmd.startsWith("./magick") || save) {
                 os.writeBytes("export LD_LIBRARY_PATH=" + dir + "\n");
                 os.flush();
             }
@@ -845,7 +879,7 @@ public class MainActivity extends AppCompatActivity {
             if (process.exitValue() != 0)
                 process.destroy();
         } catch (Exception e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         }
 
         if (newTask || process == null) {
