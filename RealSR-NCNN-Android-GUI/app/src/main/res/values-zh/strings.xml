@@ -97,6 +97,7 @@
     <string name="menu_magick3">Magick缩小到1/3</string>
     <string name="menu_magick2">Magick缩小到1/2</string>
     <string name="menu_avir2">Avir缩小到1/2</string>
+    <string name="menu_share">分享处理后的图片</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>

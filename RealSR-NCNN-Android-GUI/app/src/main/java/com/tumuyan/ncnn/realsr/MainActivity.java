@@ -4,18 +4,24 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -124,7 +130,11 @@ public class MainActivity extends AppCompatActivity {
         if (v == R.id.progress) {
             stopCommand();
             return false;
-        } else if (v == R.id.menu_avir2) {
+        } else if(v == R.id.menu_share){
+            shareImage("output.png");
+            return false;
+        }
+        else if (v == R.id.menu_avir2) {
             q = "./resize-ncnn -i input.png -o output.png  -m avir -s 0.5";
         } else if (v == R.id.menu_de_nearest) {
             q = "./resize-ncnn -i input.png -o output.png  -m de-nearest";
@@ -173,6 +183,30 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+
+    public void shareImage( String path) {
+        Intent share_intent = new Intent();
+        ArrayList<Uri> imageUris = new ArrayList<Uri>();
+
+        File file =  new File(dir, path);
+        if(file.exists()) {
+
+            Uri contentUri = FileProvider.getUriForFile(this,
+                     BuildConfig.APPLICATION_ID + ".fileprovider",
+                    file);
+            imageUris.add(contentUri);
+
+            share_intent.setAction(Intent.ACTION_SEND_MULTIPLE);//设置分享行为
+            share_intent.setType("image/png");//设置分享内容的类型
+            share_intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            share_intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, imageUris);
+            startActivity(Intent.createChooser(share_intent, "Share"));
+        }else{
+            Toast.makeText(getApplicationContext(), R.string.output_not_exits, Toast.LENGTH_SHORT).show();
+        }
+    }
+
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {

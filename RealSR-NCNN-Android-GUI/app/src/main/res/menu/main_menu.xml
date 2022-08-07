@@ -40,6 +40,11 @@
         android:id="@+id/menu_out"
         android:title="@string/menu_out"
         app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_share"
+        android:title="@string/menu_share"
+        app:showAsAction="never" />
     <item
         android:id="@+id/menu_help"
         android:title="@string/menu_help"

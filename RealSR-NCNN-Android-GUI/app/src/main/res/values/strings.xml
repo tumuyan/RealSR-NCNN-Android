@@ -85,6 +85,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="menu_in">Show input image</string>
     <string name="menu_out">Show output image</string>
     <string name="menu_help">Help</string>
+    <string name="menu_share">Share output image</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>
