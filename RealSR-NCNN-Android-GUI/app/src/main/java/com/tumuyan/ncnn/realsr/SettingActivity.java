@@ -27,6 +27,7 @@ public class SettingActivity extends AppCompatActivity {
     ToggleButton toggleKeepScreen;
     ToggleButton toggleCPU;
     ToggleButton togglePrePng;
+    ToggleButton toggleAutoSave;
     Spinner spinnerFormat;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
@@ -49,6 +50,7 @@ public class SettingActivity extends AppCompatActivity {
         String extraCommand = mySharePerferences.getString("extraCommand", "");
         String extraPath = mySharePerferences.getString("extraPath","");
         boolean useCPU = mySharePerferences.getBoolean("useCPU", false);
+        boolean autoSave = mySharePerferences.getBoolean("autoSave", false);
         int format = mySharePerferences.getInt("format", 0);
 
         editTile = findViewById(R.id.editTile);
@@ -66,6 +68,8 @@ public class SettingActivity extends AppCompatActivity {
         toggleKeepScreen.setChecked(keepScreen);
         togglePrePng = findViewById(R.id.toggle_pre_png);
         togglePrePng.setChecked(prePng);
+        toggleAutoSave = findViewById(R.id.toggle_auto_save);
+        toggleAutoSave.setChecked(autoSave);
         toggleCPU = findViewById(R.id.toggle_cpu);
         toggleCPU.setChecked(useCPU);
 
@@ -95,6 +99,7 @@ public class SettingActivity extends AppCompatActivity {
             spinner.setSelection(2);
             spinnerFormat.setSelection(0);
             toggleCPU.setChecked(false);
+            toggleAutoSave.setChecked(false);
             editTile.setText("0");
             editThread.setText("");
             editExtraPath.setText("");
@@ -106,6 +111,7 @@ public class SettingActivity extends AppCompatActivity {
             spinner.setSelection(9);
             spinnerFormat.setSelection(0);
             toggleCPU.setChecked(false);
+            toggleAutoSave.setChecked(false);
             editTile.setText("32");
             editThread.setText("1:1:1");
             editExtraPath.setText("");
@@ -169,6 +175,7 @@ public class SettingActivity extends AppCompatActivity {
         editor.putBoolean("keepScreen", toggleKeepScreen.isChecked());
         editor.putBoolean("PrePng",togglePrePng.isChecked());
         editor.putBoolean("useCPU", toggleCPU.isChecked());
+        editor.putBoolean("autoSave", toggleAutoSave.isChecked());
         editor.putInt("format", (int) spinnerFormat.getSelectedItemId());
 
         editor.apply();

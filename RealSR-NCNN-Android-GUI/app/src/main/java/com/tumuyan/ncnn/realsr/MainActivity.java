@@ -8,20 +8,15 @@ import androidx.core.content.FileProvider;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -74,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean newTask;
     private int format;
     private String BUSY;
+    private String outputSavePath = "";
 
     private String[] formats;
 
@@ -107,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean useCPU;
     private boolean keepScreen;
     private boolean prePng;
+    private boolean autoSave;
 
 
     @Override
@@ -130,11 +127,10 @@ public class MainActivity extends AppCompatActivity {
         if (v == R.id.progress) {
             stopCommand();
             return false;
-        } else if(v == R.id.menu_share){
+        } else if (v == R.id.menu_share) {
             shareImage("output.png");
             return false;
-        }
-        else if (v == R.id.menu_avir2) {
+        } else if (v == R.id.menu_avir2) {
             q = "./resize-ncnn -i input.png -o output.png  -m avir -s 0.5";
         } else if (v == R.id.menu_de_nearest) {
             q = "./resize-ncnn -i input.png -o output.png  -m de-nearest";
@@ -185,15 +181,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void shareImage( String path) {
+    public void shareImage(String path) {
         Intent share_intent = new Intent();
         ArrayList<Uri> imageUris = new ArrayList<Uri>();
 
-        File file =  new File(dir, path);
-        if(file.exists()) {
+        File file = new File(dir, path);
+        if (file.exists()) {
 
             Uri contentUri = FileProvider.getUriForFile(this,
-                     BuildConfig.APPLICATION_ID + ".fileprovider",
+                    BuildConfig.APPLICATION_ID + ".fileprovider",
                     file);
             imageUris.add(contentUri);
 
@@ -202,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
             share_intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             share_intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, imageUris);
             startActivity(Intent.createChooser(share_intent, "Share"));
-        }else{
+        } else {
             Toast.makeText(getApplicationContext(), R.string.output_not_exits, Toast.LENGTH_SHORT).show();
         }
     }
@@ -226,6 +222,7 @@ public class MainActivity extends AppCompatActivity {
         keepScreen = mySharePerferences.getBoolean("keepScreen", false);
         prePng = mySharePerferences.getBoolean("PrePng", true);
         useCPU = mySharePerferences.getBoolean("useCPU", false);
+        autoSave = mySharePerferences.getBoolean("autoSave", false);
         format = mySharePerferences.getInt("format", 0);
 
         List<String> extraCmd = getExtraCommands(
@@ -254,7 +251,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     InputStream in = getContentResolver().openInputStream(uri);
                     if (null != in)
-                        saveImage(in);
+                        saveInputImage(in);
                     else
                         Toast.makeText(this, R.string.share_is_null, Toast.LENGTH_SHORT).show();
                     return true;
@@ -508,50 +505,14 @@ public class MainActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btn_save).setOnClickListener(view -> {
-
-            if (!outputFile.exists()) {
-                Toast.makeText(getApplicationContext(), R.string.output_not_exits, Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");
-            String filePath = null;
-            if (format == 0) {
-                filePath = galleryPath + modelName + "_" + f.format(new Date()) + ".png";
-                run_command("cp " + dir + "/output.png " + filePath);
-            } else {
-                // 其他格式需要使用image magic进行转换，会额外消耗时间。但是为了方便，没有写到新线程上。
-                // progress.setTitle(BUSY);
-                if (format == 1) {
-                    filePath = galleryPath + modelName + "_" + f.format(new Date()) + ".webp";
-                    run20("./magick output.png " + filePath);
-                } else if (format == 2) {
-                    filePath = galleryPath + modelName + "_" + f.format(new Date()) + ".gif";
-                    run20("./magick output.png " + filePath);
-                } else if (format == 3) {
-                    filePath = galleryPath + modelName + "_" + f.format(new Date()) + ".heic";
-                    run20("./magick output.png " + filePath);
-                } else {
-                    filePath = galleryPath + modelName + "_" + f.format(new Date()) + ".jpg";
-                    String q = formats[format].replaceAll("[a-zA-Z%\\s]+", "");
-                    if (q.length() > 0) {
-                        run20("./magick output.png -quality " + q + " " + filePath);
-                    } else
-                        run20("./magick output.png " + filePath);
+                    if (!outputFile.exists()) {
+                        Toast.makeText(this, R.string.output_not_exits, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    run_command(saveOutputCmd());
+                    checkSaveOutput();
                 }
-            }
-
-            File file = new File(filePath);
-            if (file.exists()) {
-                Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                Uri uri = Uri.fromFile(file);
-                intent.setData(uri);
-                sendBroadcast(intent);
-                Toast.makeText(getApplicationContext(), R.string.save_succeed, Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(getApplicationContext(), R.string.save_fail, Toast.LENGTH_SHORT).show();
-            }
-        });
+        );
 
         findViewById(R.id.btn_run).setOnClickListener(view -> {
             menuProgress.setTitle("");
@@ -680,7 +641,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     in = getContentResolver().openInputStream(url);
                     if (null != in)
-                        saveImage(in);
+                        saveInputImage(in);
                     else
                         Toast.makeText(this, "input == null", Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
@@ -755,10 +716,11 @@ public class MainActivity extends AppCompatActivity {
                 else
                     modelName = "Magick";
             }
-
         } else
             modelName = "SR";
         final boolean run_ncnn = !modelName.equals("SR");
+        final boolean save = run_ncnn && autoSave;
+
 
         // 对应process进程的3个流
         BufferedReader successResult;
@@ -795,6 +757,13 @@ public class MainActivity extends AppCompatActivity {
 
             os.write(cmd.getBytes());
             os.writeBytes("\n");
+
+            if (save) {
+                os.write(saveOutputCmd().getBytes());
+                os.writeBytes("\n");
+            } else {
+                outputSavePath = "";
+            }
             os.flush();
 
             Log.i("run20", "write cmd finish");
@@ -896,7 +865,16 @@ public class MainActivity extends AppCompatActivity {
             else
                 logTextView.setText(result);
             menuProgress.setTitle(getResources().getString(R.string.done));
+
+            if (save) {
+                if (!outputFile.exists()) {
+                    Toast.makeText(getApplicationContext(), R.string.output_not_exits, Toast.LENGTH_SHORT).show();
+                } else {
+                    checkSaveOutput();
+                }
+            }
         });
+
 
         Log.i("run20", "finish");
         return true;
@@ -911,9 +889,9 @@ public class MainActivity extends AppCompatActivity {
         newTask = true;
     }
 
-    private boolean saveImage(@NonNull InputStream in) {
+    private boolean saveInputImage(@NonNull InputStream in) {
 
-        Log.i("saveImage", "start ");
+        Log.i("saveInputImage", "start ");
         File file = new File(dir + "/input.png");
 
         if (file.exists()) {
@@ -978,9 +956,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        Log.i("saveImage", "decodeFile");
-
-        Log.i("saveImage", "runOnUiThread");
+        Log.i("saveInputImage", "runOnUiThread");
         runOnUiThread(
                 () -> {
                     imageView.setVisibility(View.VISIBLE);
@@ -989,7 +965,7 @@ public class MainActivity extends AppCompatActivity {
                 }
         );
 
-        Log.i("saveImage", "finish");
+        Log.i("saveInputImage", "finish");
         return true;
     }
 
@@ -1029,6 +1005,51 @@ public class MainActivity extends AppCompatActivity {
             imageView.setVisibility(View.GONE);
             logTextView.setText(getString(R.string.image_not_exists));
         }
+    }
+
+    private void checkSaveOutput() {
+        File file = new File(outputSavePath);
+        if (file.exists()) {
+            Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+            Uri uri = Uri.fromFile(file);
+            intent.setData(uri);
+            sendBroadcast(intent);
+            Toast.makeText(getApplicationContext(), R.string.save_succeed, Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(getApplicationContext(), R.string.save_fail, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    private String saveOutputCmd() {
+        SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");
+        String cmd;
+        if (format == 0) {
+            outputSavePath = galleryPath + modelName + "_" + f.format(new Date()) + ".png";
+            cmd = ("cp " + dir + "/output.png " + outputSavePath);
+        } else {
+            // 其他格式需要使用image magic进行转换，会额外消耗时间。但是为了方便，没有写到新线程上。
+            // progress.setTitle(BUSY);
+            if (format == 1) {
+                outputSavePath = galleryPath + modelName + "_" + f.format(new Date()) + ".webp";
+                cmd = ("./magick output.png " + outputSavePath);
+            } else if (format == 2) {
+                outputSavePath = galleryPath + modelName + "_" + f.format(new Date()) + ".gif";
+                cmd = ("./magick output.png " + outputSavePath);
+            } else if (format == 3) {
+                outputSavePath = galleryPath + modelName + "_" + f.format(new Date()) + ".heic";
+                cmd = ("./magick output.png " + outputSavePath);
+            } else {
+                outputSavePath = galleryPath + modelName + "_" + f.format(new Date()) + ".jpg";
+                String q = formats[format].replaceAll("[a-zA-Z%\\s]+", "");
+                if (q.length() > 0) {
+                    cmd = ("./magick output.png -quality " + q + " " + outputSavePath);
+                } else
+                    cmd = ("./magick output.png " + outputSavePath);
+            }
+        }
+
+        return cmd;
     }
 }
 
