@@ -34,7 +34,6 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -94,6 +93,12 @@ public class MainActivity extends AppCompatActivity {
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n -1",
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n 0",
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n 3",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 2  -n -1",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 2  -n 0",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 2  -n 3",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 3  -n -1",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 3  -n 0",
+            "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 3  -n 3",
             "./resize-ncnn -i input.png -o output.png  -m nearest  -n -s 2",
             "./resize-ncnn -i input.png -o output.png  -m nearest  -n -s 4",
             "./resize-ncnn -i input.png -o output.png  -m bilinear -n -s 2",
@@ -168,9 +173,7 @@ public class MainActivity extends AppCompatActivity {
                             );
                         } else {
                             runOnUiThread(
-                                    () -> {
-                                        imageView.setVisibility(View.GONE);
-                                    }
+                                    () -> imageView.setVisibility(View.GONE)
                             );
                         }
                     }
@@ -183,7 +186,6 @@ public class MainActivity extends AppCompatActivity {
 
     public void shareImage(String path) {
         Intent share_intent = new Intent();
-        ArrayList<Uri> imageUris = new ArrayList<Uri>();
 
         Uri contentUri = null;
         File file = null;
@@ -206,26 +208,32 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (contentUri != null) {
-
-            imageUris.add(contentUri);
             String suffix = file.getName().replaceFirst(".+\\.([^.]+)$", "$1").toLowerCase(Locale.ROOT);
-            if (suffix.equals("png"))
-                share_intent.setType("image/png");
-            else if (suffix.equals("jpg"))
-                share_intent.setType("image/jpg");
-            else if (suffix.equals("webp"))
-                share_intent.setType("image/webp");
-            else if (suffix.equals("heif"))
-                share_intent.setType("image/heif");
-            else if (suffix.equals("gif"))
-                share_intent.setType("image/gif");
-            else
-                share_intent.setType("image/*");
+            switch (suffix) {
+                case "png":
+                    share_intent.setType("image/png");
+                    break;
+                case "jpg":
+                    share_intent.setType("image/jpg");
+                    break;
+                case "webp":
+                    share_intent.setType("image/webp");
+                    break;
+                case "heif":
+                    share_intent.setType("image/heif");
+                    break;
+                case "gif":
+                    share_intent.setType("image/gif");
+                    break;
+                default:
+                    share_intent.setType("image/*");
+                    break;
+            }
 
             share_intent.setAction(Intent.ACTION_SEND);//设置分享行为
             share_intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             share_intent.putExtra(Intent.EXTRA_STREAM, contentUri);
-            Log.i("shareImage()", "uri = " + contentUri.toString());
+            Log.i("shareImage()", "uri = " + contentUri);
             startActivity(Intent.createChooser(share_intent, "Share"));
 
         } else {
@@ -263,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
         if (extraCmd.size() > 0) {
             String[] presetCommand = getResources().getStringArray(R.array.style_array);
             extraCmd.addAll(0, Arrays.asList(presetCommand));
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, extraCmd);
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, extraCmd);
             spinner.setAdapter(adapter);
         }
 
@@ -274,7 +282,6 @@ public class MainActivity extends AppCompatActivity {
 
     public boolean readFileFromShare() {
         Intent intent = getIntent();
-        String type = intent.getType();
         if (intent.getAction().equalsIgnoreCase(Intent.ACTION_SEND)) {
             Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
             if (uri != null) {
@@ -355,12 +362,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (!extraPath.isEmpty()) {
             File[] folders = new File(extraPath).listFiles();
-            Arrays.sort(folders, new Comparator() {
-                @Override
-                public int compare(Object a, Object b) {
-                    return ((File) a).getName().compareTo(((File) b).getName());
-                }
-            });
+            Arrays.sort(folders, (Comparator) Comparator.comparing(a -> ((File) a).getName()));
             for (File folder : folders) {
                 String name = folder.getName();
                 if (folder.isDirectory() && name.startsWith("models")) {
@@ -395,8 +397,7 @@ public class MainActivity extends AppCompatActivity {
         int l = command_0.length;
         command = new String[cmdList.size() + l];
 
-        for (int i = 0; i < l; i++)
-            command[i] = command_0[i];
+        System.arraycopy(command_0, 0, command, 0, l);
         for (int i = 0; i < cmdList.size(); i++)
             command[l + i] = cmdList.get(i);
 
@@ -417,7 +418,7 @@ public class MainActivity extends AppCompatActivity {
      * @param folder       自定义模型目录
      * @param scaleMatcher 缩放倍率抓取规则
      * @param noiseMatcher 降噪系数抓取规则
-     * @return
+     * @return             模型名称的列表
      */
     private static List<String> genCmdFromModel(File folder, String scaleMatcher, String noiseMatcher) {
         List<String> list = new ArrayList<>();
@@ -499,8 +500,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         selectCommand = mySharePerferences.getInt("selectCommand", 2);
-//        spinner.setSelection(selectCommand);
-//        Log.i("selectCommand ","getconfig r="+selectCommand);
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -583,7 +582,7 @@ public class MainActivity extends AppCompatActivity {
                                     () -> {
                                         imageView.setVisibility(View.VISIBLE);
                                         imageView.setImage(ImageSource.uri(dir + "/output.png"));
-                                        logTextView.setText(getString(R.string.hr) + "\n" + logTextView.getText());
+                                        logTextView.setText(String.format("%s\n%s", getString(R.string.hr), logTextView.getText()));
                                         if (keepScreen) {
                                             view.setKeepScreenOn(false);
                                         }
@@ -594,7 +593,7 @@ public class MainActivity extends AppCompatActivity {
                                     () -> {
                                         imageView.setVisibility(View.VISIBLE);
                                         imageView.setImage(ImageSource.uri(dir + "/input.png"));
-                                        logTextView.setText(getString(R.string.lr) + "\n" + logTextView.getText());
+                                        logTextView.setText(String.format("%s\n%s", getString(R.string.lr), logTextView.getText()));
                                         if (keepScreen) {
                                             view.setKeepScreenOn(false);
                                         }
@@ -609,12 +608,8 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btn_setting).setOnClickListener(view -> {
             Intent intent = new Intent(this, SettingActivity.class);
             this.startActivity(intent);
-
             overridePendingTransition(0, android.R.anim.slide_out_right);
-//            overridePendingTransition(android.R.anim.fade_in, android.R.anim.slide_out_right);
         });
-
-//        System.load(dir + "/libncnn.so");
 
         requirePremision();
 
@@ -622,7 +617,6 @@ public class MainActivity extends AppCompatActivity {
             menuProgress.setTitle("");
         else
             initProcess = true;
-
 
         readFileFromShare();
     }
@@ -649,10 +643,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == MY_PERMISSIONS_REQUEST) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-            } else {
-                // Permission Denied
+            if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(MainActivity.this, "Permission Denied", Toast.LENGTH_SHORT).show();
             }
         }
@@ -691,7 +682,7 @@ public class MainActivity extends AppCompatActivity {
             Log.d("run_command", "command=" + command + "; break");
             return false;
         }
-        String cmd[];
+        String[] cmd;
         if (command.startsWith("./magick")) {
             cmd = new String[]{"/bin/sh", "-c", "cd " + dir + "; export LD_LIBRARY_PATH=" + dir + " ; " + command};
         } else cmd = new String[]{"/bin/sh", "-c", command};
@@ -738,7 +729,7 @@ public class MainActivity extends AppCompatActivity {
             if (cmd.matches(".+\\s-m(\\s+)[^\\s]*models-.+")) {
                 modelName = cmd.replaceFirst(".+\\s-m(\\s+)[^\\s]*models-([^\\s]+).*", "$2");
             }
-            if (modelName.matches("(se|nose)")) {
+            if (modelName.matches("(se|nose|pro)")) {
                 modelName = "Real-CUGAN-" + modelName;
             } else if (cmd.matches(".+\\s-m(\\s+)(bicubic|bilinear|nearest|avir|de-nearest).*")) {
                 modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest|lancir|avir|de-nearest).*", "Classical-$2");
@@ -970,8 +961,6 @@ public class MainActivity extends AppCompatActivity {
                         bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
                         out.flush();
                         out.close();
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

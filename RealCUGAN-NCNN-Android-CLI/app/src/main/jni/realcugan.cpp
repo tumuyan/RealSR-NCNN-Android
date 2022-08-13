@@ -2179,8 +2179,6 @@ int RealCUGAN::process_se_sync_gap(const ncnn::Mat& inimage, const std::vector<s
     std::vector<ncnn::VkMat> avgfeats(names.size());
     for (size_t i = 0; i < names.size(); i++)
     {
-        fprintf(stderr, "gap sync %s\n", names[i].c_str());
-
         for (int j = 0; j < tiles; j++)
         {
             if (opt.use_fp16_storage && ncnn::cpu_support_arm_asimdhp() && feats_cpu[i][j].elembits() == 16)
@@ -2602,8 +2600,6 @@ int RealCUGAN::process_se_very_rough_sync_gap(const ncnn::Mat& inimage, const st
     std::vector<ncnn::VkMat> avgfeats(names.size());
     for (size_t i = 0; i < names.size(); i++)
     {
-        fprintf(stderr, "gap sync %s\n", names[i].c_str());
-
         for (int j = 0; j < tiles; j++)
         {
             if (opt.use_fp16_storage && ncnn::cpu_support_arm_asimdhp() && feats_cpu[i][j].elembits() == 16)
@@ -3423,8 +3419,6 @@ int RealCUGAN::process_cpu_se_sync_gap(const ncnn::Mat& inimage, const std::vect
     std::vector<ncnn::Mat> avgfeats(names.size());
     for (size_t i = 0; i < names.size(); i++)
     {
-        fprintf(stderr, "gap sync %s\n", names[i].c_str());
-
         // handle feats[i] vector
         {
             ncnn::Mat avgfeat;
@@ -3780,8 +3774,6 @@ int RealCUGAN::process_cpu_se_very_rough_sync_gap(const ncnn::Mat& inimage, cons
     std::vector<ncnn::Mat> avgfeats(names.size());
     for (size_t i = 0; i < names.size(); i++)
     {
-        fprintf(stderr, "gap sync %s\n", names[i].c_str());
-
         // handle feats[i] vector
         {
             ncnn::Mat avgfeat;

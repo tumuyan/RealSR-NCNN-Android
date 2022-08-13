@@ -54,7 +54,7 @@ public class SettingActivity extends AppCompatActivity {
         int format = mySharePerferences.getInt("format", 0);
 
         editTile = findViewById(R.id.editTile);
-        editTile.setText("" + tileSize);
+        editTile.setText(String.format("%d", tileSize));
         editDefaultCommand = findViewById(R.id.editDefaultCommand);
         editDefaultCommand.setText(defaultCommand);
         editExtraCommand = findViewById(R.id.editExtraCommand);

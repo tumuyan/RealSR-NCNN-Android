@@ -122,6 +122,12 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
         <item>real-cugan-x4-conservative</item>
         <item>real-cugan-x4-noise0</item>
         <item>real-cugan-x4-noise3</item>
+        <item>real-cugan-pro-x2-conservative</item>
+        <item>real-cugan-pro-x2-noise0</item>
+        <item>real-cugan-pro-x2-noise3</item>
+        <item>real-cugan-pro-x3-conservative</item>
+        <item>real-cugan-pro-x3-noise0</item>
+        <item>real-cugan-pro-x3-noise3</item>
         <item>classical-nearest-x2</item>
         <item>classical-nearest-x4</item>
         <item>classical-bilinear-x2</item>
