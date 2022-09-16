@@ -704,6 +704,8 @@ int RealCUGAN::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                 cmd.submit_and_wait();
                 cmd.reset();
             }
+
+            fprintf(stderr, "%.2f%%\n", (float)(yi * xtiles + xi) / (ytiles * xtiles) * 100);
         }
 
         // download
@@ -1158,6 +1160,8 @@ int RealCUGAN::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
 #endif
                 }
             }
+
+            fprintf(stderr, "%.2f%%\n", (float)(yi * xtiles + xi) / (ytiles * xtiles) * 100);
         }
     }
 
@@ -2071,6 +2075,9 @@ int RealCUGAN::process_se_stage2(const ncnn::Mat& inimage, const std::vector<std
                 cmd.submit_and_wait();
                 cmd.reset();
             }
+
+
+            fprintf(stderr, "%.2f%%\n", (float)(yi * xtiles + xi) / (ytiles * xtiles) * 100);
         }
 
         // download
@@ -3361,6 +3368,9 @@ int RealCUGAN::process_cpu_se_stage2(const ncnn::Mat& inimage, const std::vector
 #endif
                 }
             }
+
+
+            fprintf(stderr, "%.2f%%\n", (float)(yi * xtiles + xi) / (ytiles * xtiles) * 100);
         }
     }
 
