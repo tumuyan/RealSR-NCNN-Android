@@ -24,15 +24,16 @@ public class SettingActivity extends AppCompatActivity {
     EditText editThread;
     EditText editExtraCommand;
     EditText editExtraPath;
+    EditText editSavePath;
     ToggleButton toggleKeepScreen;
     ToggleButton toggleCPU;
     ToggleButton togglePrePng;
     ToggleButton toggleAutoSave;
     ToggleButton toggleSearchView;
-    Spinner spinnerFormat;
+    Spinner spinnerFormat, spinnerName;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
-            + File.separator + "RealSR" + File.separator;
+            + File.separator + "RealSR";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,11 +50,13 @@ public class SettingActivity extends AppCompatActivity {
         boolean keepScreen = mySharePerferences.getBoolean("keepScreen", false);
         boolean prePng = mySharePerferences.getBoolean("PrePng", true);
         String extraCommand = mySharePerferences.getString("extraCommand", "");
-        String extraPath = mySharePerferences.getString("extraPath","");
+        String extraPath = mySharePerferences.getString("extraPath", "");
+        String savePath = mySharePerferences.getString("savePath", "");
         boolean useCPU = mySharePerferences.getBoolean("useCPU", false);
         boolean autoSave = mySharePerferences.getBoolean("autoSave", false);
         boolean showSearchView = mySharePerferences.getBoolean("showSearchView", false);
         int format = mySharePerferences.getInt("format", 0);
+        int name = mySharePerferences.getInt("name", 0);
 
         editTile = findViewById(R.id.editTile);
         editTile.setText(String.format("%d", tileSize));
@@ -64,6 +67,9 @@ public class SettingActivity extends AppCompatActivity {
         editExtraCommand.setHint("./waifu2x-ncnn -i input.png -o output.png -m " + galleryPath + "cunet");
         editExtraPath = findViewById(R.id.editExtraPath);
         editExtraPath.setText(extraPath);
+        editSavePath = findViewById(R.id.editSavePath);
+        editSavePath.setText(savePath);
+        editSavePath.setHint(galleryPath);
         editThread = findViewById(R.id.editThread);
         editThread.setText(threadCount);
         toggleKeepScreen = findViewById(R.id.toggle_keep_screen);
@@ -79,6 +85,9 @@ public class SettingActivity extends AppCompatActivity {
 
         spinnerFormat = findViewById(R.id.spinner_format);
         spinnerFormat.setSelection(format);
+
+        spinnerName = findViewById(R.id.spinner_name);
+        spinnerName.setSelection(name);
 
         Spinner spinner = findViewById(R.id.spinner);
         spinner.setSelection(selectCommand);
@@ -102,9 +111,11 @@ public class SettingActivity extends AppCompatActivity {
         findViewById(R.id.btn_reset).setOnClickListener(v -> {
             spinner.setSelection(2);
             spinnerFormat.setSelection(0);
+            spinnerName.setSelection(0);
             toggleCPU.setChecked(false);
             toggleAutoSave.setChecked(false);
             toggleSearchView.setChecked(false);
+            editSavePath.setText("");
             editTile.setText("0");
             editThread.setText("");
             editExtraPath.setText("");
@@ -115,9 +126,11 @@ public class SettingActivity extends AppCompatActivity {
         findViewById(R.id.btn_reset_low).setOnClickListener(v -> {
             spinner.setSelection(9);
             spinnerFormat.setSelection(0);
+            spinnerName.setSelection(0);
             toggleCPU.setChecked(false);
             toggleAutoSave.setChecked(false);
             toggleSearchView.setChecked(false);
+            editSavePath.setText("");
             editTile.setText("32");
             editThread.setText("1:1:1");
             editExtraPath.setText("");
@@ -162,28 +175,43 @@ public class SettingActivity extends AppCompatActivity {
         }
 
         String extraPath = editExtraPath.getText().toString().trim();
-        if(!extraPath.isEmpty()){
+        if (!extraPath.isEmpty()) {
             File file = new File(extraPath);
-            if(!file.exists()){
+            if (!file.exists()) {
                 editExtraPath.setError(getString(R.string.path_not_exist));
                 return;
             }
-            if(!file.isDirectory()){
+            if (!file.isDirectory()) {
                 editExtraPath.setError(getString(R.string.path_not_exist));
                 return;
             }
         }
         editor.putString("extraPath", extraPath);
 
+        String savePath = editSavePath.getText().toString().trim();
+        if (!savePath.isEmpty()) {
+            File file = new File(extraPath);
+            if (!file.exists()) {
+                editSavePath.setError(getString(R.string.path_not_exist));
+                return;
+            }
+            if (!file.isDirectory()) {
+                editSavePath.setError(getString(R.string.path_not_exist));
+                return;
+            }
+        }
+        editor.putString("savePath", savePath);
+
         editThread.setText(threadCount);
         editor.putString("threadCount", threadCount);
 
         editor.putBoolean("keepScreen", toggleKeepScreen.isChecked());
-        editor.putBoolean("PrePng",togglePrePng.isChecked());
+        editor.putBoolean("PrePng", togglePrePng.isChecked());
         editor.putBoolean("useCPU", toggleCPU.isChecked());
         editor.putBoolean("autoSave", toggleAutoSave.isChecked());
         editor.putBoolean("showSearchView", toggleSearchView.isChecked());
         editor.putInt("format", (int) spinnerFormat.getSelectedItemId());
+        editor.putInt("name", (int) spinnerName.getSelectedItemId());
 
         editor.apply();
     }

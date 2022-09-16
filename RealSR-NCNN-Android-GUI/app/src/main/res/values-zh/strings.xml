@@ -101,6 +101,8 @@
     <string name="share_is_null">没有收到分享的文件</string>
     <string name="auto_save">处理结束后自动导出到相册</string>
     <string name="show_serarch_view">显示命令输入框</string>
+    <string name="save_name">导出时使用的文件名</string>
+    <string name="save_path">导出图片的路径</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>
@@ -133,5 +135,11 @@
             <item>classical-avir-lancir-x2</item>
             <item>classical-avir-lancir-x4</item>
         </string-array>-->
-
+    <string-array name="name">
+        <item>算法-时间</item>
+        <item>原文件名-算法-时间</item>
+        <item>原文件名-算法</item>
+        <item>原文件名-时间</item>
+        <item>原文件名</item>
+    </string-array>
 </resources>

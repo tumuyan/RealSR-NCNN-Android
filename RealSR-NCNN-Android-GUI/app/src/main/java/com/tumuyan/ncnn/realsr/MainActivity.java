@@ -1,5 +1,7 @@
 package com.tumuyan.ncnn.realsr;
 
+import static com.tumuyan.ncnn.realsr.UriUntils.getFileName;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -56,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean initProcess;
     private final String galleryPath =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
-                    + File.separator + "RealSR" + File.separator;
+                    + File.separator + "RealSR";
     private File outputFile;
     private String dir;
     // dir="/data/data/com.tumuyan.ncnn.realsr/cache/realsr";
@@ -66,9 +68,10 @@ public class MainActivity extends AppCompatActivity {
     private Spinner spinner;
     private Process process;
     private boolean newTask;
-    private int format;
+    private int format, name;
     private String BUSY;
     private String outputSavePath = "";
+    private String inputFileName = "";
 
     private String[] formats;
 
@@ -110,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean prePng;
     private boolean autoSave;
     private boolean showSearchView;
+    private String savePath = galleryPath;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -262,13 +266,13 @@ public class MainActivity extends AppCompatActivity {
         useCPU = mySharePerferences.getBoolean("useCPU", false);
         autoSave = mySharePerferences.getBoolean("autoSave", false);
         showSearchView = mySharePerferences.getBoolean("showSearchView", false);
-        if(showSearchView)
+        if (showSearchView)
             searchView.setVisibility(View.VISIBLE);
         else
             searchView.setVisibility(View.GONE);
 
         format = mySharePerferences.getInt("format", 0);
-
+        name = mySharePerferences.getInt("name", 0);
         List<String> extraCmd = getExtraCommands(
                 mySharePerferences.getString("extraPath", "").trim()
                 , mySharePerferences.getString("extraCommand", "").trim()
@@ -283,6 +287,18 @@ public class MainActivity extends AppCompatActivity {
 
         spinner.setSelection(selectCommand);
 
+        savePath = mySharePerferences.getString("savePath", "");
+        if (savePath.isEmpty())
+            savePath = galleryPath;
+        try {
+            File file = new File(savePath);
+            if (file.isFile())
+                file.delete();
+            if (!file.exists())
+                file.mkdirs();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -291,6 +307,8 @@ public class MainActivity extends AppCompatActivity {
         if (intent.getAction().equalsIgnoreCase(Intent.ACTION_SEND)) {
             Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
             if (uri != null) {
+                inputFileName = getFileName(uri, this).replaceFirst("\\.[^\\.]+$", "");
+                Log.i("input file name", inputFileName);
                 try {
                     InputStream in = getContentResolver().openInputStream(uri);
                     if (null != in)
@@ -424,7 +442,7 @@ public class MainActivity extends AppCompatActivity {
      * @param folder       自定义模型目录
      * @param scaleMatcher 缩放倍率抓取规则
      * @param noiseMatcher 降噪系数抓取规则
-     * @return             模型名称的列表
+     * @return 模型名称的列表
      */
     private static List<String> genCmdFromModel(File folder, String scaleMatcher, String noiseMatcher) {
         List<String> list = new ArrayList<>();
@@ -637,7 +655,7 @@ public class MainActivity extends AppCompatActivity {
 
         } else {
             //权限已经被授予，在这里直接写要执行的相应方法即可
-            File file = new File(galleryPath);
+            File file = new File(savePath);
             if (file.isFile())
                 file.delete();
             if (!file.exists())
@@ -662,7 +680,11 @@ public class MainActivity extends AppCompatActivity {
         if (resultCode == RESULT_OK && null != data) {
             Uri url = data.getData();
 
+
             if (requestCode == SELECT_IMAGE && null != url) {
+
+                inputFileName = getFileName(url, this).replaceFirst("\\.[^\\.]+$", "");
+                Log.i("input file name", inputFileName);
                 InputStream in;
 
                 try {
@@ -1051,25 +1073,47 @@ public class MainActivity extends AppCompatActivity {
 
 
     private String saveOutputCmd() {
+
         SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");
+        outputSavePath = savePath + File.separator;
+        switch (name) {
+            case 0:
+                outputSavePath += modelName + "_" + f.format(new Date());
+                break;
+            case 1:
+                outputSavePath += inputFileName + "_" + modelName + "_" + f.format(new Date());
+                break;
+            case 2:
+                outputSavePath += inputFileName + "_" + modelName;
+                break;
+            case 3:
+                outputSavePath += inputFileName + "_" + f.format(new Date());
+                break;
+            case 4:
+                outputSavePath += inputFileName;
+                break;
+            default:
+                outputSavePath += "output";
+        }
+
         String cmd;
         if (format == 0) {
-            outputSavePath = galleryPath + modelName + "_" + f.format(new Date()) + ".png";
+            outputSavePath += ".png";
             cmd = ("cp " + dir + "/output.png " + outputSavePath);
         } else {
             // 其他格式需要使用image magic进行转换，会额外消耗时间。但是为了方便，没有写到新线程上。
             // progress.setTitle(BUSY);
             if (format == 1) {
-                outputSavePath = galleryPath + modelName + "_" + f.format(new Date()) + ".webp";
+                outputSavePath += ".webp";
                 cmd = ("./magick output.png " + outputSavePath);
             } else if (format == 2) {
-                outputSavePath = galleryPath + modelName + "_" + f.format(new Date()) + ".gif";
+                outputSavePath += ".gif";
                 cmd = ("./magick output.png " + outputSavePath);
             } else if (format == 3) {
-                outputSavePath = galleryPath + modelName + "_" + f.format(new Date()) + ".heic";
+                outputSavePath += ".heic";
                 cmd = ("./magick output.png " + outputSavePath);
             } else {
-                outputSavePath = galleryPath + modelName + "_" + f.format(new Date()) + ".jpg";
+                outputSavePath += ".jpg";
                 String q = formats[format].replaceAll("[a-zA-Z%\\s]+", "");
                 if (q.length() > 0) {
                     cmd = ("./magick output.png -quality " + q + " " + outputSavePath);

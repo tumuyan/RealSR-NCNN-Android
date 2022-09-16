@@ -89,6 +89,8 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="share_is_null">No image was shared</string>
     <string name="auto_save">Save image to gallery after processing</string>
     <string name="show_serarch_view">Show command input area</string>
+    <string name="save_name">File name for output image</string>
+    <string name="save_path">Path for save images</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>
@@ -102,6 +104,13 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
         <item>JPEG 80%</item>
         <item>JPEG 75%</item>
         <item>JPEG 60%</item>
+    </string-array>
+    <string-array name="name">
+        <item>Command-Time</item>
+        <item>Input File Name-Command-Time</item>
+        <item>Input File Name-Command</item>
+        <item>Input File Name-Time</item>
+        <item>Input File Name</item>
     </string-array>
     <string-array name="style_array">
         <item>real-esrgan-anime-x4</item>
