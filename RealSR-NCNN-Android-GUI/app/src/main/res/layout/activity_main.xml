@@ -70,6 +70,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:iconifiedByDefault="false"
+        android:visibility="gone"
         android:imeOptions="actionDone|flagForceAscii"
         android:queryHint="@string/input_command"
         android:searchIcon="@drawable/ic_baseline_all_inclusive_24" />

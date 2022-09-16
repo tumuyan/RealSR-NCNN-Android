@@ -28,6 +28,7 @@ public class SettingActivity extends AppCompatActivity {
     ToggleButton toggleCPU;
     ToggleButton togglePrePng;
     ToggleButton toggleAutoSave;
+    ToggleButton toggleSearchView;
     Spinner spinnerFormat;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
@@ -51,6 +52,7 @@ public class SettingActivity extends AppCompatActivity {
         String extraPath = mySharePerferences.getString("extraPath","");
         boolean useCPU = mySharePerferences.getBoolean("useCPU", false);
         boolean autoSave = mySharePerferences.getBoolean("autoSave", false);
+        boolean showSearchView = mySharePerferences.getBoolean("showSearchView", false);
         int format = mySharePerferences.getInt("format", 0);
 
         editTile = findViewById(R.id.editTile);
@@ -72,6 +74,8 @@ public class SettingActivity extends AppCompatActivity {
         toggleAutoSave.setChecked(autoSave);
         toggleCPU = findViewById(R.id.toggle_cpu);
         toggleCPU.setChecked(useCPU);
+        toggleSearchView = findViewById(R.id.toggle_serarch_view);
+        toggleSearchView.setChecked(showSearchView);
 
         spinnerFormat = findViewById(R.id.spinner_format);
         spinnerFormat.setSelection(format);
@@ -100,6 +104,7 @@ public class SettingActivity extends AppCompatActivity {
             spinnerFormat.setSelection(0);
             toggleCPU.setChecked(false);
             toggleAutoSave.setChecked(false);
+            toggleSearchView.setChecked(false);
             editTile.setText("0");
             editThread.setText("");
             editExtraPath.setText("");
@@ -112,6 +117,7 @@ public class SettingActivity extends AppCompatActivity {
             spinnerFormat.setSelection(0);
             toggleCPU.setChecked(false);
             toggleAutoSave.setChecked(false);
+            toggleSearchView.setChecked(false);
             editTile.setText("32");
             editThread.setText("1:1:1");
             editExtraPath.setText("");
@@ -176,6 +182,7 @@ public class SettingActivity extends AppCompatActivity {
         editor.putBoolean("PrePng",togglePrePng.isChecked());
         editor.putBoolean("useCPU", toggleCPU.isChecked());
         editor.putBoolean("autoSave", toggleAutoSave.isChecked());
+        editor.putBoolean("showSearchView", toggleSearchView.isChecked());
         editor.putInt("format", (int) spinnerFormat.getSelectedItemId());
 
         editor.apply();

@@ -88,6 +88,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="menu_share">Share output image</string>
     <string name="share_is_null">No image was shared</string>
     <string name="auto_save">Save image to gallery after processing</string>
+    <string name="show_serarch_view">Show command input area</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>

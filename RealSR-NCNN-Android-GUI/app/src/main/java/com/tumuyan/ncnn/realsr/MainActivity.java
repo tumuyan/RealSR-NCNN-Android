@@ -109,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean keepScreen;
     private boolean prePng;
     private boolean autoSave;
-
+    private boolean showSearchView;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -261,6 +261,12 @@ public class MainActivity extends AppCompatActivity {
         prePng = mySharePerferences.getBoolean("PrePng", true);
         useCPU = mySharePerferences.getBoolean("useCPU", false);
         autoSave = mySharePerferences.getBoolean("autoSave", false);
+        showSearchView = mySharePerferences.getBoolean("showSearchView", false);
+        if(showSearchView)
+            searchView.setVisibility(View.VISIBLE);
+        else
+            searchView.setVisibility(View.GONE);
+
         format = mySharePerferences.getInt("format", 0);
 
         List<String> extraCmd = getExtraCommands(
