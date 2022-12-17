@@ -592,8 +592,8 @@ public class MainActivity extends AppCompatActivity {
                             cmd.append(" -g -1");
                     }
                 }
-
-                outputFile.delete();
+                if (outputFile.exists())
+                    outputFile.delete();
                 if (keepScreen) {
                     view.setKeepScreenOn(true);
                 }
@@ -601,29 +601,43 @@ public class MainActivity extends AppCompatActivity {
                 new Thread(() -> {
 
                     if (run20(cmd.toString())) {
-                        if (outputFile.exists()) {
-                            runOnUiThread(
-                                    () -> {
-                                        imageView.setVisibility(View.VISIBLE);
-                                        imageView.setImage(ImageSource.uri(dir + "/output.png"));
-                                        logTextView.setText(String.format("%s\n%s", getString(R.string.hr), logTextView.getText()));
-                                        if (keepScreen) {
-                                            view.setKeepScreenOn(false);
+                        boolean showImgView = (cmd.toString().contains("output.png"));
+                        if (showImgView) {
+                            if (outputFile.exists()) {
+                                runOnUiThread(
+                                        () -> {
+                                            imageView.setVisibility(View.VISIBLE);
+                                            imageView.setImage(ImageSource.uri(dir + "/output.png"));
+                                            logTextView.setText(String.format("%s\n%s", getString(R.string.hr), logTextView.getText()));
+                                            if (keepScreen) {
+                                                view.setKeepScreenOn(false);
+                                            }
                                         }
-                                    }
-                            );
-                        } else {
-                            runOnUiThread(
-                                    () -> {
-                                        imageView.setVisibility(View.VISIBLE);
-                                        imageView.setImage(ImageSource.uri(dir + "/input.png"));
-                                        logTextView.setText(String.format("%s\n%s", getString(R.string.lr), logTextView.getText()));
-                                        if (keepScreen) {
-                                            view.setKeepScreenOn(false);
-                                        }
-                                    }
-                            );
+                                );
+                            } else {
+                                File inputFile = new File(dir + "/input.png");
+                                showImgView = inputFile.exists();
+                                if (showImgView) {
+                                    runOnUiThread(
+                                            () -> {
+                                                imageView.setVisibility(View.VISIBLE);
+                                                imageView.setImage(ImageSource.uri(dir + "/input.png"));
+
+                                                logTextView.setText(String.format("%s\n%s", getString(R.string.lr), logTextView.getText()));
+                                                if (keepScreen) {
+                                                    view.setKeepScreenOn(false);
+                                                }
+                                            }
+                                    );
+                                }
+                            }
                         }
+                        if (!showImgView)
+                            runOnUiThread(
+                                    () -> {
+                                        imageView.setVisibility(View.GONE);
+                                    }
+                            );
                     }
                 }).start();
             }
@@ -772,7 +786,7 @@ public class MainActivity extends AppCompatActivity {
         } else
             modelName = "SR";
         final boolean run_ncnn = !modelName.equals("SR");
-        final boolean save = run_ncnn && autoSave;
+        final boolean save = run_ncnn && autoSave && cmd.contains("output.png");
 
 
         // 对应process进程的3个流
@@ -1027,6 +1041,7 @@ public class MainActivity extends AppCompatActivity {
             return true;
         if (q.equals("help")) {
             logTextView.setText(getString(R.string.default_log));
+            showImage(null, "");
         } else if (q.equals("in")) {
             File file = new File(dir + "/input.png");
             showImage(file, getString(R.string.lr));
@@ -1048,7 +1063,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showImage(File file, String info) {
-        if (file.exists()) {
+        if (file == null)
+            imageView.setVisibility(View.GONE);
+        else if (file.exists()) {
             imageView.setVisibility(View.VISIBLE);
             imageView.setImage(ImageSource.uri(file.getAbsolutePath()));
             logTextView.setText(info);
@@ -1071,7 +1088,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
+    //    生成输出的图片的命令
     private String saveOutputCmd() {
 
         SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");
