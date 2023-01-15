@@ -1,0 +1,44 @@
+name: Sync Hugging Face hub
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: 'Upload'
+        required: false
+        default: yes
+        type: choice
+        options:
+          - 'yes'
+          - 'no'
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone from hub
+        run: |
+          git clone https://huggingface.co/spaces/tumuyan/RealSR
+          
+      - name: Install Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+
+      - name: Install requirements
+        run: |
+          pip install -r ./RealSR/requirements.txt
+          
+      - name: Download files
+        run: python -c 'import RealSR.utils as u; u.dlFile(False, "./RealSR/")'
+          
+      - name: List files
+        run: tree
+        
+      - name: Push to hub
+        if: (github.event.inputs.upload == 'yes')
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config --global user.email "tumuyan@gmail.com"
+          git config --global user.name "tumuyan"
+          cd RealSR && git add . && git status -s &&  git commit -m 'github ci' && git push https://tumuyan:$HF_TOKEN@huggingface.co/spaces/tumuyan/RealSR

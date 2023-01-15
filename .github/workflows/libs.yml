@@ -1,0 +1,69 @@
+name: Build libs for hub
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: 'Upload'
+        required: false
+        default: yes
+        type: choice
+        options:
+          - 'yes'
+          - 'no'
+env:
+  GLIBC: glibc-2.30
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print GLIBC_
+        run: |
+          strings /lib/x86_64-linux-gnu/libm.so.6 | grep GLIBC_
+          
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: libm_ubuntu-latest.zip
+          path: /lib/x86_64-linux-gnu/libm*
+          # keep 90 days
+          retention-days: 90
+          
+          
+      - name: Download glibc
+        run: |
+          wget http://mirrors.nju.edu.cn/gnu/libc/$GLIBC.tar.xz
+          xz -d $GLIBC.tar.xz
+          tar -xf $GLIBC.tar
+
+      - name: Build glibc
+        run: |
+          cd $GLIBC
+          mkdir build
+          cd build
+          ../configure  --prefix=$HOME/local
+          make
+          make install
+
+      - name: Build glibc
+        run: |
+          ls
+          strings $GLIBC/build/math/libm.so.6 | grep GLIBC_
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: glibc.zip
+          path: $GLIBC/build
+          # keep 90 days
+          retention-days: 90
+          
+#       - name: Push to hub
+#         if: (github.event.inputs.upload == 'yes')
+#         env:
+#           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+#         run: |
+#           git config --global user.email "tumuyan@gmail.com"
+#           git config --global user.name "tumuyan"
+#           cd RealSR && git add . && git status -s &&  git commit -m 'github ci' && git push https://tumuyan:$HF_TOKEN@huggingface.co/spaces/tumuyan/RealSR

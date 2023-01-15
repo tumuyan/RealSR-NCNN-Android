@@ -2,7 +2,7 @@
 
 [中文说明](https://github.com/tumuyan/RealSR-NCNN-Android/blob/master/README_CHS.md)  
 
-RealSR-NCNN-Android is a simple Android application that based on [RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan), [SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan), [RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan) & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).  
+RealSR-NCNN-Android is a simple Android application that based on [Waifu2x-NCNN](https://github.com/nihui/waifu2x-ncnn-vulkan), [SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan), [RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan), [RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan), & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).  
 The application does not collect any private information from your device.  
 Download: Github [Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases) or [CoolApk](https://www.coolapk.com/apk/292197)
 
@@ -14,6 +14,15 @@ This repository contains 7 project:
 5. Waifu2x-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android (models not packaged in APK).
 6. Resize-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android. use ncnn only to reduce the elf file size. Contains classical interpolation mode `nearest` `bilinear` `bicubic` and `avir` `lancir`
 7. Resize-CLI just a demo like the Resize-NCNN-Android-CLI, but it not need ncnn and could build by VS
+
+
+### Web UI
+The hugging face repository contains the model and executable file for Windows/Linux platform, you can clone the repository and open a web UI in the python (instead of the original command line program)
+
+https://huggingface.co/spaces/tumuyan/RealSR
+你也可以在线体验docker版本（由于使用双核CPU运算，速度相当慢）
+Also you could try online demo! [![Hugging Face](https://img.shields.io/badge/Demo-%F0%9F%A4%97%20Hugging%20Face-blue)](https://huggingface.co/spaces/tumuyan/realsr-docker)
+
 
 ### About Real-ESRGAN
 
@@ -57,9 +66,12 @@ open this project with Android Studio, rebuild it and then you could find the pr
 ## How to use RealSR-NCNN-Android-CLI
 ### Download models
 
-I have package and upload models, also you can download models from RealSR-NCNN and Real-ESRGAN.
+You could run this command in shell (termux) to download and unzip program and models:
+`curl https://huggingface.co/spaces/tumuyan/RealSR/raw/main/install_realsr_android.sh | bash`
 
-`https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.4.1/models.zip`
+or download and unzip them by your self.
+`https://huggingface.co/spaces/tumuyan/RealSR/resolve/main/assets.zip`
+
 
 ### Example Command
 
@@ -95,79 +107,100 @@ Usage: realsr-ncnn -i infile -o outfile [options]...
 If you encounter crash or error, try to upgrade your derive
 
 ## How to build RealSR-NCNN-Android-GUI
-download models & elf files, put them to this folder, then build it with Android Studio. (I have upload the assets.zip)
+download [models & elf files](https://huggingface.co/spaces/tumuyan/RealSR/resolve/main/assets.zip), unzip and put them to this folder, then build it with Android Studio. 
 
 ```
-RealSR-NCNN-Android-GUI\app\src\main\assets\realsr
-│  libncnn.so
-│  libvulkan.so
-│  realcugan-ncnn
-│  realsr-ncnn
-│  srmd-ncnn
-│  
-├─models-DF2K
-│      x4.bin
-│      x4.param
-│      
-├─models-DF2K_JPEG
-│      x4.bin
-│      x4.param
-│      
-├─models-nose
-│      up2x-no-denoise.bin
-│      up2x-no-denoise.param
-│      
-├─models-Real-ESRGAN
-│      x4.bin
-│      x4.param
-│      
-├─models-Real-ESRGAN-anime
-│      x4.bin
-│      x4.param
-│      
-├─models-Real-ESRGANv2-anime
-│      x2.bin
-│      x2.param
-│      x4.bin
-│      x4.param
-│      
-├─models-se
-│      up2x-conservative.bin
-│      up2x-conservative.param
-│      up2x-denoise1x.bin
-│      up2x-denoise1x.param
-│      up2x-denoise2x.bin
-│      up2x-denoise2x.param
-│      up2x-denoise3x.bin
-│      up2x-denoise3x.param
-│      up2x-no-denoise.bin
-│      up2x-no-denoise.param
-│      up3x-conservative.bin
-│      up3x-conservative.param
-│      up3x-denoise3x.bin
-│      up3x-denoise3x.param
-│      up3x-no-denoise.bin
-│      up3x-no-denoise.param
-│      up4x-conservative.bin
-│      up4x-conservative.param
-│      up4x-denoise3x.bin
-│      up4x-denoise3x.param
-│      up4x-no-denoise.bin
-│      up4x-no-denoise.param
-│      
-└─models-srmd
-        srmdnf_x2.bin
-        srmdnf_x2.param
-        srmdnf_x3.bin
-        srmdnf_x3.param
-        srmdnf_x4.bin
-        srmdnf_x4.param
-        srmd_x2.bin
-        srmd_x2.param
-        srmd_x3.bin
-        srmd_x3.param
-        srmd_x4.bin
-        srmd_x4.param
+RealSR-NCNN-Android-GUI\app\src\main\assets\
+└─realsr
+    │  colors.xml
+    │  delegates.xml
+    │  libc++_shared.so
+    │  libncnn.so
+    │  libomp.so
+    │  magick
+    │  realcugan-ncnn
+    │  realsr-ncnn
+    │  resize-ncnn
+    │  srmd-ncnn
+    │  waifu2x-ncnn
+    │  
+    ├─models-nose
+    │      up2x-no-denoise.bin
+    │      up2x-no-denoise.param
+    │      
+    ├─models-pro
+    │      up2x-conservative.bin
+    │      up2x-conservative.param
+    │      up2x-denoise3x.bin
+    │      up2x-denoise3x.param
+    │      up2x-no-denoise.bin
+    │      up2x-no-denoise.param
+    │      up3x-conservative.bin
+    │      up3x-conservative.param
+    │      up3x-denoise3x.bin
+    │      up3x-denoise3x.param
+    │      up3x-no-denoise.bin
+    │      up3x-no-denoise.param
+    │      
+    ├─models-Real-ESRGAN
+    │      x4.bin
+    │      x4.param
+    │      
+    ├─models-Real-ESRGAN-anime
+    │      x4.bin
+    │      x4.param
+    │      
+    ├─models-Real-ESRGANv2-anime
+    │      x2.bin
+    │      x2.param
+    │      x4.bin
+    │      x4.param
+    │      
+    ├─models-Real-ESRGANv3-anime
+    │      x2.bin
+    │      x2.param
+    │      x3.bin
+    │      x3.param
+    │      x4.bin
+    │      x4.param
+    │      
+    ├─models-se
+    │      up2x-conservative.bin
+    │      up2x-conservative.param
+    │      up2x-denoise1x.bin
+    │      up2x-denoise1x.param
+    │      up2x-denoise2x.bin
+    │      up2x-denoise2x.param
+    │      up2x-denoise3x.bin
+    │      up2x-denoise3x.param
+    │      up2x-no-denoise.bin
+    │      up2x-no-denoise.param
+    │      up3x-conservative.bin
+    │      up3x-conservative.param
+    │      up3x-denoise3x.bin
+    │      up3x-denoise3x.param
+    │      up3x-no-denoise.bin
+    │      up3x-no-denoise.param
+    │      up4x-conservative.bin
+    │      up4x-conservative.param
+    │      up4x-denoise3x.bin
+    │      up4x-denoise3x.param
+    │      up4x-no-denoise.bin
+    │      up4x-no-denoise.param
+    │      
+    └─models-srmd
+            srmdnf_x2.bin
+            srmdnf_x2.param
+            srmdnf_x3.bin
+            srmdnf_x3.param
+            srmdnf_x4.bin
+            srmdnf_x4.param
+            srmd_x2.bin
+            srmd_x2.param
+            srmd_x3.bin
+            srmd_x3.param
+            srmd_x4.bin
+            srmd_x4.param
 
 ```
 
