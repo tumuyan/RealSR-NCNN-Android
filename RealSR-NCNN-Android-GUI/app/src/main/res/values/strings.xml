@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">RealSR BigImage</string>
     <string name="default_log">\n
-        Real-ESRGAN is a Practical Algorithms for General Image Restoration.\n
         This is a simple Android application that uses Realsr-NCNN, SRMD-NCNN, Real-CUGAN-NCNN, Real-ESRGAN, Waifu2x-NCNN and ImageMagicK.
 
         \nThe application does not collect any private information from your device.
@@ -77,11 +76,11 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="extra_path">Path for custom models (RealSR/ESRGAN/Waifu2x)</string>
     <string name="path_not_exist">Not exist this directory</string>
     <string name="menu_out2in" translatable="false"><![CDATA[Output -> Input]]></string>
-    <string name="menu_de_nearest" >De Nearest</string>
-    <string name="menu_magick4" >Magick 25%</string>
+    <string name="menu_de_nearest">De Nearest</string>
+    <string name="menu_magick4">Magick 25%</string>
     <string name="menu_magick3">Magick 33.3%</string>
-    <string name="menu_magick2" >Magick 50%</string>
-    <string name="menu_avir2" >Avir 50%</string>
+    <string name="menu_magick2">Magick 50%</string>
+    <string name="menu_avir2">Avir 50%</string>
     <string name="menu_in">Show input image</string>
     <string name="menu_out">Show output image</string>
     <string name="menu_help">Help</string>
@@ -91,6 +90,8 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="show_serarch_view">Show command input area</string>
     <string name="save_name">File name for output image</string>
     <string name="save_path">Path for save images</string>
+    <string name="download_models">Download models</string>
+    <string name="start">Start</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>

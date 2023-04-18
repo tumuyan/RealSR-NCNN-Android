@@ -103,6 +103,8 @@
     <string name="show_serarch_view">显示命令输入框</string>
     <string name="save_name">导出时使用的文件名</string>
     <string name="save_path">导出图片的路径</string>
+    <string name="download_models">下载模型</string>
+    <string name="start">开始</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>

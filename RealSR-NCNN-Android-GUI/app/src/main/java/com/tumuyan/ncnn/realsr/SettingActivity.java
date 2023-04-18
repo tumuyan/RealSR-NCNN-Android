@@ -3,6 +3,7 @@ package com.tumuyan.ncnn.realsr;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
@@ -102,6 +103,14 @@ public class SettingActivity extends AppCompatActivity {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+
+/*
+        findViewById(R.id.btn_download_models).setOnClickListener(view -> {
+            Intent intent = new Intent(this, DownloadActivity.class);
+            this.startActivity(intent);
+            overridePendingTransition(0, android.R.anim.slide_out_right);
+        });
+*/
 
 
         findViewById(R.id.btn_save).setOnClickListener(view -> {
