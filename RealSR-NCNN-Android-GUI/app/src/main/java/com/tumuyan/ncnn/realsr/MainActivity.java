@@ -41,12 +41,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1;
@@ -59,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
     private final String galleryPath =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
                     + File.separator + "RealSR";
-    private File outputFile;
+    private File outputFile, inputFile;
     private String dir;
     // dir="/data/data/com.tumuyan.ncnn.realsr/cache/realsr";
     private String modelName = "SR";
@@ -68,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     private Spinner spinner;
     private Process process;
     private boolean newTask;
-    private int format, name;
+    private int format, name, name2;
     private String BUSY;
     private String outputSavePath = "";
     private String inputFileName = "";
@@ -168,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
                     () -> {
                         run20(q);
                         final File finalfile = new File(dir + finalImageName);
-                        if (finalfile.exists()) {
+                        if (finalfile.exists() && (!finalfile.isDirectory())) {
                             runOnUiThread(
                                     () -> {
                                         imageView.setVisibility(View.VISIBLE);
@@ -273,6 +275,7 @@ public class MainActivity extends AppCompatActivity {
 
         format = mySharePerferences.getInt("format", 0);
         name = mySharePerferences.getInt("name", 0);
+        name2 = mySharePerferences.getInt("name2", 0);
         List<String> extraCmd = getExtraCommands(
                 mySharePerferences.getString("extraPath", "").trim()
                 , mySharePerferences.getString("extraCommand", "").trim()
@@ -304,21 +307,59 @@ public class MainActivity extends AppCompatActivity {
 
     public boolean readFileFromShare() {
         Intent intent = getIntent();
-        if (intent.getAction().equalsIgnoreCase(Intent.ACTION_SEND)) {
+        String action = intent.getAction();
+        String type = intent.getType();
+
+        if (Intent.ACTION_SEND.equals(action)) {
             Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
-            if (uri != null) {
+            inputFileName = getFileName(uri, this).replaceFirst("\\.[^\\.]+$", "");
+            Log.i("input file name", inputFileName);
+            whiteFileFromUri(uri, "");
+
+        } else if (Intent.ACTION_SEND_MULTIPLE.equals(action)) {
+            ArrayList<Uri> imageUris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+            inputFile.delete();
+            inputFile.mkdirs();
+            outputFile.delete();
+
+            SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");
+            String time = f.format(new Date());
+
+            for (int i = 0; i < imageUris.size(); i++) {
+                Uri uri = imageUris.get(i);
                 inputFileName = getFileName(uri, this).replaceFirst("\\.[^\\.]+$", "");
-                Log.i("input file name", inputFileName);
-                try {
-                    InputStream in = getContentResolver().openInputStream(uri);
-                    if (null != in)
-                        saveInputImage(in);
-                    else
-                        Toast.makeText(this, R.string.share_is_null, Toast.LENGTH_SHORT).show();
-                    return true;
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (inputFileName.isEmpty())
+                    inputFileName = "" + i;
+                switch (name2) {
+                    case 0:
+                        inputFileName += "_" + time;
+                        break;
+                    case 1:
+                        break;
+                    case 2:
+                        inputFileName = time;
+                        break;
+                    case 3:
+                        inputFileName = time + "_" + inputFileName;
+                        break;
                 }
+                whiteFileFromUri(uri, dir + "/input.png/" + inputFileName + ".png");
+            }
+        }
+        return false;
+    }
+
+    private boolean whiteFileFromUri(Uri uri, String path) {
+        if (uri != null) {
+            try {
+                InputStream in = getContentResolver().openInputStream(uri);
+                if (null != in)
+                    saveInputImage(in, path);
+                else
+                    Toast.makeText(this, R.string.share_is_null, Toast.LENGTH_SHORT).show();
+                return true;
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
         return false;
@@ -507,6 +548,7 @@ public class MainActivity extends AppCompatActivity {
         dir = dir + "/realsr";
 
         outputFile = new File(dir, "output.png");
+        inputFile = new File(dir, "input.png");
 
         run_command("chmod 777 " + dir + " -R");
 
@@ -561,6 +603,16 @@ public class MainActivity extends AppCompatActivity {
                     if (!outputFile.exists()) {
                         Toast.makeText(this, R.string.output_not_exits, Toast.LENGTH_SHORT).show();
                         return;
+                    } else if (outputFile.isDirectory()) {
+                        File[] files = outputFile.listFiles();
+                        if (files.length < 1) {
+
+                            Toast.makeText(this, R.string.output_not_exits, Toast.LENGTH_SHORT).show();
+                        } else {
+
+                            Toast.makeText(this, R.string.output_is_dir, Toast.LENGTH_SHORT).show();
+                        }
+                        return;
                     }
                     run_command(saveOutputCmd());
                     checkSaveOutput();
@@ -595,7 +647,7 @@ public class MainActivity extends AppCompatActivity {
                 if (outputFile.exists())
                     outputFile.delete();
                 if (keepScreen) {
-                    view.setKeepScreenOn(true);
+                    logTextView.setKeepScreenOn(true);
                 }
 
                 new Thread(() -> {
@@ -604,32 +656,9 @@ public class MainActivity extends AppCompatActivity {
                         boolean showImgView = (cmd.toString().contains("output.png"));
                         if (showImgView) {
                             if (outputFile.exists()) {
-                                runOnUiThread(
-                                        () -> {
-                                            imageView.setVisibility(View.VISIBLE);
-                                            imageView.setImage(ImageSource.uri(dir + "/output.png"));
-                                            logTextView.setText(String.format("%s\n%s", getString(R.string.hr), logTextView.getText()));
-                                            if (keepScreen) {
-                                                view.setKeepScreenOn(false);
-                                            }
-                                        }
-                                );
+                                updateImage(dir + "/output.png", String.format("%s\n%s", getString(R.string.hr), logTextView.getText()), false);
                             } else {
-                                File inputFile = new File(dir + "/input.png");
-                                showImgView = inputFile.exists();
-                                if (showImgView) {
-                                    runOnUiThread(
-                                            () -> {
-                                                imageView.setVisibility(View.VISIBLE);
-                                                imageView.setImage(ImageSource.uri(dir + "/input.png"));
-
-                                                logTextView.setText(String.format("%s\n%s", getString(R.string.lr), logTextView.getText()));
-                                                if (keepScreen) {
-                                                    view.setKeepScreenOn(false);
-                                                }
-                                            }
-                                    );
-                                }
+                                updateImage(dir + "/input.png", String.format("%s\n%s", getString(R.string.lr), logTextView.getText()), false);
                             }
                         }
                         if (!showImgView)
@@ -704,7 +733,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     in = getContentResolver().openInputStream(url);
                     if (null != in)
-                        saveInputImage(in);
+                        saveInputImage(in, "");
                     else
                         Toast.makeText(this, "input == null", Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
@@ -754,18 +783,26 @@ public class MainActivity extends AppCompatActivity {
 
     private String progressText = "";
 
+    // 主要的运行命令的方式
     public synchronized boolean run20(@NonNull String cmd) {
         newTask = false;
         Log.i("run20", "cmd = " + cmd);
         final long timeStart = System.currentTimeMillis();
+        boolean output_savePath = false;
 
         if (cmd.startsWith("./realsr-ncnn")
                 || cmd.startsWith("./srmd-ncnn")
                 || cmd.startsWith("./realcugan-ncnn")
                 || cmd.startsWith("./resize-ncnn")
                 || cmd.startsWith("./waifu2x-ncnn")
-                || cmd.startsWith("./magick input.png -")
+                || cmd.startsWith("./magick input")
         ) {
+            if (cmd.contains("input.png") && cmd.contains("output.png")) {
+                if (inputFile.isDirectory()) {
+                    output_savePath = true;
+                    cmd = cmd.replace("output.png", savePath);
+                }
+            }
             runOnUiThread(() -> menuProgress.setTitle(BUSY));
             modelName = "Real-ESRGAN-anime";
             if (cmd.matches(".+\\s-m(\\s+)[^\\s]*models-.+")) {
@@ -777,7 +814,7 @@ public class MainActivity extends AppCompatActivity {
                 modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest|lancir|avir|de-nearest).*", "Classical-$2");
             } else if (cmd.matches(".*waifu2x.+models-(cugan|cunet|upconv).*")) {
                 modelName = cmd.replaceFirst(".*waifu2x.+models-(cugan|cunet|upconv_7_photo|upconv_7_anime).*", "Waifu2x-$1");
-            } else if (cmd.startsWith("./magick input.png -")) {
+            } else if (cmd.startsWith("./magick input")) {
                 if (cmd.contains("-filter"))
                     modelName = cmd.replaceFirst(".*-filter\\s+(\\w+).+", "Magick-$1");
                 else
@@ -812,7 +849,7 @@ public class MainActivity extends AppCompatActivity {
             // 写入要执行的命令
             os.flush();
 
-            os.writeBytes("cd " + dir + "\n");
+            os.writeBytes("cd " + dir + "; chmod 777 *ncnn\n");
             os.flush();
 
             if (cmd.startsWith("./magick") || save) {
@@ -926,6 +963,7 @@ public class MainActivity extends AppCompatActivity {
 
         result.append("\nfinish, use ").append((float) (System.currentTimeMillis() - timeStart) / 1000).append(" second");
 
+        boolean finalOutput_savePath = output_savePath;
         runOnUiThread(() -> {
             if (run_ncnn)
                 logTextView.setText(result.append(", ").append(modelName));
@@ -939,6 +977,8 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     checkSaveOutput();
                 }
+            } else if (finalOutput_savePath) {
+                Toast.makeText(getApplicationContext(), R.string.save_succeed, Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -956,10 +996,12 @@ public class MainActivity extends AppCompatActivity {
         newTask = true;
     }
 
-    private boolean saveInputImage(@NonNull InputStream in) {
+    private boolean saveInputImage(@NonNull InputStream in, String path) {
 
         Log.i("saveInputImage", "start ");
-        File file = new File(dir + "/input.png");
+        if (path.isEmpty())
+            path = dir + "/input.png";
+        File file = new File(path);
 
         if (file.exists()) {
             file.delete();
@@ -999,7 +1041,7 @@ public class MainActivity extends AppCompatActivity {
                     Bitmap bitmap = BitmapFactory.decodeFile(dir + "/tmp");
 
                     try {
-                        FileOutputStream out = new FileOutputStream(dir + "/input.png");
+                        FileOutputStream out = new FileOutputStream(path);
                         bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
                         out.flush();
                         out.close();
@@ -1007,8 +1049,7 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 } else
-                    run20("./magick tmp input.png");
-//                run_command("."+dir+"/magick " + dir + "/tmp "+dir + "/input.png");
+                    run20("./magick tmp '" + path + "'");
             }
 
         } catch (IOException e) {
@@ -1020,18 +1061,28 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        updateImage(dir + "/input.png", getString(R.string.lr), false);
+        return true;
+    }
 
+    private void updateImage(final String path, String text, boolean keepScreen) {
         Log.i("saveInputImage", "runOnUiThread");
+        File file = new File(path);
         runOnUiThread(
                 () -> {
-                    imageView.setVisibility(View.VISIBLE);
-                    imageView.setImage(ImageSource.uri(dir + "/input.png"));
-                    logTextView.setText(getString(R.string.lr));
+                    if (file.exists() && (!file.isDirectory())) {
+                        imageView.setVisibility(View.VISIBLE);
+                        imageView.setImage(ImageSource.uri(path));
+                        logTextView.setText(text);
+                        Log.i("saveInputImage", "finish");
+                    } else
+                        Log.i("saveInputImage", "skip");
+                    if (keepScreen) {
+                        logTextView.setKeepScreenOn(false);
+                    }
+
                 }
         );
-
-        Log.i("saveInputImage", "finish");
-        return true;
     }
 
     private boolean run_fake_command(String q) {
@@ -1065,10 +1116,16 @@ public class MainActivity extends AppCompatActivity {
     private void showImage(File file, String info) {
         if (file == null)
             imageView.setVisibility(View.GONE);
-        else if (file.exists()) {
+        else if (file.exists() && (!file.isDirectory())) {
             imageView.setVisibility(View.VISIBLE);
             imageView.setImage(ImageSource.uri(file.getAbsolutePath()));
             logTextView.setText(info);
+        } else if (file.isDirectory()) {
+            imageView.setVisibility(View.GONE);
+            File[] files = file.listFiles();
+            if (files.length < 1) {
+                logTextView.setText(getString(R.string.image_not_exists));
+            } else logTextView.setText(getString(R.string.image_is_directory));
         } else {
             imageView.setVisibility(View.GONE);
             logTextView.setText(getString(R.string.image_not_exists));

@@ -88,10 +88,13 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="share_is_null">No image was shared</string>
     <string name="auto_save">Save image to gallery after processing</string>
     <string name="show_serarch_view">Show command input area</string>
-    <string name="save_name">File name for output image</string>
+    <string name="save_name">File name for output one image</string>
+    <string name="save_name2">File name for output images</string>
     <string name="save_path">Path for save images</string>
     <string name="download_models">Download models</string>
     <string name="start">Start</string>
+    <string name="image_is_directory">Image input is directory</string>
+    <string name="output_is_dir">Skip: don\'t need export</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>
@@ -112,6 +115,12 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
         <item>Input File Name-Command</item>
         <item>Input File Name-Time</item>
         <item>Input File Name</item>
+    </string-array>
+    <string-array name="name2">
+        <item>Input File Name-Input Time</item>
+        <item>Input File Name</item>
+        <item>Input Time</item>
+        <item>Input Time-Input File Name</item>
     </string-array>
     <string-array name="style_array">
         <item>real-esrgan-anime-x4</item>

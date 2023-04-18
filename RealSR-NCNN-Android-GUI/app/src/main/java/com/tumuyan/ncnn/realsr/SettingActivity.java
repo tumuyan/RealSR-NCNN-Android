@@ -31,7 +31,7 @@ public class SettingActivity extends AppCompatActivity {
     ToggleButton togglePrePng;
     ToggleButton toggleAutoSave;
     ToggleButton toggleSearchView;
-    Spinner spinnerFormat, spinnerName;
+    Spinner spinnerFormat, spinnerName, spinnerName2;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
             + File.separator + "RealSR";
@@ -58,6 +58,7 @@ public class SettingActivity extends AppCompatActivity {
         boolean showSearchView = mySharePerferences.getBoolean("showSearchView", false);
         int format = mySharePerferences.getInt("format", 0);
         int name = mySharePerferences.getInt("name", 0);
+        int name2 = mySharePerferences.getInt("name2", 0);
 
         editTile = findViewById(R.id.editTile);
         editTile.setText(String.format("%d", tileSize));
@@ -89,6 +90,8 @@ public class SettingActivity extends AppCompatActivity {
 
         spinnerName = findViewById(R.id.spinner_name);
         spinnerName.setSelection(name);
+        spinnerName2 = findViewById(R.id.spinner_name2);
+        spinnerName2.setSelection(name2);
 
         Spinner spinner = findViewById(R.id.spinner);
         spinner.setSelection(selectCommand);
@@ -121,6 +124,7 @@ public class SettingActivity extends AppCompatActivity {
             spinner.setSelection(2);
             spinnerFormat.setSelection(0);
             spinnerName.setSelection(0);
+            spinnerName2.setSelection(0);
             toggleCPU.setChecked(false);
             toggleAutoSave.setChecked(false);
             toggleSearchView.setChecked(false);
@@ -136,6 +140,7 @@ public class SettingActivity extends AppCompatActivity {
             spinner.setSelection(9);
             spinnerFormat.setSelection(0);
             spinnerName.setSelection(0);
+            spinnerName2.setSelection(0);
             toggleCPU.setChecked(false);
             toggleAutoSave.setChecked(false);
             toggleSearchView.setChecked(false);
@@ -221,6 +226,7 @@ public class SettingActivity extends AppCompatActivity {
         editor.putBoolean("showSearchView", toggleSearchView.isChecked());
         editor.putInt("format", (int) spinnerFormat.getSelectedItemId());
         editor.putInt("name", (int) spinnerName.getSelectedItemId());
+        editor.putInt("name2", (int) spinnerName2.getSelectedItemId());
 
         editor.apply();
     }

@@ -206,9 +206,13 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
 
 
 ## How to use RealSR-NCNN-Android-GUI
-You can open photo picker, chose a model, click the `Run` button and wait some time. The photo view will show the result when the progrem finish its work. If you like the result, you could click the `Save` button.  
+Two ways of selecting files:
+1. Share one or more images from other apps (e.g. Gallery) to this app
+2. In this app, click `Select Image` to select an image
 
-Also the app could input shell command. (You can input `help` and get more info)
+Tow ways of running:
+1. chose a model, click the `Run` button and wait some time. The photo view will show the result when the progrem finish its work. If you like the result, you could click the `Save` button.  
+2. input shell command and enter. (You can input `help` and get more info)
 
 ## Add more models to RealSR-NCNN-Android-GUI
 First of all , you could use preset commands or input command as shell, but

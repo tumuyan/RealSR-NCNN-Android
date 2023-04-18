@@ -9,8 +9,8 @@ android {
         applicationId "com.tumuyan.ncnn.realsr"
         minSdk 24
         targetSdk 28
-        versionCode 27
-        versionName "1.7.14"
+        versionCode 28
+        versionName "1.8"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -27,6 +27,10 @@ android {
             variant.outputs.all {
                 outputFileName = "RealSR-NCNN-Android-GUI-armv8a-${variant.versionName}.apk"
             }
+    }
+
+    lint {
+        baseline = file("lint-baseline.xml")
     }
 
     compileOptions {
