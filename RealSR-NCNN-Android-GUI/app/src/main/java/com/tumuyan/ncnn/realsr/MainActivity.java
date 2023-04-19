@@ -190,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // 删除文件或者目录
-    public static void deleteFile(File f){
+    public static void deleteFile(File f) {
         if (f.isDirectory()) {
             //获取目录下所有文件和目录
             File[] files = f.listFiles();
@@ -369,7 +369,7 @@ public class MainActivity extends AppCompatActivity {
                 whiteFileFromUri(uri, inputFilePath);
             }
             int inputFileSize = inputFile.listFiles().length;
-            logTextView.setText(String.format( getString(R.string.input_file_size), inputFileSize));
+            logTextView.setText(String.format(getString(R.string.input_file_size), inputFileSize));
         }
         return false;
     }
@@ -822,10 +822,10 @@ public class MainActivity extends AppCompatActivity {
                 || cmd.startsWith("./waifu2x-ncnn")
                 || cmd.startsWith("./magick input")
         ) {
-            if (cmd.contains("input.png") && cmd.contains("output.png")) {
+            if (cmd.contains(" input.png ") && cmd.contains(" output.png ")) {
                 if (inputFile.isDirectory()) {
                     output_savePath = true;
-                    cmd = cmd.replace("output.png", savePath);
+                    cmd = cmd.replace(" output.png ", " '" + savePath + "' ");
                 }
             }
             runOnUiThread(() -> menuProgress.setTitle(BUSY));
@@ -884,13 +884,12 @@ public class MainActivity extends AppCompatActivity {
 
             Log.i("run20", "write cmd start");
 
-            os.write(cmd.getBytes());
-            os.writeBytes("\n");
-
             if (save) {
-                os.write(saveOutputCmd().getBytes());
+                os.write((cmd + " ; " + saveOutputCmd()).getBytes());
                 os.writeBytes("\n");
             } else {
+                os.write(cmd.getBytes());
+                os.writeBytes("\n");
                 outputSavePath = "";
             }
             os.flush();
@@ -1119,11 +1118,9 @@ public class MainActivity extends AppCompatActivity {
             logTextView.setText(getString(R.string.default_log));
             showImage(null, "");
         } else if (q.equals("in")) {
-            File file = new File(dir + "/input.png");
-            showImage(file, getString(R.string.lr));
+            showImage(inputFile, getString(R.string.lr));
         } else if (q.equals("out")) {
-            File file = new File(dir + "/output.png");
-            showImage(file, getString(R.string.hr));
+            showImage(outputFile, getString(R.string.hr));
         } else if (q.startsWith("show ")) {
             String path = q.replaceFirst("\\s*show\\s+([^\\s]+)\\s*", "$1");
             File file = new File(path);
@@ -1198,30 +1195,30 @@ public class MainActivity extends AppCompatActivity {
         String cmd;
         if (format == 0) {
             outputSavePath += ".png";
-            cmd = ("cp " + dir + "/output.png " + outputSavePath);
+            cmd = ("cp " + dir + "/output.png");
         } else {
             // 其他格式需要使用image magic进行转换，会额外消耗时间。但是为了方便，没有写到新线程上。
             // progress.setTitle(BUSY);
             if (format == 1) {
                 outputSavePath += ".webp";
-                cmd = ("./magick output.png " + outputSavePath);
+                cmd = ("./magick output.png");
             } else if (format == 2) {
                 outputSavePath += ".gif";
-                cmd = ("./magick output.png " + outputSavePath);
+                cmd = ("./magick output.png");
             } else if (format == 3) {
                 outputSavePath += ".heic";
-                cmd = ("./magick output.png " + outputSavePath);
+                cmd = ("./magick output.png");
             } else {
                 outputSavePath += ".jpg";
                 String q = formats[format].replaceAll("[a-zA-Z%\\s]+", "");
                 if (q.length() > 0) {
-                    cmd = ("./magick output.png -quality " + q + " " + outputSavePath);
+                    cmd = ("./magick output.png -quality " + q);
                 } else
-                    cmd = ("./magick output.png " + outputSavePath);
+                    cmd = ("./magick output.png");
             }
         }
 
-        return cmd;
+        return cmd + " '" + outputSavePath + "'";
     }
 }
 
