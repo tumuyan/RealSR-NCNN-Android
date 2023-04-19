@@ -95,6 +95,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="start">Start</string>
     <string name="image_is_directory">Image input is directory</string>
     <string name="output_is_dir">Skip: don\'t need export</string>
+    <string name="input_file_size">Input %d files</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>
@@ -118,8 +119,8 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     </string-array>
     <string-array name="name2">
         <item>Input File Name-Input Time</item>
-        <item>Input File Name</item>
-        <item>Input Time</item>
+        <item>Input File Name-Index</item>
+        <item>Input Time-Index</item>
         <item>Input Time-Input File Name</item>
     </string-array>
     <string-array name="style_array">

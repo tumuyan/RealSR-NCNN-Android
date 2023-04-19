@@ -189,6 +189,22 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    // 删除文件或者目录
+    public static void deleteFile(File f){
+        if (f.isDirectory()) {
+            //获取目录下所有文件和目录
+            File[] files = f.listFiles();
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteFile(file);
+                } else {
+                    file.delete();
+                }
+            }
+        }
+        f.delete();
+    }
+
 
     public void shareImage(String path) {
         Intent share_intent = new Intent();
@@ -308,9 +324,9 @@ public class MainActivity extends AppCompatActivity {
     public boolean readFileFromShare() {
         Intent intent = getIntent();
         String action = intent.getAction();
-        String type = intent.getType();
 
         if (Intent.ACTION_SEND.equals(action)) {
+            deleteFile(inputFile);
             Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
             inputFileName = getFileName(uri, this).replaceFirst("\\.[^\\.]+$", "");
             Log.i("input file name", inputFileName);
@@ -318,7 +334,7 @@ public class MainActivity extends AppCompatActivity {
 
         } else if (Intent.ACTION_SEND_MULTIPLE.equals(action)) {
             ArrayList<Uri> imageUris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
-            inputFile.delete();
+            deleteFile(inputFile);
             inputFile.mkdirs();
             outputFile.delete();
 
@@ -328,23 +344,32 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < imageUris.size(); i++) {
                 Uri uri = imageUris.get(i);
                 inputFileName = getFileName(uri, this).replaceFirst("\\.[^\\.]+$", "");
-                if (inputFileName.isEmpty())
-                    inputFileName = "" + i;
+//                if (inputFileName.isEmpty())
+//                    inputFileName = "" + i;
                 switch (name2) {
                     case 0:
-                        inputFileName += "_" + time;
+                        inputFileName = String.format("%s_%s", inputFileName, time);
                         break;
                     case 1:
+                        inputFileName = String.format("%s_%d", inputFileName, i);
                         break;
                     case 2:
-                        inputFileName = time;
+                        inputFileName = String.format("%s_%d", time, i);
                         break;
                     case 3:
                         inputFileName = time + "_" + inputFileName;
                         break;
                 }
-                whiteFileFromUri(uri, dir + "/input.png/" + inputFileName + ".png");
+                String inputFilePath = String.format("%s/input.png/%s.png", dir, inputFileName);
+                int j = 0;
+                while (new File(inputFilePath).exists()) {
+                    j++;
+                    inputFilePath = dir + "/input.png/" + inputFileName + "_" + j + ".png";
+                }
+                whiteFileFromUri(uri, inputFilePath);
             }
+            int inputFileSize = inputFile.listFiles().length;
+            logTextView.setText(String.format( getString(R.string.input_file_size), inputFileSize));
         }
         return false;
     }
@@ -725,7 +750,7 @@ public class MainActivity extends AppCompatActivity {
 
 
             if (requestCode == SELECT_IMAGE && null != url) {
-
+                deleteFile(inputFile);
                 inputFileName = getFileName(url, this).replaceFirst("\\.[^\\.]+$", "");
                 Log.i("input file name", inputFileName);
                 InputStream in;
