@@ -3,7 +3,6 @@ package com.tumuyan.ncnn.realsr;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
@@ -189,31 +188,13 @@ public class SettingActivity extends AppCompatActivity {
         }
 
         String extraPath = editExtraPath.getText().toString().trim();
-        if (!extraPath.isEmpty()) {
-            File file = new File(extraPath);
-            if (!file.exists()) {
-                editExtraPath.setError(getString(R.string.path_not_exist));
-                return;
-            }
-            if (!file.isDirectory()) {
-                editExtraPath.setError(getString(R.string.path_not_exist));
-                return;
-            }
-        }
+        if (folderHasErr(extraPath, editExtraPath))
+            return;
         editor.putString("extraPath", extraPath);
 
         String savePath = editSavePath.getText().toString().trim();
-        if (!savePath.isEmpty()) {
-            File file = new File(extraPath);
-            if (!file.exists()) {
-                editSavePath.setError(getString(R.string.path_not_exist));
-                return;
-            }
-            if (!file.isDirectory()) {
-                editSavePath.setError(getString(R.string.path_not_exist));
-                return;
-            }
-        }
+        if (folderHasErr(savePath, editSavePath))
+            return;
         editor.putString("savePath", savePath);
 
         editThread.setText(threadCount);
@@ -230,4 +211,20 @@ public class SettingActivity extends AppCompatActivity {
 
         editor.apply();
     }
+
+    public boolean folderHasErr(String path, EditText editText) {
+        if (!path.isEmpty()) {
+            File file = new File(path);
+            if (!file.exists()) {
+                editText.setError(getString(R.string.path_not_exist));
+                return true;
+            }
+            if (!file.isDirectory()) {
+                editText.setError(getString(R.string.path_not_dir));
+                return true;
+            }
+        }
+        return false;
+    }
 }
+

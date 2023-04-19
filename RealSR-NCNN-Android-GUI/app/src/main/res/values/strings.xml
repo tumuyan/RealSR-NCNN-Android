@@ -75,6 +75,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="preprocess_to_png">Preprocess input image (not webp/png/jpg/bmp) to png</string>
     <string name="extra_path">Path for custom models (RealSR/ESRGAN/Waifu2x)</string>
     <string name="path_not_exist">Not exist this directory</string>
+    <string name="path_not_dir">The path is a file, not a directory</string>
     <string name="menu_out2in" translatable="false"><![CDATA[Output -> Input]]></string>
     <string name="menu_de_nearest">De Nearest</string>
     <string name="menu_magick4">Magick 25%</string>

@@ -452,31 +452,35 @@ public class MainActivity extends AppCompatActivity {
 
         if (!extraPath.isEmpty()) {
             File[] folders = new File(extraPath).listFiles();
-            Arrays.sort(folders, (Comparator) Comparator.comparing(a -> ((File) a).getName()));
-            for (File folder : folders) {
-                String name = folder.getName();
-                if (folder.isDirectory() && name.startsWith("models")) {
+            if (folders == null)
+                Log.e("getExtraCommands", "extraPath folders is null");
+            else {
+                Arrays.sort(folders, (Comparator) Comparator.comparing(a -> ((File) a).getName()));
+                for (File folder : folders) {
+                    String name = folder.getName();
+                    if (folder.isDirectory() && name.startsWith("models")) {
 
-                    // 匹配realsr模型
-                    String model = name.replace("models-", "");
-                    String scaleMatcher = ".*x(\\d+).*";
-                    String noiseMatcher = "";
-                    String command = "./realsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
+                        // 匹配realsr模型
+                        String model = name.replace("models-", "");
+                        String scaleMatcher = ".*x(\\d+).*";
+                        String noiseMatcher = "";
+                        String command = "./realsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
 
-                    // 匹配waifu2x模型
-                    if (name.matches("models-(cugan|cunet|upconv).*")) {
-                        model = name.replace("models-", "Waifu2x-");
-                        scaleMatcher = ".*scale(\\d+).*";
-                        command = "./waifu2x-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
-                        noiseMatcher = "noise(\\d+).*";
-                    } else if (name.startsWith("models-DF2K")) {
-                        model = name.replace("models-", "RealSR-");
-                    }
+                        // 匹配waifu2x模型
+                        if (name.matches("models-(cugan|cunet|upconv).*")) {
+                            model = name.replace("models-", "Waifu2x-");
+                            scaleMatcher = ".*scale(\\d+).*";
+                            command = "./waifu2x-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
+                            noiseMatcher = "noise(\\d+).*";
+                        } else if (name.startsWith("models-DF2K")) {
+                            model = name.replace("models-", "RealSR-");
+                        }
 
-                    List<String> suffix = genCmdFromModel(folder, scaleMatcher, noiseMatcher);
-                    for (String s : suffix) {
-                        cmdList.add(command + s);
-                        cmdLabel.add(model + "-x" + s.replace(" -n ", "-noise"));
+                        List<String> suffix = genCmdFromModel(folder, scaleMatcher, noiseMatcher);
+                        for (String s : suffix) {
+                            cmdList.add(command + s);
+                            cmdLabel.add(model + "-x" + s.replace(" -n ", "-noise"));
+                        }
                     }
                 }
             }

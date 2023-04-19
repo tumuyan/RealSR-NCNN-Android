@@ -89,6 +89,7 @@
     <string name="preprocess_to_png">预处理webp/png/jpg/bmp以外的图片为png</string>
     <string name="extra_path">自定义模型的路径(RealSR/ESRGAN/Waifu2x)</string>
     <string name="path_not_exist">不存在此目录</string>
+    <string name="path_not_dir">此路径为一个文件，而不是目录</string>
     <string name="menu_help">帮助</string>
     <string name="menu_out">显示处理后的图片</string>
     <string name="menu_in">显示处理前的图片</string>
