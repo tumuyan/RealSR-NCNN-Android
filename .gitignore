@@ -1,3 +1,4 @@
-/3rdparty/*
+/3rdparty/*/*/*
+/3rdparty/tests/*
 /.idea/
 *.apk

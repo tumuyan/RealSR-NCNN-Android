@@ -15,18 +15,47 @@ This repository contains 7 project:
 6. Resize-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android. use ncnn only to reduce the elf file size. Contains classical interpolation mode `nearest` `bilinear` `bicubic` and `avir` `lancir`
 7. Resize-CLI just a demo like the Resize-NCNN-Android-CLI, but it not need ncnn and could build by VS
 
+### How to use RealSR-NCNN-Android-GUI
+Two ways of selecting files:
+1. Share one or more images from other apps (e.g. Gallery) to this app
+2. In this app, click `Select Image` to select an image
+
+Tow ways of running:
+1. chose a model, click the `Run` button and wait some time. The photo view will show the result when the progrem finish its work. If you like the result, you could click the `Save` button.  
+2. input shell command and enter. (You can input `help` and get more info)
+
+input & output
+![](Screenshot.jpg)
+
+### Add more models to RealSR-NCNN-Android-GUI
+RealSR-NCNN-Android-GUI could load extra models from sdcard automatily in ver 1.7.6. You could download more models from https://huggingface.co/tumuyan/realsr .
+1. Make a directory in sdcard.
+2. Input the directory path to `Path for custom models (RealSR/ESRGAN/Waifu2x)` and save.
+3. Download and copy models to the directory you make.
+5. Return the main activity, then you could select the new models.
+
+![](Screenshot_models.jpg)
+
+### Convert pth models by yourself
+Also you could convert ESRGAN pth moddls by yourself.
+1. Download ESRGAN pytorch models from [https://upscale.wiki/wiki/Model_Database](https://upscale.wiki/wiki/Model_Database) and unzip it to somewhere.
+2. Download [cupscale](https://github.com/n00mkrad/cupscale) and unzip it in your PC.
+3. Convert pytorch models to ncnn. Open CupscaleData\bin\pth2ncnn, use pth2ncnn.exe to convert pth files to ncnn file.
+3. Rename models, just like this:
+```
+models-Real-ESRGAN-AnimeSharp  // directory should have a suffix of models-Real- or models-ESRGAN-
+├─x4.bin                       // models name as x[n], n is scale
+├─x4.param
+```
 
 ### Web UI
-The hugging face repository contains the model and executable file for Windows/Linux platform, you can clone the repository and open a web UI in the python (instead of the original command line program)
-
 https://huggingface.co/spaces/tumuyan/RealSR
-你也可以在线体验docker版本（由于使用双核CPU运算，速度相当慢）
+The hugging face repository contains the model and executable file for Windows/Linux platform, you can clone the repository and open a web UI in the python (instead of the original command line program)
 Also you could try online demo! [![Hugging Face](https://img.shields.io/badge/Demo-%F0%9F%A4%97%20Hugging%20Face-blue)](https://huggingface.co/spaces/tumuyan/realsr-docker)
 
 
-### About Real-ESRGAN
 
-![realesrgan_logo](https://github.com/xinntao/Real-ESRGAN/raw/master/assets/realesrgan_logo.png)  
+### About Real-ESRGAN 
 Real-ESRGAN is a Practical Algorithms for General Image Restoration.
 
 > [[Paper](https://arxiv.org/abs/2107.10833)] [[Project Page]](https://github.com/xinntao/Real-ESRGAN) &emsp; [[YouTube Video](https://www.youtube.com/watch?v=fxHWoDSSvSc)] [[Bilibili](https://www.bilibili.com/video/BV1H34y1m7sS/)] &emsp; [[Poster](https://xinntao.github.io/projects/RealESRGAN_src/RealESRGAN_poster.pdf)] [[PPT slides](https://docs.google.com/presentation/d/1QtW6Iy8rm8rGLsJ0Ldti6kP-7Qyzy6XL/edit?usp=sharing&ouid=109799856763657548160&rtpof=true&sd=true)]<br>
@@ -205,46 +234,6 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
 ```
 
 
-## How to use RealSR-NCNN-Android-GUI
-Two ways of selecting files:
-1. Share one or more images from other apps (e.g. Gallery) to this app
-2. In this app, click `Select Image` to select an image
-
-Tow ways of running:
-1. chose a model, click the `Run` button and wait some time. The photo view will show the result when the progrem finish its work. If you like the result, you could click the `Save` button.  
-2. input shell command and enter. (You can input `help` and get more info)
-
-## Add more models to RealSR-NCNN-Android-GUI
-First of all , you could use preset commands or input command as shell, but
-
-**RealSR-NCNN-Android-GUI could load waifu2x models from sdcard automatily in ver 1.7.6🎉.**  
-1. Make a  directory in sdcard.
-2. Open setting, input the directory path to `Path for custom models (RealSR/ESRGAN/Waifu2x)` and save.
-3. Download [waifu2x-ncnn](https://github.com/nihui/waifu2x-ncnn-vulkan/releases) and unzip it to somewhere.
-4. Copy`models-cunet` `models-upconv_7_anime_style_art_rgb` `models-upconv_7_photo` to the directory you make.
-5. Open the App, then you could select new commands for waifu2x-ncnn.
-
-**RealSR-NCNN-Android-GUI could load esrgan models from sdcard automatily in ver 1.7.6 🎉.**  
-Cause of most models is pytorch not ncnn, you should convert moddls in your PC.
-1. Download ESRGAN pytorch models from [https://upscale.wiki/wiki/Model_Database](https://upscale.wiki/wiki/Model_Database) and unzip it to somewhere.
-2. Download  [cupscale](https://github.com/n00mkrad/cupscale) and unzip it
-3. Convert pytorch models to ncnn. Open CupscaleData\bin\pth2ncnn, use pth2ncnn.exe to convert pth files to ncnn file.
-3. Rename models, just like this:
-```
-models-Real-ESRGAN-AnimeSharp  // directory should have a suffix of models-Real- or models-ESRGAN-
-├─x4.bin                       // models name as x[n], n is scale
-├─x4.bin
-```
-
-1. You should make a  directory in sdcard.
-2. Open setting, input the directory path to `Path for custom models (RealSR/ESRGAN/Waifu2x)` and save.
-4. Copy models to the directory you make.
-5. Open the App, then you could select new commands for realsr-ncnn.
-
-## Screenshot
-
-input & output
-![](Screenshot.jpg)
 
 ## Others project in this Repository
 Building and usage is same as RealSR-NCNN-Android-CLI

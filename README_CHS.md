@@ -21,11 +21,9 @@
 [酷安](https://www.coolapk.com/apk/292197) 或 [Github Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases)  
 
 ### Web UI
-如下仓库集成了Windows和Linux平台下的ncnn版本超分程序，可以clone仓库，在python环境下打开一个web UI来使用（代替原版程序的命令行方式）
 https://huggingface.co/spaces/tumuyan/RealSR
-你也可以在线体验docker版本（由于使用双核CPU运算，速度相当慢）
-https://huggingface.co/spaces/tumuyan/realsr-docker
-
+上方链接仓库集成了Windows和Linux平台下的ncnn版本超分程序，可以clone仓库，在python环境下打开一个web UI来使用（代替原版程序的命令行方式）
+你也可以在线体验docker版本（由于使用双核CPU运算，速度相当慢）[![Hugging Face](https://img.shields.io/badge/Demo-%F0%9F%A4%97%20Hugging%20Face-blue)](https://huggingface.co/spaces/tumuyan/realsr-docker)
 ### 仓库结构
 1. RealSR-NCNN-Android-GUI 可以编译出APK文件，这样用户可以在图形环境下操作。（不过他的本质就是在给命令行程序套壳，而不是通过JNI调用库文件）
 2. RealSR-NCNN-Android-CLI 可以编译出RealSR-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。这个程序可以使用RealSR和Real-ESRGAN的模型。
@@ -35,9 +33,48 @@ https://huggingface.co/spaces/tumuyan/realsr-docker
 6. Resize-NCNN-Android-CLI 可以编译出resize-ncnn命令行程序，可以在安卓设备的Termux等虚拟终端中使用，包含了`nearest/最邻近`、`bilinear/两次线性`、`bicubic/两次立方`三种经典放大（interpolation/插值）算法，以及Lanczos插值算法相似的`avir/lancir`。特别的，nearest和bilinear可以通过`-n`参数，不使用ncnn进行运算，得到点对点放大的结果;当不使用`-n`。参数时，`-s`参数可以使用小数
 7. Resize-CLI 可以编译出resize命令行程序，包含`nearest/最邻近`、`bilinear/两次线性`两种算法，不需要ncnn，编译体积较大。此工程除Android使用外，也可使用VS2019编译，在PC端快速验证。
 
-## 关于 Real-ESRGAN
 
-![realesrgan_logo](https://github.com/xinntao/Real-ESRGAN/raw/master/assets/realesrgan_logo.png)
+
+
+## 如何使用 RealSR-NCNN-Android-GUI
+支持两种选择文件的方式：
+1. 从其他应用（比如图库）分享一个或多个图片到本应用
+2. 在本应用中，点击`选图`选择图片
+
+支持两种操作方式:
+1. 点击`放大`（视图片大小和设备性能需要等待不同时间——毕竟原项目是使用电脑显卡运行的）- 查看放大效果是否满意，如果满意点击`导出`保存到相册。也可以在运行前切换使用的模型。切换模型后无需重新选择图片。运行过程中点击右上角进度可以终止运行；运行过程中切换模型并点击运行，或者直接输入命令并回车，可以终止上次任务并开始执行新的任务。
+2. 直接在输入框内输入命令完成调用(可以输入help查看更多信息)
+
+应用依赖于vulkan API，所以对设备有如下要求（几年前游戏《光遇》上架时，很多人已经对vulkan有所了解了吧？）：
+1. 使用了比较新的SOC。经过实际测试，骁龙853（GPU Adreno510）可以处理较小的图片
+2. 系统支持vulkan。（Google在Android7.0中增加了vulkan的集成，但是您的设备厂商不一定提供了这项支持）
+
+
+![](ScreenshotCHS.jpg)
+
+
+## 为 RealSR-NCNN-Android-GUI 增加更多模型
+RealSR-NCNN-Android-GUI 在 ver 1.7.6 以上的版本可以自动加载自定义模型。
+你可以从 https://huggingface.co/tumuyan/realsr 下载更多模型：
+1. 在文件管理器里新建一个目录
+2. 在App的设置中，自定义模型路径的选项里填入刚才新建目录的路径，点击保存
+3. 下载模型并复制到刚才新建的目录里
+5. 返回App，可以看到下拉菜单增加了新的模型
+
+![](Screenshot_models.jpg)
+
+你自己也可以把pth格式的模型转换为本应用可用的ncnn模型。
+1. 从 [https://upscale.wiki/wiki/Model_Database](https://upscale.wiki/wiki/Model_Database) 下载模型并解压
+2. 下载  [cupscale](https://github.com/n00mkrad/cupscale) 并解压
+3. 打开 CupscaleData\bin\pth2ncnn, 用 pth2ncnn.exe 转换t pth 文件为 ncnn 文件
+3. 重命名文件，举例：
+```
+models-Real-ESRGAN-AnimeSharp  // 目录需要用 models-Real- 或 models-ESRGAN- 开头
+├─x4.bin                       // 模型名称为 x[n], n 是放大倍率
+├─x4.param
+```
+
+## 关于 Real-ESRGAN
 Real ESRGAN是一个实用的图像修复算法，可以用来对低分辨率图片完成四倍放大和修复，化腐朽为神奇。
 > [[论文](https://arxiv.org/abs/2107.10833)] &emsp; [[项目地址]](https://github.com/xinntao/Real-ESRGAN) &emsp; [[YouTube 视频](https://www.youtube.com/watch?v=fxHWoDSSvSc)] &emsp; [[B站讲解](https://www.bilibili.com/video/BV1H34y1m7sS/)] &emsp; [[Poster](https://xinntao.github.io/projects/RealESRGAN_src/RealESRGAN_poster.pdf)] &emsp; [[PPT slides](https://docs.google.com/presentation/d/1QtW6Iy8rm8rGLsJ0Ldti6kP-7Qyzy6XL/edit?usp=sharing&ouid=109799856763657548160&rtpof=true&sd=true)]<br>
 > [Xintao Wang](https://xinntao.github.io/), Liangbin Xie, [Chao Dong](https://scholar.google.com.hk/citations?user=OSDCB0UAAAAJ), [Ying Shan](https://scholar.google.com/citations?user=4oXBp9UAAAAJ&hl=en) <br>
@@ -203,52 +240,6 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
 
 ```
 
-
-## 如何使用 RealSR-NCNN-Android-GUI
-支持两种选择文件的方式：
-1. 从其他应用（比如图库）分享一个或多个图片到本应用
-2. 在本应用中，点击`选图`选择图片
-
-支持两种操作方式:
-1. 点击`放大`（视图片大小和设备性能需要等待不同时间——毕竟原项目是使用电脑显卡运行的）- 查看放大效果是否满意，如果满意点击`导出`保存到相册。也可以在运行前切换使用的模型。切换模型后无需重新选择图片。运行过程中点击右上角进度可以终止运行；运行过程中切换模型并点击运行，或者直接输入命令并回车，可以终止上次任务并开始执行新的任务。
-2. 直接在输入框内输入命令完成调用(可以输入help查看更多信息)
-
-应用依赖于vulkan API，所以对设备有如下要求（几年前游戏《光遇》上架时，很多人已经对vulkan有所了解了吧？）：
-1. 使用了比较新的SOC。经过实际测试，骁龙853（GPU Adreno510）可以处理较小的图片
-2. 系统支持vulkan。（Google在Android7.0中增加了vulkan的集成，但是您的设备厂商不一定提供了这项支持）
-
-
-## 为 RealSR-NCNN-Android-GUI 增加更多模型
-
-首先，你可以在设置中设置预设命令，或者直接输入shell命令，调用存放在任意路径的模型，但是：
-
-**ver 1.7.6 RealSR-NCNN-Android-GUI 可以自动加载 waifu2x模型了！🎉**  
-1. 在文件管理器里新建一个目录
-2. 在App的设置中，自定义模型路径的选项里填入刚才新建目录的路径，点击保存
-3. 下载 [waifu2x-ncnn](https://github.com/nihui/waifu2x-ncnn-vulkan/releases) 并解压
-4. 复制`models-cunet` `models-upconv_7_anime_style_art_rgb` `models-upconv_7_photo`到刚才新建的目录里
-5. 返回App，可以看到下拉菜单增加了waifu2x-ncnn的命令
-
-**ver 1.7.6 RealSR-NCNN-Android-GUI 可以自动加载 ESRGAN 模型了！🎉**  
-由于大部分模型都是pytorch而非ncnn，所以需要先使用电脑转换模型的格式.
-1. 从 [https://upscale.wiki/wiki/Model_Database](https://upscale.wiki/wiki/Model_Database) 下载模型并解压
-2. 下载  [cupscale](https://github.com/n00mkrad/cupscale) 并解压
-3. 打开 CupscaleData\bin\pth2ncnn, 用 pth2ncnn.exe 转换t pth 文件为 ncnn 文件
-3. 重命名文件，举例：
-```
-models-Real-ESRGAN-AnimeSharp  // 目录需要用 models-Real- 或 models-ESRGAN- 开头
-├─x4.bin                       // 模型名称为 x[n], n 是放大倍率
-├─x4.bin
-```
-1. 在文件管理器里新建一个目录
-2. 在App的设置中，自定义模型路径的选项里填入刚才新建目录的路径，点击保存
-3. 复制模型到刚才新建的目录里
-4. 返回App，可以看到下拉菜单增加了realsr-ncnn的命令
-
-
-
-## 截屏
-![](ScreenshotCHS.jpg)
 
 ## 本仓库中的其他工程
 其他工程的编译和使用与RealSR-NCNN-Android-CLI完全相同，故不重复说明

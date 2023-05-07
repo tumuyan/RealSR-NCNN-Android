@@ -1,0 +1,1 @@
+download ncnn-yyyymmdd-android-vulkan-shared.zip from https://github.com/Tencent/ncnn/releases and extract abi folders to here
