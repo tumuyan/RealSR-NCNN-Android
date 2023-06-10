@@ -26,6 +26,9 @@
 #include "stb_image_write.h"
 #endif // _WIN32
 #include "webp_image.h"
+#include <chrono>
+
+using namespace std::chrono;
 
 #if _WIN32
 #include <wchar.h>
@@ -375,7 +378,8 @@ void* save(void* args)
             break;
 
         fprintf(stderr, "save result...\n");
-        float begin = clock();
+        high_resolution_clock::time_point begin = high_resolution_clock::now();
+
         // free input pixel data
         {
             unsigned char* pixeldata = (unsigned char*)v.inimage.data;
@@ -419,8 +423,9 @@ void* save(void* args)
         }
         if (success)
         {
-            float end = clock();
-            fprintf(stderr, "save result use time: %.3f\n", (end - begin) / CLOCKS_PER_SEC);
+            high_resolution_clock::time_point end = high_resolution_clock::now();
+            duration<double> time_span = duration_cast<duration<double>>(end - begin);
+            fprintf(stderr, "save result use time: %.3f\n",time_span);
 
             if (verbose)
             {
@@ -460,6 +465,9 @@ int wmain(int argc, wchar_t** argv)
 int main(int argc, char** argv)
 #endif
 {
+
+    high_resolution_clock::time_point prg_start = high_resolution_clock::now();
+
     path_t inputpath;
     path_t outputpath;
     int scale = 4;
@@ -734,12 +742,14 @@ int main(int argc, char** argv)
 #if _WIN32
     wchar_t modelpath[256];
     swprintf(modelpath, 256, L"%s/x%d.bin", model.c_str(), scale);
+    fprintf(stderr, "finding model: %s\n", modelpath);
 
     path_t modelfullpath = sanitize_filepath(modelpath);
     FILE* mp = _wfopen(modelfullpath.c_str(), L"rb");
 #else
     char modelpath[256];
     sprintf(modelpath, "%s/x%d.bin", model.c_str(), scale);
+    fprintf(stderr, "finding model: %s\n", modelpath);
 
     path_t modelfullpath = sanitize_filepath(modelpath);
     FILE *mp = fopen(modelfullpath.c_str(), "rb");
@@ -872,7 +882,6 @@ int main(int argc, char** argv)
                 tilesize[i] = 32;
         }
 
-
     if (verbose)
         fprintf(stderr, "init gpu tilesize %d/%d = %d\n", i,tilesize.size(),tilesize[i]);
     }
@@ -982,6 +991,11 @@ int main(int argc, char** argv)
     }
 
     ncnn::destroy_gpu_instance();
+
+    high_resolution_clock::time_point prg_end = high_resolution_clock::now();
+    duration<double> time_span = duration_cast<duration<double>>(prg_end - prg_start);
+    fprintf(stderr, "Total use time: %.3f\n",time_span);
+
 
     return 0;
 }

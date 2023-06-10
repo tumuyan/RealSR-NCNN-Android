@@ -86,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 4",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime -s 2",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime",
+            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-SourceBook -s 2",
             "./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 4",
             "./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 3",
             "./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 2",
@@ -985,18 +986,23 @@ public class MainActivity extends AppCompatActivity {
                 logTextView.setText(result.append("\nbreak"));
                 menuProgress.setTitle("");
             });
+
             return false;
         }
 
-
+//TM
         result.append("\nfinish, use ").append((float) (System.currentTimeMillis() - timeStart) / 1000).append(" second");
+
+        if (run_ncnn) {
+            result.append(", ").append(modelName+"\n");
+            Log.i("run20 finish'","run_ncnn="+run_ncnn+", modelName="+modelName+", ..."+result.substring(Math.max(result.length()-100,0)));
+        }else
+            Log.i("run20 finish","run_ncnn=false");
 
         boolean finalOutput_savePath = output_savePath;
         runOnUiThread(() -> {
-            if (run_ncnn)
-                logTextView.setText(result.append(", ").append(modelName));
-            else
-                logTextView.setText(result);
+
+            logTextView.setText(result);
             menuProgress.setTitle(getResources().getString(R.string.done));
 
             if (save) {

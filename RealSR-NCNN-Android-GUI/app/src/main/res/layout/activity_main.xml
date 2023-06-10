@@ -102,13 +102,13 @@
 
             <TextView
                 android:id="@+id/tv_log"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:autoLink="web"
                 android:paddingLeft="15dp"
                 android:paddingTop="5dp"
                 android:paddingRight="15dp"
-                android:paddingBottom="10dp"
+                android:paddingBottom="20dp"
                 android:text="@string/default_log" />
         </LinearLayout>
     </ScrollView>

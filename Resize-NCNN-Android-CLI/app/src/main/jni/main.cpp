@@ -39,6 +39,9 @@
 #include <ctime>
 #include "avir.h"
 #include "lancir.h"
+#include <chrono>
+
+using namespace std::chrono;
 
 #if _WIN32
 #include <wchar.h>
@@ -578,8 +581,8 @@ int main(int argc, char **argv)
                 fprintf(stderr, "\n");
             }
 
+            high_resolution_clock::time_point process_begin = high_resolution_clock::now();
 
-            float process_begin = clock();
 
             if (not_use_ncnn && model.find(PATHSTR("nearest")) != path_t::npos) {
 
@@ -792,9 +795,11 @@ int main(int argc, char **argv)
                 }
             }
 
-            float process_end = clock();
-            fprintf(stderr, "%s use time: %.2f\n", model.c_str(),
-                    (process_end - process_begin) / CLOCKS_PER_SEC);
+            high_resolution_clock::time_point process_end = high_resolution_clock::now();
+            duration<double> process_time_span = duration_cast<duration<double>>(process_end - process_begin);
+            fprintf(stderr, "%s use time: %.2f\n", model.c_str(),process_time_span);
+
+
 
             if (verbose) {
                 fprintf(stderr, "buf data: ");
@@ -821,7 +826,8 @@ int main(int argc, char **argv)
             }
 
             // save
-            float save_begin = clock();
+            high_resolution_clock::time_point save_begin = high_resolution_clock::now();
+
             {
 
 
@@ -866,9 +872,11 @@ int main(int argc, char **argv)
                 }
             }
 
-            float save_end = clock();
-            fprintf(stderr, "save image use time:%.2f \n",
-                    (save_end - save_begin) / CLOCKS_PER_SEC);
+            high_resolution_clock::time_point save_end = high_resolution_clock::now();
+            duration<double> time_span = duration_cast<duration<double>>(save_end - save_begin);
+            fprintf(stderr, "Total use time: %.3f\n",time_span);
+
+
 
         } else {
 #if _WIN32
