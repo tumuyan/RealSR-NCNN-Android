@@ -204,6 +204,7 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
     const int ytiles = (h + TILE_SIZE_Y - 1) / TILE_SIZE_Y;
 
     const size_t in_out_tile_elemsize = opt.use_fp16_storage ? 2u : 4u;
+    high_resolution_clock::time_point begin = high_resolution_clock::now();
 
     //#pragma omp parallel for num_threads(2)
     for (int yi = 0; yi < ytiles; yi++)
@@ -526,8 +527,11 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                 cmd.submit_and_wait();
                 cmd.reset();
             }
+            high_resolution_clock::time_point end = high_resolution_clock::now();
+            double time_span = duration_cast<duration<double>>(end - begin).count();
+            double progress = (float)(yi * xtiles + xi +1) / (ytiles * xtiles);
+            fprintf(stderr, "%5.2f%%\t[%5.2fs /%5.2f ETA]\n", progress * 100, time_span, time_span / progress - time_span);
 
-            fprintf(stderr, "%.2f%%\n", (float)(yi * xtiles + xi) / (ytiles * xtiles) * 100);
         }
 
         // download

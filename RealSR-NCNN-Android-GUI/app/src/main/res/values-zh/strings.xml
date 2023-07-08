@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">RealSR放大图片</string>
     <string name="default_log">
-        \n这是一个使用人工智能技术和传统插值算法兼备的图片放大的应用。
+        \n这是一个兼具人工智能和传统插值算法的图片放大的应用。
         \n\n最初使用了Real ESRGAN和RealSR NCNN的成果实现安卓本地超分，后来又添加了SRMD NCNN和Real CUGAN NCNN，再往后又加入了传统插值缩放算法nearest/bilinear/bicubic和sinc类型插值算法avir/avir-lancir，最后更是直接加入了强大的图标处理工具ImageMagick，逐步成为一个算法完善的图片放大的工具。
         \n在内置的超分模型中，本人对其中的Real ESRGAN最为推崇。Real ESRGAN所实现的放大和修复做到了一定程度上化腐朽为神奇。
 
@@ -13,7 +13,6 @@
         \n常见错误：https://note.youdao.com/s/3xv6h5iv
         \n模型和算法的说明：https://note.youdao.com/s/6XlIFbWt
         \n添加更多模型: https://note.youdao.com/s/XEv68sBU (包含waifu2x realsr real-esrgan模型，欢迎在酷安、github或者这篇笔记的评论区讨论这些额外的模型)
-
 
         \n\n\n本应用除使用下拉选项中的预设参数外，还支持在输入框内输入命令。
         \n一、调用超分辨率程序

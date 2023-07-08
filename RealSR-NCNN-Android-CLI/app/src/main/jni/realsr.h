@@ -9,7 +9,9 @@
 #include "net.h"
 #include "gpu.h"
 #include "layer.h"
+#include <chrono>
 
+using namespace std::chrono;
 class RealSR
 {
 public:

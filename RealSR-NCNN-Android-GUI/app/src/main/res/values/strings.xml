@@ -1,11 +1,12 @@
 <resources>
     <string name="app_name">RealSR BigImage</string>
     <string name="default_log">\n
-        This is a simple Android application that uses Realsr-NCNN, SRMD-NCNN, Real-CUGAN-NCNN, Real-ESRGAN, Waifu2x-NCNN and ImageMagicK.
+        This is a simple Android application that uses Realsr-NCNN, SRMD-NCNN, Real-CUGAN-NCNN, Real-ESRGAN, Waifu2x-NCNN and ImageMagick.
 
         \nThe application does not collect any private information from your device.
         \nGithub: https://github.com/tumuyan/RealSR-NCNN-Android
         \nCoolApk:https://www.coolapk.com/apk/292197
+        \nAdd more models: https://github.com/tumuyan/RealSR-NCNN-Android#add-more-models-to-realsr-ncnn-android-gui
         \n
         \nYou can run these programs:
         \n1.Super resolution -i input.png -o output.png

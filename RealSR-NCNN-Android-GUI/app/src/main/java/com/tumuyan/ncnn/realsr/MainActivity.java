@@ -915,8 +915,8 @@ public class MainActivity extends AppCompatActivity {
                         continue;
 
                     result.append(line).append("\n");
-                    boolean p = run_ncnn && line.matches("\\d([0-9.]*)%");
-                    progressText = line;
+                    boolean p = run_ncnn && line.matches("\\s*\\d([0-9.]*)%(\\s.+)?");
+                    progressText = line.trim().split("\\s")[0];
 
                     runOnUiThread(() -> {
                         logTextView.setText(result);
