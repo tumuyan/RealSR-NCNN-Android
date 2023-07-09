@@ -30,7 +30,7 @@ public class SettingActivity extends AppCompatActivity {
     ToggleButton togglePrePng;
     ToggleButton toggleAutoSave;
     ToggleButton toggleSearchView;
-    Spinner spinnerFormat, spinnerName, spinnerName2;
+    Spinner spinnerFormat, spinnerName, spinnerName2, spinnerOrientation;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
             + File.separator + "RealSR";
@@ -58,6 +58,7 @@ public class SettingActivity extends AppCompatActivity {
         int format = mySharePerferences.getInt("format", 0);
         int name = mySharePerferences.getInt("name", 0);
         int name2 = mySharePerferences.getInt("name2", 0);
+        int orientation = mySharePerferences.getInt("ORIENTATION", 0);
 
         editTile = findViewById(R.id.editTile);
         editTile.setText(String.format("%d", tileSize));
@@ -91,6 +92,8 @@ public class SettingActivity extends AppCompatActivity {
         spinnerName.setSelection(name);
         spinnerName2 = findViewById(R.id.spinner_name2);
         spinnerName2.setSelection(name2);
+        spinnerOrientation = findViewById(R.id.spinner_orientation);
+        spinnerOrientation.setSelection(orientation);
 
         Spinner spinner = findViewById(R.id.spinner);
         spinner.setSelection(selectCommand);
@@ -208,7 +211,7 @@ public class SettingActivity extends AppCompatActivity {
         editor.putInt("format", (int) spinnerFormat.getSelectedItemId());
         editor.putInt("name", (int) spinnerName.getSelectedItemId());
         editor.putInt("name2", (int) spinnerName2.getSelectedItemId());
-
+        editor.putInt("ORIENTATION", (int) spinnerOrientation.getSelectedItemId());
         editor.apply();
     }
 

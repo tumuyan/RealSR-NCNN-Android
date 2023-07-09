@@ -109,6 +109,7 @@
     <string name="image_is_directory">输入的是一个目录</string>
     <string name="output_is_dir">跳过：无需导出</string>
     <string name="input_file_size">选择了%d个文件</string>
+    <string name="orientation">屏幕方向</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>
@@ -153,5 +154,11 @@
         <item>原文件名-序号</item>
         <item>选择文件时间-序号</item>
         <item>选择文件时间-原文件名</item>
+    </string-array>
+    <string-array name="oriental_item">
+        <item>默认</item>
+        <item>自动</item>
+        <item>竖屏</item>
+        <item>横屏</item>
     </string-array>
 </resources>

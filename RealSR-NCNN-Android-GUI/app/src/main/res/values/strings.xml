@@ -98,6 +98,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="image_is_directory">Image input is directory</string>
     <string name="output_is_dir">Skip: don\'t need export</string>
     <string name="input_file_size">Input %d files</string>
+    <string name="orientation">屏幕方向</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>
@@ -157,5 +158,10 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
         <item>classical-bilinear-x2</item>
         <item>classical-bilinear-x4</item>
     </string-array>
-
+    <string-array name="oriental_item">
+        <item>Default</item>
+        <item>Auto</item>
+        <item>Portrait</item>
+        <item>Landscape</item>
+    </string-array>
 </resources>

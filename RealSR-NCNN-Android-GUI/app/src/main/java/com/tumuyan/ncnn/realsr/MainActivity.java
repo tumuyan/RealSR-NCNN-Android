@@ -12,7 +12,9 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.icu.text.SimpleDateFormat;
@@ -555,6 +557,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
         imageView = findViewById(R.id.photo_view);
         logTextView = findViewById(R.id.tv_log);
         searchView = findViewById(R.id.serarch_view);
@@ -574,6 +578,17 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences.Editor editor = mySharePerferences.edit();
         editor.putInt("version", BuildConfig.VERSION_CODE);
         editor.apply();
+
+
+        int orientation = mySharePerferences.getInt("ORIENTATION", 0);
+        if (orientation == 1) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+        } else if (orientation == 2)
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        else if(orientation==3) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        }
+
 
         dir = dir + "/realsr";
 
@@ -994,10 +1009,10 @@ public class MainActivity extends AppCompatActivity {
         result.append("\nfinish, use ").append((float) (System.currentTimeMillis() - timeStart) / 1000).append(" second");
 
         if (run_ncnn) {
-            result.append(", ").append(modelName+"\n");
-            Log.i("run20 finish'","run_ncnn="+run_ncnn+", modelName="+modelName+", ..."+result.substring(Math.max(result.length()-100,0)));
-        }else
-            Log.i("run20 finish","run_ncnn=false");
+            result.append(", ").append(modelName + "\n");
+            Log.i("run20 finish'", "run_ncnn=" + run_ncnn + ", modelName=" + modelName + ", ..." + result.substring(Math.max(result.length() - 100, 0)));
+        } else
+            Log.i("run20 finish", "run_ncnn=false");
 
         boolean finalOutput_savePath = output_savePath;
         runOnUiThread(() -> {

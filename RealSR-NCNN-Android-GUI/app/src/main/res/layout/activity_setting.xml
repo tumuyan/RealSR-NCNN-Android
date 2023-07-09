@@ -169,14 +169,34 @@
             android:background="@drawable/round_corner_bg"
             android:ems="10"
             android:padding="5dp" />
-<!--
-        <Button
-            android:id="@+id/btn_download_models"
+
+
+
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/download_models"
-            android:padding="5dp" />
--->
+            android:layout_marginTop="10dp"
+            android:text="@string/orientation"
+            android:textSize="18sp" />
+
+        <Spinner
+            android:id="@+id/spinner_orientation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:entries="@array/oriental_item"
+            android:padding="5dp"
+            android:textAlignment="center" />
+
+        <!--
+                <Button
+                    android:id="@+id/btn_download_models"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/download_models"
+                    android:padding="5dp" />
+        -->
 
         <TextView
             android:layout_width="match_parent"
