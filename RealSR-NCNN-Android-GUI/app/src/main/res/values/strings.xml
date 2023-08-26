@@ -98,7 +98,9 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="image_is_directory">Image input is directory</string>
     <string name="output_is_dir">Skip: don\'t need export</string>
     <string name="input_file_size">Input %d files</string>
-    <string name="orientation">屏幕方向</string>
+    <string name="orientation">Screen orientaion</string>
+    <string name="error">Error</string>
+    <string name="use_notification">Send notification</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>

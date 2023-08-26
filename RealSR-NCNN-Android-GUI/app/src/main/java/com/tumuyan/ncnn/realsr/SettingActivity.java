@@ -26,6 +26,8 @@ public class SettingActivity extends AppCompatActivity {
     EditText editExtraPath;
     EditText editSavePath;
     ToggleButton toggleKeepScreen;
+
+    ToggleButton toggleUseNotication;
     ToggleButton toggleCPU;
     ToggleButton togglePrePng;
     ToggleButton toggleAutoSave;
@@ -48,6 +50,7 @@ public class SettingActivity extends AppCompatActivity {
         String defaultCommand = mySharePerferences.getString("defaultCommand", "");
         String threadCount = mySharePerferences.getString("threadCount", "");
         boolean keepScreen = mySharePerferences.getBoolean("keepScreen", false);
+        boolean useNotification = mySharePerferences.getBoolean("useNotification",false);
         boolean prePng = mySharePerferences.getBoolean("PrePng", true);
         String extraCommand = mySharePerferences.getString("extraCommand", "");
         String extraPath = mySharePerferences.getString("extraPath", "");
@@ -76,6 +79,8 @@ public class SettingActivity extends AppCompatActivity {
         editThread.setText(threadCount);
         toggleKeepScreen = findViewById(R.id.toggle_keep_screen);
         toggleKeepScreen.setChecked(keepScreen);
+        toggleUseNotication = findViewById(R.id.toggle_use_notification);
+        toggleUseNotication.setChecked(useNotification);
         togglePrePng = findViewById(R.id.toggle_pre_png);
         togglePrePng.setChecked(prePng);
         toggleAutoSave = findViewById(R.id.toggle_auto_save);
@@ -204,6 +209,7 @@ public class SettingActivity extends AppCompatActivity {
         editor.putString("threadCount", threadCount);
 
         editor.putBoolean("keepScreen", toggleKeepScreen.isChecked());
+        editor.putBoolean("useNotification",toggleUseNotication.isChecked());
         editor.putBoolean("PrePng", togglePrePng.isChecked());
         editor.putBoolean("useCPU", toggleCPU.isChecked());
         editor.putBoolean("autoSave", toggleAutoSave.isChecked());

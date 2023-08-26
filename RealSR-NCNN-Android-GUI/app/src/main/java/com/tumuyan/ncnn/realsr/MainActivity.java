@@ -5,16 +5,20 @@ import static com.tumuyan.ncnn.realsr.UriUntils.getFileName;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.icu.text.SimpleDateFormat;
@@ -43,14 +47,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
+
 
 public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1;
@@ -114,11 +117,14 @@ public class MainActivity extends AppCompatActivity {
     };
     private int tileSize;
     private boolean useCPU;
-    private boolean keepScreen;
+    private boolean keepScreen, useNotification;
     private boolean prePng;
     private boolean autoSave;
     private boolean showSearchView;
     private String savePath = galleryPath;
+
+    private NotificationManager mNManager;
+    private static final int NOTIFY_ID = 1;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -169,24 +175,18 @@ public class MainActivity extends AppCompatActivity {
         if (!run_fake_command(q)) {
             stopCommand();
             String finalImageName = imageName;
-            new Thread(
-                    () -> {
-                        run20(q);
-                        final File finalfile = new File(dir + finalImageName);
-                        if (finalfile.exists() && (!finalfile.isDirectory())) {
-                            runOnUiThread(
-                                    () -> {
-                                        imageView.setVisibility(View.VISIBLE);
-                                        imageView.setImage(ImageSource.uri(finalfile.getAbsolutePath()));
-                                    }
-                            );
-                        } else {
-                            runOnUiThread(
-                                    () -> imageView.setVisibility(View.GONE)
-                            );
-                        }
-                    }
-            ).start();
+            new Thread(() -> {
+                run20(q);
+                final File finalfile = new File(dir + finalImageName);
+                if (finalfile.exists() && (!finalfile.isDirectory())) {
+                    runOnUiThread(() -> {
+                        imageView.setVisibility(View.VISIBLE);
+                        imageView.setImage(ImageSource.uri(finalfile.getAbsolutePath()));
+                    });
+                } else {
+                    runOnUiThread(() -> imageView.setVisibility(View.GONE));
+                }
+            }).start();
         }
 
         return super.onOptionsItemSelected(item);
@@ -283,6 +283,7 @@ public class MainActivity extends AppCompatActivity {
         tileSize = mySharePerferences.getInt("tileSize", 0);
         threadCount = mySharePerferences.getString("threadCount", "");
         keepScreen = mySharePerferences.getBoolean("keepScreen", false);
+        useNotification = mySharePerferences.getBoolean("useNotification", false);
         prePng = mySharePerferences.getBoolean("PrePng", true);
         useCPU = mySharePerferences.getBoolean("useCPU", false);
         autoSave = mySharePerferences.getBoolean("autoSave", false);
@@ -409,15 +410,9 @@ public class MainActivity extends AppCompatActivity {
         List<String> cmdLabel = new ArrayList<>();
 
         // 增加resize-ncnn经典插值放大的命令
-        String[] classicalFilters = {
-                "bicubic",
-                "avir",
-                "avir-lancir",
-        };
+        String[] classicalFilters = {"bicubic", "avir", "avir-lancir",};
 
-        String[] classicalResize = {
-                "2", "4"
-        };
+        String[] classicalResize = {"2", "4"};
 
         for (String f : classicalFilters) {
             for (String s : classicalResize) {
@@ -441,9 +436,7 @@ public class MainActivity extends AppCompatActivity {
                 "Blackman",
         };
 
-        String[] magickResize = {
-                "200%", "400%", "1000%"
-        };
+        String[] magickResize = {"200%", "400%", "1000%"};
 
         for (String f : magickFilters) {
             for (String s : magickResize) {
@@ -585,7 +578,7 @@ public class MainActivity extends AppCompatActivity {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
         } else if (orientation == 2)
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        else if(orientation==3) {
+        else if (orientation == 3) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         }
 
@@ -723,12 +716,18 @@ public class MainActivity extends AppCompatActivity {
             overridePendingTransition(0, android.R.anim.slide_out_right);
         });
 
+        mNManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            // 创建渠道
+            NotificationChannel channel = new NotificationChannel("message", "message", NotificationManager.IMPORTANCE_HIGH);
+            mNManager.createNotificationChannel(channel);
+        }
+
+
         requirePremision();
 
-        if (menuProgress != null)
-            menuProgress.setTitle("");
-        else
-            initProcess = true;
+        if (menuProgress != null) menuProgress.setTitle("");
+        else initProcess = true;
 
         readFileFromShare();
     }
@@ -749,6 +748,29 @@ public class MainActivity extends AppCompatActivity {
             if (!file.exists())
                 file.mkdirs();
         }
+    }
+
+
+    private void notify(Context mContext, String text) {
+        if (!useNotification)
+            return;
+
+        if (text == null) {
+            mNManager.cancel(NOTIFY_ID);                          //取消Notification
+            return;
+        }
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mContext, "message");
+        mBuilder.setContentTitle(getString(R.string.app_name))                        //标题
+                .setContentText(text)
+                .setWhen(System.currentTimeMillis())
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setDefaults(Notification.FLAG_ONGOING_EVENT)
+//                .setAutoCancel(true)                           //设置点击后取消Notification
+        ;
+        Notification notify = mBuilder.build();
+        mNManager.notify(NOTIFY_ID, notify);
+
     }
 
 
@@ -848,7 +870,11 @@ public class MainActivity extends AppCompatActivity {
                     cmd = cmd.replace(" output.png ", " '" + savePath + "' ");
                 }
             }
-            runOnUiThread(() -> menuProgress.setTitle(BUSY));
+
+            runOnUiThread(() -> {
+                menuProgress.setTitle(BUSY);
+                notify(this, BUSY);
+            });
             modelName = "Real-ESRGAN-anime";
             if (cmd.matches(".+\\s-m(\\s+)[^\\s]*models-.+")) {
                 modelName = cmd.replaceFirst(".+\\s-m(\\s+)[^\\s]*models-([^\\s]+).*", "$2");
@@ -933,10 +959,13 @@ public class MainActivity extends AppCompatActivity {
                     boolean p = run_ncnn && line.matches("\\s*\\d([0-9.]*)%(\\s.+)?");
                     progressText = line.trim().split("\\s")[0];
 
+                    String finalLine = line;
                     runOnUiThread(() -> {
                         logTextView.setText(result);
-                        if (p)
+                        if (p) {
                             menuProgress.setTitle(progressText);
+                            notify(this, finalLine);
+                        }
                     });
 
                     Log.d("run20 errorResult", line);
@@ -963,10 +992,13 @@ public class MainActivity extends AppCompatActivity {
                     boolean p = run_ncnn && line.matches("\\d([0-9.]*)%");
                     progressText = line;
 
+                    String finalLine = line;
                     runOnUiThread(() -> {
                         logTextView.setText(result);
-                        if (p)
+                        if (p) {
                             menuProgress.setTitle(progressText);
+                            notify(this, finalLine);
+                        }
                     });
 
                     Log.d("run20 successResult", line);
@@ -984,14 +1016,14 @@ public class MainActivity extends AppCompatActivity {
 
         } catch (Exception e) {
             e.printStackTrace();
+            notify(this, getString(R.string.error));
             return false;
         }
         Log.d("run_20", "finish, process " + (process != null));
 
         try {
             Log.d("run_20", "finish, exitValue " + process.exitValue());
-            if (process.exitValue() != 0)
-                process.destroy();
+            if (process.exitValue() != 0) process.destroy();
         } catch (Exception e) {
 //            e.printStackTrace();
         }
@@ -1011,14 +1043,14 @@ public class MainActivity extends AppCompatActivity {
         if (run_ncnn) {
             result.append(", ").append(modelName + "\n");
             Log.i("run20 finish'", "run_ncnn=" + run_ncnn + ", modelName=" + modelName + ", ..." + result.substring(Math.max(result.length() - 100, 0)));
-        } else
-            Log.i("run20 finish", "run_ncnn=false");
+        } else Log.i("run20 finish", "run_ncnn=false");
 
         boolean finalOutput_savePath = output_savePath;
         runOnUiThread(() -> {
 
             logTextView.setText(result);
             menuProgress.setTitle(getResources().getString(R.string.done));
+            notify(this, getString(R.string.done));
 
             if (save) {
                 if (!outputFile.exists()) {
@@ -1039,8 +1071,7 @@ public class MainActivity extends AppCompatActivity {
     private void stopCommand() {
         if (process != null) {
             process.destroy();
-            if (menuProgress != null)
-                menuProgress.setTitle("");
+            if (menuProgress != null) menuProgress.setTitle("");
         }
         newTask = true;
     }
@@ -1048,8 +1079,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean saveInputImage(@NonNull InputStream in, String path) {
 
         Log.i("saveInputImage", "start ");
-        if (path.isEmpty())
-            path = dir + "/input.png";
+        if (path.isEmpty()) path = dir + "/input.png";
         File file = new File(path);
 
         if (file.exists()) {
@@ -1097,8 +1127,7 @@ public class MainActivity extends AppCompatActivity {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                } else
-                    run20("./magick tmp '" + path + "'");
+                } else run20("./magick tmp '" + path + "'");
             }
 
         } catch (IOException e) {
@@ -1117,28 +1146,23 @@ public class MainActivity extends AppCompatActivity {
     private void updateImage(final String path, String text, boolean keepScreen) {
         Log.i("saveInputImage", "runOnUiThread");
         File file = new File(path);
-        runOnUiThread(
-                () -> {
-                    if (file.exists() && (!file.isDirectory())) {
-                        imageView.setVisibility(View.VISIBLE);
-                        imageView.setImage(ImageSource.uri(path));
-                        logTextView.setText(text);
-                        Log.i("saveInputImage", "finish");
-                    } else
-                        Log.i("saveInputImage", "skip");
-                    if (keepScreen) {
-                        logTextView.setKeepScreenOn(false);
-                    }
+        runOnUiThread(() -> {
+            if (file.exists() && (!file.isDirectory())) {
+                imageView.setVisibility(View.VISIBLE);
+                imageView.setImage(ImageSource.uri(path));
+                logTextView.setText(text);
+                Log.i("saveInputImage", "finish");
+            } else Log.i("saveInputImage", "skip");
+            if (keepScreen) {
+                logTextView.setKeepScreenOn(false);
+            }
 
-                }
-        );
+        });
     }
 
     private boolean run_fake_command(String q) {
-        if (q == null)
-            return true;
-        if (q.isEmpty())
-            return true;
+        if (q == null) return true;
+        if (q.isEmpty()) return true;
         if (q.equals("help")) {
             logTextView.setText(getString(R.string.default_log));
             showImage(null, "");
@@ -1155,14 +1179,12 @@ public class MainActivity extends AppCompatActivity {
             }
             showImage(file, getString(R.string.show) + path);
 
-        } else
-            return false;
+        } else return false;
         return true;
     }
 
     private void showImage(File file, String info) {
-        if (file == null)
-            imageView.setVisibility(View.GONE);
+        if (file == null) imageView.setVisibility(View.GONE);
         else if (file.exists() && (!file.isDirectory())) {
             imageView.setVisibility(View.VISIBLE);
             imageView.setImage(ImageSource.uri(file.getAbsolutePath()));
@@ -1238,8 +1260,7 @@ public class MainActivity extends AppCompatActivity {
                 String q = formats[format].replaceAll("[a-zA-Z%\\s]+", "");
                 if (q.length() > 0) {
                     cmd = ("./magick output.png -quality " + q);
-                } else
-                    cmd = ("./magick output.png");
+                } else cmd = ("./magick output.png");
             }
         }
 
