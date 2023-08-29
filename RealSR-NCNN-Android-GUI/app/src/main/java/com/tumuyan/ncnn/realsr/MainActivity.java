@@ -22,7 +22,9 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.icu.text.SimpleDateFormat;
+import android.media.AudioAttributes;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -75,8 +77,8 @@ public class MainActivity extends AppCompatActivity {
     private Spinner spinner;
     private Process process;
     private boolean newTask;
-    private int format, name, name2;
-    private String BUSY;
+    private int format, name, name2, notify;
+    private String BUSY, ERR, DONE;
     private String outputSavePath = "";
     private String inputFileName = "";
 
@@ -117,14 +119,15 @@ public class MainActivity extends AppCompatActivity {
     };
     private int tileSize;
     private boolean useCPU;
-    private boolean keepScreen, useNotification;
+    private boolean keepScreen;
     private boolean prePng;
     private boolean autoSave;
     private boolean showSearchView;
     private String savePath = galleryPath;
-
-    private NotificationManager mNManager;
     private static final int NOTIFY_ID = 1;
+    private static final String CHANNEL_NAME_RESULT = "channel_result";
+    private static final String CHANNEL_NAME_PROGRESS = "channel_progress";
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -278,12 +281,13 @@ public class MainActivity extends AppCompatActivity {
 
         formats = getResources().getStringArray(R.array.format);
         BUSY = getResources().getString(R.string.busy);
+        ERR = getString(R.string.error);
+        DONE = getString(R.string.done);
 
         SharedPreferences mySharePerferences = getSharedPreferences("config", Activity.MODE_PRIVATE);
         tileSize = mySharePerferences.getInt("tileSize", 0);
         threadCount = mySharePerferences.getString("threadCount", "");
         keepScreen = mySharePerferences.getBoolean("keepScreen", false);
-        useNotification = mySharePerferences.getBoolean("useNotification", false);
         prePng = mySharePerferences.getBoolean("PrePng", true);
         useCPU = mySharePerferences.getBoolean("useCPU", false);
         autoSave = mySharePerferences.getBoolean("autoSave", false);
@@ -292,6 +296,8 @@ public class MainActivity extends AppCompatActivity {
             searchView.setVisibility(View.VISIBLE);
         else
             searchView.setVisibility(View.GONE);
+
+        notify = mySharePerferences.getInt("notify", 0);
 
         format = mySharePerferences.getInt("format", 0);
         name = mySharePerferences.getInt("name", 0);
@@ -716,14 +722,6 @@ public class MainActivity extends AppCompatActivity {
             overridePendingTransition(0, android.R.anim.slide_out_right);
         });
 
-        mNManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            // 创建渠道
-            NotificationChannel channel = new NotificationChannel("message", "message", NotificationManager.IMPORTANCE_HIGH);
-            mNManager.createNotificationChannel(channel);
-        }
-
-
         requirePremision();
 
         if (menuProgress != null) menuProgress.setTitle("");
@@ -751,26 +749,45 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void notify(Context mContext, String text) {
-        if (!useNotification)
+    private void sendNotification(Context mContext, String text) {
+        if (notify == 0)
             return;
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
         if (text == null) {
-            mNManager.cancel(NOTIFY_ID);                          //取消Notification
+            notificationManager.cancel(NOTIFY_ID);   //取消Notification
             return;
         }
 
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mContext, "message");
+        String channel_name = null;
+        if ((text.equals(ERR) || text.equals(DONE))) {
+            channel_name = CHANNEL_NAME_RESULT;
+        } else if (notify == 2) {
+            return;
+        } else {
+            channel_name = CHANNEL_NAME_PROGRESS;
+        }
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    channel_name,
+                    channel_name,
+                    NotificationManager.IMPORTANCE_HIGH);
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mContext, channel_name);
         mBuilder.setContentTitle(getString(R.string.app_name))                        //标题
                 .setContentText(text)
                 .setWhen(System.currentTimeMillis())
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setDefaults(Notification.FLAG_ONGOING_EVENT)
+                .setDefaults(Notification.DEFAULT_SOUND);
+//                .setDefaults(Notification.FLAG_ONGOING_EVENT)
 //                .setAutoCancel(true)                           //设置点击后取消Notification
         ;
-        Notification notify = mBuilder.build();
-        mNManager.notify(NOTIFY_ID, notify);
-
+        Notification notification = mBuilder.build();
+        notificationManager.notify(NOTIFY_ID, notification);
     }
 
 
@@ -873,7 +890,7 @@ public class MainActivity extends AppCompatActivity {
 
             runOnUiThread(() -> {
                 menuProgress.setTitle(BUSY);
-                notify(this, BUSY);
+                sendNotification(this, BUSY);
             });
             modelName = "Real-ESRGAN-anime";
             if (cmd.matches(".+\\s-m(\\s+)[^\\s]*models-.+")) {
@@ -964,7 +981,7 @@ public class MainActivity extends AppCompatActivity {
                         logTextView.setText(result);
                         if (p) {
                             menuProgress.setTitle(progressText);
-                            notify(this, finalLine);
+                            sendNotification(this, finalLine);
                         }
                     });
 
@@ -997,7 +1014,7 @@ public class MainActivity extends AppCompatActivity {
                         logTextView.setText(result);
                         if (p) {
                             menuProgress.setTitle(progressText);
-                            notify(this, finalLine);
+                            sendNotification(this, finalLine);
                         }
                     });
 
@@ -1016,7 +1033,7 @@ public class MainActivity extends AppCompatActivity {
 
         } catch (Exception e) {
             e.printStackTrace();
-            notify(this, getString(R.string.error));
+            sendNotification(this, ERR);
             return false;
         }
         Log.d("run_20", "finish, process " + (process != null));
@@ -1049,8 +1066,8 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> {
 
             logTextView.setText(result);
-            menuProgress.setTitle(getResources().getString(R.string.done));
-            notify(this, getString(R.string.done));
+            menuProgress.setTitle(DONE);
+            sendNotification(this, DONE);
 
             if (save) {
                 if (!outputFile.exists()) {

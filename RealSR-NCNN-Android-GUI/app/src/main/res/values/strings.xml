@@ -166,4 +166,9 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
         <item>Portrait</item>
         <item>Landscape</item>
     </string-array>
+    <string-array name="notify_item">
+        <item>No</item>
+        <item>Notify</item>
+        <item>Notify when finish</item>
+    </string-array>
 </resources>

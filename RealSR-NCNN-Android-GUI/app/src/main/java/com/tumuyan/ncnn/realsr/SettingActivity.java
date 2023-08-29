@@ -27,12 +27,11 @@ public class SettingActivity extends AppCompatActivity {
     EditText editSavePath;
     ToggleButton toggleKeepScreen;
 
-    ToggleButton toggleUseNotication;
     ToggleButton toggleCPU;
     ToggleButton togglePrePng;
     ToggleButton toggleAutoSave;
     ToggleButton toggleSearchView;
-    Spinner spinnerFormat, spinnerName, spinnerName2, spinnerOrientation;
+    Spinner spinnerFormat, spinnerName, spinnerName2, spinnerOrientation, spinnerNotify;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
             + File.separator + "RealSR";
@@ -62,6 +61,7 @@ public class SettingActivity extends AppCompatActivity {
         int name = mySharePerferences.getInt("name", 0);
         int name2 = mySharePerferences.getInt("name2", 0);
         int orientation = mySharePerferences.getInt("ORIENTATION", 0);
+        int notify =  mySharePerferences.getInt("notify", 0);
 
         editTile = findViewById(R.id.editTile);
         editTile.setText(String.format("%d", tileSize));
@@ -79,8 +79,6 @@ public class SettingActivity extends AppCompatActivity {
         editThread.setText(threadCount);
         toggleKeepScreen = findViewById(R.id.toggle_keep_screen);
         toggleKeepScreen.setChecked(keepScreen);
-        toggleUseNotication = findViewById(R.id.toggle_use_notification);
-        toggleUseNotication.setChecked(useNotification);
         togglePrePng = findViewById(R.id.toggle_pre_png);
         togglePrePng.setChecked(prePng);
         toggleAutoSave = findViewById(R.id.toggle_auto_save);
@@ -99,6 +97,8 @@ public class SettingActivity extends AppCompatActivity {
         spinnerName2.setSelection(name2);
         spinnerOrientation = findViewById(R.id.spinner_orientation);
         spinnerOrientation.setSelection(orientation);
+        spinnerNotify = findViewById(R.id.spinner_notify);
+        spinnerNotify.setSelection(notify);
 
         Spinner spinner = findViewById(R.id.spinner);
         spinner.setSelection(selectCommand);
@@ -209,7 +209,6 @@ public class SettingActivity extends AppCompatActivity {
         editor.putString("threadCount", threadCount);
 
         editor.putBoolean("keepScreen", toggleKeepScreen.isChecked());
-        editor.putBoolean("useNotification",toggleUseNotication.isChecked());
         editor.putBoolean("PrePng", togglePrePng.isChecked());
         editor.putBoolean("useCPU", toggleCPU.isChecked());
         editor.putBoolean("autoSave", toggleAutoSave.isChecked());
@@ -218,6 +217,7 @@ public class SettingActivity extends AppCompatActivity {
         editor.putInt("name", (int) spinnerName.getSelectedItemId());
         editor.putInt("name2", (int) spinnerName2.getSelectedItemId());
         editor.putInt("ORIENTATION", (int) spinnerOrientation.getSelectedItemId());
+        editor.putInt("notify",(int) spinnerNotify.getSelectedItemId());
         editor.apply();
     }
 

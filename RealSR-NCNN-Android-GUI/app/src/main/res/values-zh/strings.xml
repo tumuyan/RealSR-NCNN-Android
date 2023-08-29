@@ -163,4 +163,9 @@
         <item>竖屏</item>
         <item>横屏</item>
     </string-array>
+    <string-array name="notify_item">
+        <item>无</item>
+        <item>通知</item>
+        <item>结束时通知</item>
+    </string-array>
 </resources>

@@ -43,15 +43,16 @@
             android:text="@string/use_notification"
             android:textSize="18sp" />
 
-        <ToggleButton
-            android:id="@+id/toggle_use_notification"
+        <Spinner
+            android:id="@+id/spinner_notify"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
+            android:entries="@array/notify_item"
+            android:minHeight="48dp"
             android:padding="5dp"
-            android:text="ToggleButton" />
-
+            android:textAlignment="center" />
 
         <TextView
             android:layout_width="match_parent"
