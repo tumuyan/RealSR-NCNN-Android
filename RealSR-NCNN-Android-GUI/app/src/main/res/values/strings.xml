@@ -101,6 +101,12 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="orientation">Screen orientaion</string>
     <string name="error">Error</string>
     <string name="use_notification">Send notification</string>
+    <string name="menu_bench_mark">Bench Mark</string>
+    <string name="model">Device Model</string>
+    <string name="system_version">Android Version</string>
+    <string name="cpu_model">CPU</string>
+    <string name="ram_size">RAM</string>
+    <string name="temperature">Temperature</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>

@@ -112,6 +112,12 @@
     <string name="orientation">屏幕方向</string>
     <string name="error">错误</string>
     <string name="use_notification">发送通知栏消息</string>
+    <string name="menu_bench_mark">基准测试</string>
+    <string name="model">设备型号</string>
+    <string name="system_version">安卓版本</string>
+    <string name="cpu_model">处理器</string>
+    <string name="ram_size">设备运存</string>
+    <string name="temperature">温度</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>

@@ -1,5 +1,7 @@
 package com.tumuyan.ncnn.realsr;
 
+
+import static com.tumuyan.ncnn.realsr.DeviceInfo.getInfo;
 import static com.tumuyan.ncnn.realsr.UriUntils.getFileName;
 
 import androidx.annotation.NonNull;
@@ -53,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
@@ -68,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private final String galleryPath =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
                     + File.separator + "RealSR";
-    private File outputFile, inputFile;
+    private File outputFile, inputFile, titleFile;
     private String dir;
     // dir="/data/data/com.tumuyan.ncnn.realsr/cache/realsr";
     private String modelName = "SR";
@@ -85,6 +88,12 @@ public class MainActivity extends AppCompatActivity {
     private String[] formats;
 
     private String[] command = null;
+
+    private final String[] bench_mark_commands = new String[]{
+            "./realsr-ncnn -c -i img/PM5544.jpeg -o input.png  -m models-Real-ESRGAN",
+            "./realsr-ncnn -c -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 4"
+    };
+
     private final String[] command_0 = new String[]{
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-anime",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN",
@@ -146,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
 
         final String q;
         String imageName = "/output.png";
+        boolean bench_mark_mode = false;
         int v = item.getItemId();
         if (v == R.id.progress) {
             stopCommand();
@@ -172,19 +182,37 @@ public class MainActivity extends AppCompatActivity {
             q = "out";
         } else if (v == R.id.menu_help) {
             q = "help";
+        } else if (v == R.id.menu_bench_mark) {
+            String append_param = "";
+            if (tileSize > 0)
+                append_param = " -t " + tileSize;
+            if (useCPU)
+                append_param += (" -g -1");
+
+            append_param += ";";
+            q = "rm *.png;" + bench_mark_commands[0] + append_param + bench_mark_commands[1] + append_param;
+
+            imageName = "/img/realsr.png";
+            bench_mark_mode = true;
+            imageView.setVisibility(View.GONE);
+            if (keepScreen) {
+                logTextView.setKeepScreenOn(true);
+            }
         } else
             q = "";
 
         if (!run_fake_command(q)) {
             stopCommand();
             String finalImageName = imageName;
+            boolean final_bench_mark_mode = bench_mark_mode;
             new Thread(() -> {
-                run20(q);
+                run20(q, final_bench_mark_mode);
                 final File finalfile = new File(dir + finalImageName);
                 if (finalfile.exists() && (!finalfile.isDirectory())) {
                     runOnUiThread(() -> {
                         imageView.setVisibility(View.VISIBLE);
                         imageView.setImage(ImageSource.uri(finalfile.getAbsolutePath()));
+                        logTextView.setKeepScreenOn(false);
                     });
                 } else {
                     runOnUiThread(() -> imageView.setVisibility(View.GONE));
@@ -593,6 +621,8 @@ public class MainActivity extends AppCompatActivity {
 
         outputFile = new File(dir, "output.png");
         inputFile = new File(dir, "input.png");
+        titleFile = new File(dir, "img/realsr.png");
+        showImage(titleFile, getString(R.string.default_log));
 
         run_command("chmod 777 " + dir + " -R");
 
@@ -619,7 +649,7 @@ public class MainActivity extends AppCompatActivity {
 
                 if (!run_fake_command(q)) {
                     stopCommand();
-                    new Thread(() -> run20(query)).start();
+                    new Thread(() -> run20(query, false)).start();
                 }
                 return false;
             }
@@ -696,7 +726,7 @@ public class MainActivity extends AppCompatActivity {
 
                 new Thread(() -> {
 
-                    if (run20(cmd.toString())) {
+                    if (run20(cmd.toString(), false)) {
                         boolean showImgView = (cmd.toString().contains("output.png"));
                         if (showImgView) {
                             if (outputFile.exists()) {
@@ -721,6 +751,7 @@ public class MainActivity extends AppCompatActivity {
             this.startActivity(intent);
             overridePendingTransition(0, android.R.anim.slide_out_right);
         });
+
 
         requirePremision();
 
@@ -768,7 +799,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             channel_name = CHANNEL_NAME_PROGRESS;
         }
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     channel_name,
@@ -867,10 +898,12 @@ public class MainActivity extends AppCompatActivity {
 
     private String progressText = "";
 
+    private String[] rewriteStrings = {"save result..."};
+
     // 主要的运行命令的方式
-    public synchronized boolean run20(@NonNull String cmd) {
+    public synchronized boolean run20(@NonNull String cmd, boolean bench_mark_mode) {
         newTask = false;
-        Log.i("run20", "cmd = " + cmd);
+        Log.i("run20", "cmd = ");
         final long timeStart = System.currentTimeMillis();
         boolean output_savePath = false;
 
@@ -910,9 +943,6 @@ public class MainActivity extends AppCompatActivity {
             }
         } else
             modelName = "SR";
-        final boolean run_ncnn = !modelName.equals("SR");
-        final boolean save = run_ncnn && autoSave && cmd.contains("output.png");
-
 
         // 对应process进程的3个流
         BufferedReader successResult;
@@ -921,6 +951,19 @@ public class MainActivity extends AppCompatActivity {
 
         // 保存的执行结果
         StringBuilder result = new StringBuilder();
+        HashSet<String> results = new HashSet<>();
+        boolean result_fail = false;
+
+        final boolean run_ncnn = bench_mark_mode || !modelName.equals("SR");
+        boolean save_output = run_ncnn && autoSave && cmd.contains("output.png");
+        if (bench_mark_mode) {
+            save_output = false;
+            runOnUiThread(() -> {
+                menuProgress.setTitle(BUSY);
+                sendNotification(this, BUSY);
+            });
+        }
+        final boolean save = save_output;
 
         try {
             process = Runtime.getRuntime().exec("sh");
@@ -972,20 +1015,36 @@ public class MainActivity extends AppCompatActivity {
                     if (line.contains("unused DT entry"))
                         continue;
 
-                    result.append(line).append("\n");
+                    Log.d("run20 errorResult", line);
+
                     boolean p = run_ncnn && line.matches("\\s*\\d([0-9.]*)%(\\s.+)?");
                     progressText = line.trim().split("\\s")[0];
 
+                    if (!p) {
+                        if (line.equals("save result...") || line.equals("busy...") || line.equals("check result...")) {
+
+                        } else if (result.toString().contains("vkQueueSubmit")) {
+                            result_fail = true;
+                        } else if (bench_mark_mode && results.contains(line)) {
+                            line = "";
+                        } else {
+                            if (bench_mark_mode)
+                                results.add(line);
+                            result.append(line).append("\n");
+                            line = "";
+                        }
+                    }
+
                     String finalLine = line;
                     runOnUiThread(() -> {
-                        logTextView.setText(result);
+                        logTextView.setText(result + finalLine);
                         if (p) {
                             menuProgress.setTitle(progressText);
                             sendNotification(this, finalLine);
                         }
                     });
 
-                    Log.d("run20 errorResult", line);
+
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -1055,9 +1114,15 @@ public class MainActivity extends AppCompatActivity {
         }
 
 //TM
-        result.append("\nfinish, use ").append((float) (System.currentTimeMillis() - timeStart) / 1000).append(" second");
+        if (result_fail)
+            result.append("\nfail, use ").append((float) (System.currentTimeMillis() - timeStart) / 1000).append(" second");
+        else
+            result.append("\nfinish, use ").append((float) (System.currentTimeMillis() - timeStart) / 1000).append(" second");
 
-        if (run_ncnn) {
+        if (bench_mark_mode) {
+            result.append(String.format(", Benchmark run on %s\n%s", DeviceInfo.getConfigStr(useCPU, tileSize), DeviceInfo.getInfo(this)));
+            Log.i("run20 finish", "Benchmark, ..." + result.substring(Math.max(result.length() - 100, 0)));
+        } else if (run_ncnn) {
             result.append(", ").append(modelName + "\n");
             Log.i("run20 finish'", "run_ncnn=" + run_ncnn + ", modelName=" + modelName + ", ..." + result.substring(Math.max(result.length() - 100, 0)));
         } else Log.i("run20 finish", "run_ncnn=false");
@@ -1144,7 +1209,7 @@ public class MainActivity extends AppCompatActivity {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                } else run20("./magick tmp '" + path + "'");
+                } else run20("./magick tmp '" + path + "'", false);
             }
 
         } catch (IOException e) {
@@ -1181,8 +1246,7 @@ public class MainActivity extends AppCompatActivity {
         if (q == null) return true;
         if (q.isEmpty()) return true;
         if (q.equals("help")) {
-            logTextView.setText(getString(R.string.default_log));
-            showImage(null, "");
+            showImage(titleFile, getString(R.string.default_log));
         } else if (q.equals("in")) {
             showImage(inputFile, getString(R.string.lr));
         } else if (q.equals("out")) {
