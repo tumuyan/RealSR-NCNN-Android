@@ -47,12 +47,12 @@ models-Real-ESRGAN-AnimeSharp  // directory should have a suffix of models-Real-
 ├─x4.bin                       // models name as x[n], n is scale
 ├─x4.param
 ```
+* This tool can only convert ESRGAN models, not Real-ESRGAN models. If there are Real-ESRGAN models with perfect effect that need to be converted, I can help you convert them manually.
 
 ### Web UI
 https://huggingface.co/spaces/tumuyan/RealSR
 The hugging face repository contains the model and executable file for Windows/Linux platform, you can clone the repository and open a web UI in the python (instead of the original command line program)
 Also you could try online demo! [![Hugging Face](https://img.shields.io/badge/Demo-%F0%9F%A4%97%20Hugging%20Face-blue)](https://huggingface.co/spaces/tumuyan/realsr-docker)
-
 
 
 ### About Real-ESRGAN 
@@ -86,10 +86,23 @@ download the source of libwebp.
 
 ### step2
 extract `ncnn-yyyymmdd-android-vulkan-shared.zip` into `../3rdparty/ncnn-android-vulkan-shared`  
-extract the source of libwebp into `app/src/main/jni/webp`
+extract the source of libwebp into `../3rdparty/libwebp`
+
+```
+RealSR-NCNN-Android\RealSR-NCNN-Android-GUI\app\src\main\assets\
+├─3rdparty
+│   ├─libwebp
+│   └─ncnn-android-vulkan-shared
+│       └─arm64-v8a
+├─RealCUGAN-NCNN-Android-CLI  
+├─SRMD-NCNN-Android-CLI
+├─Waifu2x-NCNN-Android-CLI 
+├─Resize-NCNN-Android-CLI  
+└─RealSR-NCNN-Android-CLI
+```
 
 ### step3
-open this project with Android Studio, rebuild it and then you could find the program in `RealSR-NCNN-Android-CLI\app\build\intermediates\cmake\debug\obj`
+open this project with Android Studio, rebuild it and then you could find the program in `RealSR-NCNN-Android-CLI\app\build\intermediates\cmake\release\obj\arm64-v8a`
 
 
 ## How to use RealSR-NCNN-Android-CLI

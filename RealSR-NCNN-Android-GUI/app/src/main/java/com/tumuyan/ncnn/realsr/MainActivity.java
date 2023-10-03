@@ -90,8 +90,8 @@ public class MainActivity extends AppCompatActivity {
     private String[] command = null;
 
     private final String[] bench_mark_commands = new String[]{
-            "./realsr-ncnn -c -i img/PM5544.jpeg -o input.png  -m models-Real-ESRGAN",
-            "./realsr-ncnn -c -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 4"
+            "./realsr-ncnn -c 46 -i img/PM5544.jpeg -o input.png  -m models-Real-ESRGAN",
+            "./realsr-ncnn -c 46 -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 4"
     };
 
     private final String[] command_0 = new String[]{

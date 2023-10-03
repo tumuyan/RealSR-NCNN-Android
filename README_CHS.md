@@ -24,6 +24,7 @@
 https://huggingface.co/spaces/tumuyan/RealSR
 上方链接仓库集成了Windows和Linux平台下的ncnn版本超分程序，可以clone仓库，在python环境下打开一个web UI来使用（代替原版程序的命令行方式）
 你也可以在线体验docker版本（由于使用双核CPU运算，速度相当慢）[![Hugging Face](https://img.shields.io/badge/Demo-%F0%9F%A4%97%20Hugging%20Face-blue)](https://huggingface.co/spaces/tumuyan/realsr-docker)
+
 ### 仓库结构
 1. RealSR-NCNN-Android-GUI 可以编译出APK文件，这样用户可以在图形环境下操作。（不过他的本质就是在给命令行程序套壳，而不是通过JNI调用库文件）
 2. RealSR-NCNN-Android-CLI 可以编译出RealSR-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。这个程序可以使用RealSR和Real-ESRGAN的模型。
@@ -32,9 +33,6 @@ https://huggingface.co/spaces/tumuyan/RealSR
 5. Waifu2x-NCNN-Android-CLI 可以编译出Waifu2x-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用(考虑到应用的体积，程序本体已经内置到App内置了waifu2x可执行文件，但是没有内置对应模型，UI上也没有预设命令。可以参考[教程](https://note.youdao.com/s/BwDPRoZf))。
 6. Resize-NCNN-Android-CLI 可以编译出resize-ncnn命令行程序，可以在安卓设备的Termux等虚拟终端中使用，包含了`nearest/最邻近`、`bilinear/两次线性`、`bicubic/两次立方`三种经典放大（interpolation/插值）算法，以及Lanczos插值算法相似的`avir/lancir`。特别的，nearest和bilinear可以通过`-n`参数，不使用ncnn进行运算，得到点对点放大的结果;当不使用`-n`。参数时，`-s`参数可以使用小数
 7. Resize-CLI 可以编译出resize命令行程序，包含`nearest/最邻近`、`bilinear/两次线性`两种算法，不需要ncnn，编译体积较大。此工程除Android使用外，也可使用VS2019编译，在PC端快速验证。
-
-
-
 
 ## 如何使用 RealSR-NCNN-Android-GUI
 支持两种选择文件的方式：
@@ -104,10 +102,23 @@ https://github.com/webmproject/libwebp
 
 ### step2
 解压 `ncnn-yyyymmdd-android-vulkan-shared.zip` 到 `../3rdparty/ncnn-android-vulkan-shared`  
-解压libwebp源码到`app/src/main/jni/webp`
+解压libwebp源码到`../3rdparty/libwebp`
+
+```
+RealSR-NCNN-Android\RealSR-NCNN-Android-GUI\app\src\main\assets\
+├─3rdparty
+│   ├─libwebp
+│   └─ncnn-android-vulkan-shared
+│       └─arm64-v8a
+├─RealCUGAN-NCNN-Android-CLI  
+├─SRMD-NCNN-Android-CLI
+├─Waifu2x-NCNN-Android-CLI 
+├─Resize-NCNN-Android-CLI  
+└─RealSR-NCNN-Android-CLI
+```
 
 ### step3
-用 Android Studio 打开工程, rebuild 然后你就可以在 `RealSR-NCNN-Android-CLI\app\build\intermediates\cmake\debug\obj` 找到编译好的二进制文件
+用 Android Studio 打开工程, rebuild 然后你就可以在 `RealSR-NCNN-Android-CLI\app\build\intermediates\cmake\release\obj\arm64-v8a` 找到编译好的二进制文件
 
 
 ## 如何使用 RealSR-NCNN-Android-CLI

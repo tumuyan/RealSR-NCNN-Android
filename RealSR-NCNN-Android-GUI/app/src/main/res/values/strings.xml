@@ -4,9 +4,10 @@
         This is a simple Android application that uses Realsr-NCNN, SRMD-NCNN, Real-CUGAN-NCNN, Real-ESRGAN, Waifu2x-NCNN and ImageMagick.
 
         \nThe application does not collect any private information from your device.
-        \nGithub: https://github.com/tumuyan/RealSR-NCNN-Android
-        \nCoolApk:https://www.coolapk.com/apk/292197
         \nAdd more models: https://github.com/tumuyan/RealSR-NCNN-Android#add-more-models-to-realsr-ncnn-android-gui
+        \nGithub: https://github.com/tumuyan/RealSR-NCNN-Android
+        \nCoolApk: https://www.coolapk.com/apk/292197
+        \nSponsor: https://afdian.net/a/tumuyan (No additional functionality will be provided)
         \n
         \nYou can run these programs:
         \n1.Super resolution -i input.png -o output.png

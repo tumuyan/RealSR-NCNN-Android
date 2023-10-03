@@ -31,14 +31,15 @@ else ()
     set_target_properties(ncnn PROPERTIES IMPORTED_LOCATION
             ${ncnn_DIR}/${ANDROID_ABI}/lib/libncnn.so)
 endif ()
-
+#set(libwebp_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libwebp)
+set(libwebp_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/libwebp)
 #include_directories(${CMAKE_CURRENT_BINARY_DIR})
 option(USE_SYSTEM_WEBP "build with system libwebp" OFF)
 if (NOT USE_SYSTEM_WEBP)
     # build libwebp library
-    if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libwebp/CMakeLists.txt")
-        message(FATAL_ERROR "The submodules were not downloaded! Please update submodules with \"git submodule update --init --recursive\" and try again.")
-    endif ()
+    if(NOT EXISTS "${libwebp_DIR}/CMakeLists.txt")
+        message(FATAL_ERROR "Not find libwebp CMakeLists.txt!")
+    endif()
 
     option(WEBP_ENABLE_SIMD "" ON)
     option(WEBP_BUILD_ANIM_UTILS "" OFF)
@@ -54,9 +55,8 @@ if (NOT USE_SYSTEM_WEBP)
     option(WEBP_NEAR_LOSSLESS "" OFF)
     option(WEBP_ENABLE_SWAP_16BIT_CSP "" OFF)
 
-    add_subdirectory(libwebp)
-
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libwebp/src)
+    add_subdirectory(${libwebp_DIR}  ${CMAKE_BINARY_DIR}/libwebp)
+    include_directories(${CMAKE_BINARY_DIR}/libwebp/src)
 endif ()
 
 

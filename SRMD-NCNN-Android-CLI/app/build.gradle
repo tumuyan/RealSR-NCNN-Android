@@ -16,9 +16,10 @@ android {
 
     externalNativeBuild {
         cmake {
-            version "3.18.1"
+            version "3.22.1"
             path file('src/main/jni/CMakeLists.txt')
         }
     }
-    ndkVersion '22.1.7171670'
+    ndkVersion '25.2.9519653'
+    namespace 'com.tumuyan.ncnn.realsr'
 }

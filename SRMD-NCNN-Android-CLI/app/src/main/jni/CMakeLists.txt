@@ -7,7 +7,8 @@ set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -s -Wall -g -ggdb -Wl,-rpath=./")
 set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wl,-rpath=./")
 
-
+#set(libwebp_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libwebp)
+set(libwebp_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/libwebp)
 set(ncnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/ncnn-android-vulkan-shared)
 add_library(ncnn SHARED IMPORTED)
 include_directories(${ncnn_DIR}/${ANDROID_ABI}/include/ncnn)
@@ -19,8 +20,8 @@ set_target_properties(ncnn PROPERTIES IMPORTED_LOCATION
 option(USE_SYSTEM_WEBP "build with system libwebp" OFF)
 if(NOT USE_SYSTEM_WEBP)
     # build libwebp library
-    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libwebp/CMakeLists.txt")
-        message(FATAL_ERROR "The submodules were not downloaded! Please update submodules with \"git submodule update --init --recursive\" and try again.")
+    if(NOT EXISTS "${libwebp_DIR}/CMakeLists.txt")
+        message(FATAL_ERROR "Not find libwebp CMakeLists.txt!")
     endif()
 
     option(WEBP_ENABLE_SIMD "" ON)
@@ -37,9 +38,8 @@ if(NOT USE_SYSTEM_WEBP)
     option(WEBP_NEAR_LOSSLESS "" OFF)
     option(WEBP_ENABLE_SWAP_16BIT_CSP "" OFF)
 
-    add_subdirectory(libwebp)
-
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libwebp/src)
+    add_subdirectory(${libwebp_DIR}  ${CMAKE_BINARY_DIR}/libwebp)
+    include_directories(${CMAKE_BINARY_DIR}/libwebp/src)
 endif()
 
 

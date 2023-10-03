@@ -132,7 +132,7 @@ class Task {
 public:
     int id;
     int webp;
-    bool check;
+//    bool check;
 
     path_t inpath;
     path_t outpath;
@@ -190,7 +190,7 @@ class LoadThreadParams {
 public:
     int scale;
     int jobs_load;
-    bool check;
+    int check_threshold;
 
     // session data
     std::vector<path_t> input_files;
@@ -201,7 +201,7 @@ void *load(void *args) {
     const LoadThreadParams *ltp = (const LoadThreadParams *) args;
     const int count = ltp->input_files.size();
     const int scale = ltp->scale;
-    const bool check = ltp->check;
+    const bool check = ltp->check_threshold > 0;
 
 #pragma omp parallel for schedule(static, 1) num_threads(ltp->jobs_load)
     for (int i = 0; i < count; i++) {
@@ -358,16 +358,17 @@ void *proc(void *args) {
 class SaveThreadParams {
 public:
     int verbose;
-    bool check;
-    int check_scale;
+//    bool check;
+    int check_threshold;
 
 };
 
 float compareNcnnMats(const ncnn::Mat &mat1, const ncnn::Mat &mat2) {
+    fprintf(stderr, "check result: mat1 %dx%dx%d, mat2 %dx%dx%d, elempack: %d, elemsize: %zu",
+            mat1.w, mat1.h, mat1.c, mat2.w, mat2.h, mat2.c, mat1.elempack, mat1.elemsize);
+
     // 检查两个Mat对象的维度是否相同
     if (mat1.w != mat2.w || mat1.h != mat2.h) {
-        fprintf(stderr, "mat1 %dx%d, mat2 %dx%d\n", mat1.w, mat2.w, mat1.h, mat2.h);
-
         return -1;
     }
 
@@ -377,21 +378,36 @@ float compareNcnnMats(const ncnn::Mat &mat1, const ncnn::Mat &mat2) {
     }
 
     // 比较每个通道的像素差异
-    float sum_diff = 0;
+    long sum_diff = 0;
     int channels = std::min(mat1.c, mat2.c);
+    size_t plane_size = mat1.w * mat1.h * mat1.elemsize * mat1.elempack;
     for (int c = 0; c < channels; c++) {
-        size_t plane_size = mat1.w * mat1.h * mat1.elemsize * mat1.elempack;
+
         const unsigned char *data1 = mat1.channel(c);
         const unsigned char *data2 = mat2.channel(c);
+
+//        fprintf(stderr, ", q=%d", sizeof(data1) / mat1.w / mat1.h);
         for (size_t i = 0; i < plane_size; i++) {
-            float diff = fabs(data1[i] - data2[i]);
+            int diff = abs(data1[i] - data2[i]);
             sum_diff += diff;
+//            if(i<48)
+//                fprintf(stderr, "compare[%d]: %d, %d, diff=%d\n", i, data1[i],data2[i],diff);
         }
     }
 
-    // 计算平均差异
-    float avg_diff = sum_diff / (mat1.w * mat1.h * channels);
+/*    for (int c = 0; c < channels; ++c) {
+        const unsigned char *data1 = mat1.channel(c);
+        const unsigned char *data2 = mat2.channel(c);
+        for (int i = 0; i < mat1.h; ++i) {
+            for (int j = 0; j < mat1.w; ++j) {
+                int diff = abs(data1[i * mat1.w + j] - data2[i * mat2.w + j]);
+                sum_diff += diff;
+            }
+        }
+    }*/
 
+    // 计算平均差异
+    float avg_diff = (float) sum_diff / (plane_size * channels);
     return avg_diff;
 }
 
@@ -432,7 +448,7 @@ float compareImageFiles(const std::string& file1, const std::string& file2)
 void *save(void *args) {
     const SaveThreadParams *stp = (const SaveThreadParams *) args;
     const int verbose = stp->verbose;
-    const int check_scale = stp->check_scale;
+    const int check_threshold = stp->check_threshold;
 
     for (;;) {
         Task v;
@@ -500,11 +516,30 @@ void *save(void *args) {
             }
 
 
-            if (check_scale > 0) {
+            if (check_threshold > 0) {
                 fprintf(stderr, "check result...\n");
-                ncnn::Mat checkimage,inputimage ;
-                ncnn::resize_bilinear(v.outimage, checkimage, v.inimage.w,v.inimage.h);
-                fprintf(stderr,"Diff %f\n",compareNcnnMats(checkimage , v.inimage));
+                ncnn::Mat checkimage1, checkimage2, outimage;
+
+                int w = v.inimage.w, h = v.inimage.h, c = v.inimage.elemsize;
+                if (c == 4) {
+                    outimage = ncnn::Mat::from_pixels((const unsigned char *) v.outimage.data,
+                                                      ncnn::Mat::PIXEL_RGBA, w, h);
+                } else {
+                    outimage = ncnn::Mat::from_pixels((const unsigned char *) v.outimage.data,
+                                                      ncnn::Mat::PIXEL_RGB, w, h);
+                }
+                ncnn::resize_bilinear(outimage, checkimage2, w / 2, h / 2);
+                ncnn::resize_bilinear(v.in, checkimage1, w / 2, h / 2);
+                float avg_diff = compareNcnnMats(checkimage1, checkimage2);
+                if (avg_diff > check_threshold)
+                    fprintf(stderr, "\nResult is not similar to input, avg diff: %f\n",
+                            avg_diff);
+                else if (avg_diff < 0)
+                    fprintf(stderr, "\n[Error]compare result and input, error code: %f\n",
+                            avg_diff);
+                else
+                    fprintf(stderr, "\ncompare result and input, avg diff: %f\n", avg_diff);
+
             }
         } else {
 #if _WIN32
@@ -554,12 +589,12 @@ int main(int argc, char **argv)
     int verbose = 0;
     int tta_mode = 0;
     path_t format = PATHSTR("png");
-    bool check = false;
+    int check_threshold = 0;
 
 #if _WIN32
     setlocale(LC_ALL, "");
     wchar_t opt;
-    while ((opt = getopt(argc, argv, L"i:o:s:t:m:g:j:f:vxhc")) != (wchar_t)-1)
+    while ((opt = getopt(argc, argv, L"i:o:s:c:t:m:g:j:f:vxh")) != (wchar_t)-1)
     {
         switch (opt)
         {
@@ -595,7 +630,7 @@ int main(int argc, char **argv)
             tta_mode = 1;
             break;
         case L'c':
-            check = true;
+            check_threshold = _wtoi(optarg);
             break;
         case L'h':
         default:
@@ -605,7 +640,7 @@ int main(int argc, char **argv)
     }
 #else // _WIN32
     int opt;
-    while ((opt = getopt(argc, argv, "i:o:s:t:m:g:j:f:vxhc")) != -1) {
+    while ((opt = getopt(argc, argv, "i:o:s:c:t:m:g:j:f:vxh")) != -1) {
         switch (opt) {
             case 'i':
                 inputpath = optarg;
@@ -639,7 +674,7 @@ int main(int argc, char **argv)
                 tta_mode = 1;
                 break;
             case 'c':
-                check = true;
+                check_threshold = atoi(optarg);
                 break;
             case 'h':
             default:
@@ -748,7 +783,7 @@ int main(int argc, char **argv)
                 path_t filename_noext = get_file_name_without_extension(filename);
                 path_t output_filename = filename_noext + PATHSTR('.') + format;
 
-                // filename list is sorted, check if output image path conflicts
+                // filename list is sorted, check_threshold if output image path conflicts
                 if (filename_noext == last_filename_noext) {
                     path_t output_filename2 = filename + PATHSTR('.') + format;
 #if _WIN32
@@ -970,7 +1005,7 @@ int main(int argc, char **argv)
             // load image
             LoadThreadParams ltp;
             ltp.scale = scale;
-            ltp.check = check;
+            ltp.check_threshold = check_threshold;
             ltp.jobs_load = jobs_load;
             ltp.input_files = input_files;
             ltp.output_files = output_files;
@@ -1002,8 +1037,7 @@ int main(int argc, char **argv)
             // save image
             SaveThreadParams stp;
             stp.verbose = verbose;
-            if (check)
-                stp.check_scale = scale;
+            stp.check_threshold = check_threshold;
 
             std::vector<ncnn::Thread *> save_threads(jobs_save);
             for (int i = 0; i < jobs_save; i++) {
