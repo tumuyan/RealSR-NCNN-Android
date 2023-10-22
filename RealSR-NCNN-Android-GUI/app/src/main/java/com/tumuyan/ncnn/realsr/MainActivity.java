@@ -1,7 +1,6 @@
 package com.tumuyan.ncnn.realsr;
 
 
-import static com.tumuyan.ncnn.realsr.DeviceInfo.getInfo;
 import static com.tumuyan.ncnn.realsr.UriUntils.getFileName;
 
 import androidx.annotation.NonNull;
@@ -24,7 +23,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.icu.text.SimpleDateFormat;
-import android.media.AudioAttributes;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -190,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
                 append_param += (" -g -1");
 
             append_param += ";";
-            q = "rm *.png;" + bench_mark_commands[0] + append_param + bench_mark_commands[1] + append_param;
+            q = "rm *.png; rm *.png/*; rmdir *.png;" + bench_mark_commands[0] + append_param + bench_mark_commands[1] + append_param;
 
             imageName = "/img/realsr.png";
             bench_mark_mode = true;
@@ -485,7 +484,7 @@ public class MainActivity extends AppCompatActivity {
             if (folders == null)
                 Log.e("getExtraCommands", "extraPath folders is null");
             else {
-                Arrays.sort(folders, (Comparator) Comparator.comparing(a -> ((File) a).getName()));
+                Arrays.sort(folders, Comparator.comparing(a -> ((File) a).getName()));
                 for (File folder : folders) {
                     String name = folder.getName();
                     if (folder.isDirectory() && name.startsWith("models")) {
@@ -727,6 +726,17 @@ public class MainActivity extends AppCompatActivity {
                 new Thread(() -> {
 
                     if (run20(cmd.toString(), false)) {
+                        if (inputFile.isDirectory()) {
+                            File[] files = inputFile.listFiles();
+
+                            Log.i("befor scanFiles()", "inputFile size=" + files.length);
+                            List<String> outputPaths = new ArrayList<>();
+                            for (File file : files) {
+                                outputPaths.add(savePath + File.separator + file.getName());
+                            }
+                            scanFiles(outputPaths.toArray(new String[0]));
+                        }
+
                         boolean showImgView = (cmd.toString().contains("output.png"));
                         if (showImgView) {
                             if (outputFile.exists()) {
@@ -737,9 +747,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         if (!showImgView)
                             runOnUiThread(
-                                    () -> {
-                                        imageView.setVisibility(View.GONE);
-                                    }
+                                    () -> imageView.setVisibility(View.GONE)
                             );
                     }
                 }).start();
@@ -791,7 +799,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        String channel_name = null;
+        String channel_name;
         if ((text.equals(ERR) || text.equals(DONE))) {
             channel_name = CHANNEL_NAME_RESULT;
         } else if (notify == 2) {
@@ -815,8 +823,8 @@ public class MainActivity extends AppCompatActivity {
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setDefaults(Notification.DEFAULT_SOUND);
 //                .setDefaults(Notification.FLAG_ONGOING_EVENT)
-//                .setAutoCancel(true)                           //设置点击后取消Notification
-        ;
+//                .setAutoCancel(true);                           //设置点击后取消Notification
+
         Notification notification = mBuilder.build();
         notificationManager.notify(NOTIFY_ID, notification);
     }
@@ -898,7 +906,6 @@ public class MainActivity extends AppCompatActivity {
 
     private String progressText = "";
 
-    private String[] rewriteStrings = {"save result..."};
 
     // 主要的运行命令的方式
     public synchronized boolean run20(@NonNull String cmd, boolean bench_mark_mode) {
@@ -1279,6 +1286,23 @@ public class MainActivity extends AppCompatActivity {
         } else {
             imageView.setVisibility(View.GONE);
             logTextView.setText(getString(R.string.image_not_exists));
+        }
+    }
+
+
+    /**
+     * 通知android媒体库更新文件
+     */
+    private void scanFiles(String[] filePath) {
+        Log.i("scanFiles()", "length=" + filePath.length);
+        try {
+            MediaScannerConnection.scanFile(getApplicationContext(), filePath, null,
+                    (path, uri) -> {
+                        Log.i("TAG", "Scanned " + path + ":");
+                        Log.i("TAG", "-> uri=" + uri);
+                    });
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
