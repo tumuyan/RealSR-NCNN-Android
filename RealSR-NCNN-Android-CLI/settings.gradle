@@ -1,1 +1,5 @@
-include ':app'
+include ':RealCUGAN'
+include ':RealSR'
+include ':Resize'
+include ':SRMD'
+include ':Waifu2x'

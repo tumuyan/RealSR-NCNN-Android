@@ -27,12 +27,10 @@ https://huggingface.co/spaces/tumuyan/RealSR
 
 ### 仓库结构
 1. RealSR-NCNN-Android-GUI 可以编译出APK文件，这样用户可以在图形环境下操作。（不过他的本质就是在给命令行程序套壳，而不是通过JNI调用库文件）
-2. RealSR-NCNN-Android-CLI 可以编译出RealSR-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。这个程序可以使用RealSR和Real-ESRGAN的模型。
-3. RealCUGAN-NCNN-Android-CLI 可以编译出SRMD-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。
-4. SRMD-NCNN-Android-CLI 可以编译出SRMD-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用。
-5. Waifu2x-NCNN-Android-CLI 可以编译出Waifu2x-NCNN命令行程序，可以在安卓设备的Termux等虚拟终端中使用(考虑到应用的体积，程序本体已经内置到App内置了waifu2x可执行文件，但是没有内置对应模型，UI上也没有预设命令。可以参考[教程](https://note.youdao.com/s/BwDPRoZf))。
-6. Resize-NCNN-Android-CLI 可以编译出resize-ncnn命令行程序，可以在安卓设备的Termux等虚拟终端中使用，包含了`nearest/最邻近`、`bilinear/两次线性`、`bicubic/两次立方`三种经典放大（interpolation/插值）算法，以及Lanczos插值算法相似的`avir/lancir`。特别的，nearest和bilinear可以通过`-n`参数，不使用ncnn进行运算，得到点对点放大的结果;当不使用`-n`。参数时，`-s`参数可以使用小数
-7. Resize-CLI 可以编译出resize命令行程序，包含`nearest/最邻近`、`bilinear/两次线性`两种算法，不需要ncnn，编译体积较大。此工程除Android使用外，也可使用VS2019编译，在PC端快速验证。
+2. RealSR-NCNN-Android-CLI 包含RealSR、SRMD、SRMD、Waifu2x、Resize五个模块，可以分别编译出对应的命令行程序，编译结果可以在安卓设备的Termux等虚拟终端中使用。其中:
+  - RealSR 可以使用RealSR和Real-ESRGAN的模型。
+  - Resize 可以使用了`nearest/最邻近`、`bilinear/两次线性`、`bicubic/两次立方`三种经典放大（interpolation/插值）算法，以及Lanczos插值算法相似的`avir/lancir`。特别的，nearest和bilinear可以通过`-n`参数，不使用ncnn进行运算，得到点对点放大的结果;当不使用`-n`。参数时，`-s`参数可以使用小数。
+3. Resize-CLI 可以编译出resize命令行程序，包含`nearest/最邻近`、`bilinear/两次线性`两种算法，不需要ncnn，编译体积较大。此工程除Android使用外，也可使用VS2019编译，在PC端快速验证。
 
 ## 如何使用 RealSR-NCNN-Android-GUI
 支持两种选择文件的方式：
@@ -64,7 +62,7 @@ RealSR-NCNN-Android-GUI 在 ver 1.7.6 以上的版本可以自动加载自定义
 你自己也可以把pth格式的模型转换为本应用可用的ncnn模型。
 1. 从 [https://upscale.wiki/wiki/Model_Database](https://upscale.wiki/wiki/Model_Database) 下载模型并解压
 2. 下载  [cupscale](https://github.com/n00mkrad/cupscale) 并解压
-3. 打开 CupscaleData\bin\pth2ncnn, 用 pth2ncnn.exe 转换t pth 文件为 ncnn 文件
+3. 打开 CupscaleData\bin\pth2ncnn, 用 pth2ncnn.exe 转换 pth 文件为 ncnn 模型文件
 3. 重命名文件，举例：
 ```
 models-Real-ESRGAN-AnimeSharp  // 目录需要用 models-Real- 或 models-ESRGAN- 开头
@@ -105,21 +103,23 @@ https://github.com/webmproject/libwebp
 解压libwebp源码到`../3rdparty/libwebp`
 
 ```
-RealSR-NCNN-Android\RealSR-NCNN-Android-GUI\app\src\main\assets\
+RealSR-NCNN-Android
 ├─3rdparty
 │   ├─libwebp
 │   └─ncnn-android-vulkan-shared
 │       └─arm64-v8a
-├─RealCUGAN-NCNN-Android-CLI  
-├─SRMD-NCNN-Android-CLI
-├─Waifu2x-NCNN-Android-CLI 
-├─Resize-NCNN-Android-CLI  
-└─RealSR-NCNN-Android-CLI
+├─RealSR-NCNN-Android-CLI
+│   ├─RealCUGAN
+│   ├─Waifu2x
+│   ├─RealSR
+│   ├─SRMD
+│   └─ReSize
+└─RealSR-NCNN-Android-GUI
 ```
 
 ### step3
-用 Android Studio 打开工程, rebuild 然后你就可以在 `RealSR-NCNN-Android-CLI\app\build\intermediates\cmake\release\obj\arm64-v8a` 找到编译好的二进制文件
-
+用 Android Studio 打开工程, rebuild 然后你就可以在 `RealSR-NCNN-Android-CLI\*\build\intermediates\cmake\release\obj\arm64-v8a` 或 `RealSR-NCNN-Android-CLI\*\build\intermediates\cmake\debug\obj\arm64-v8a` 找到编译好的二进制文件。  
+点击 `3rdparty/copy_cli_build_result.bat` 可以自动复制编译结果到 GUI 工程目录中
 
 ## 如何使用 RealSR-NCNN-Android-CLI
 ### 下载模型
