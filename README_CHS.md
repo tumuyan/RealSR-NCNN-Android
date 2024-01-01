@@ -137,6 +137,7 @@ RealSR-NCNN-Android
 ```
 
 ### 完整用法
+仅以 realsr-ncnn 为例说明，其他程序使用方法完全相同，故不重复说明
 ```console
 用法: realsr-ncnn -i 输入的图片路径 -o 输出的图片路径 [其他可选参数]...
 
@@ -151,6 +152,7 @@ RealSR-NCNN-Android
   -j load:proc:save    解码/处理/保存的线程数 (默认1:2:2) 多GPU可以设 1:2,2,2:2
   -x                   开启tta模式
   -f format            输出格式(jpg/png/webp, 默认ext/png)
+  
 ```
 
 ## 如何编译 RealSR-NCNN-Android-GUI
@@ -251,9 +253,6 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
 
 ```
 
-
-## 本仓库中的其他工程
-其他工程的编译和使用与RealSR-NCNN-Android-CLI完全相同，故不重复说明
 
 ## 感谢
 ### 原始超分辨率项目
