@@ -8,12 +8,10 @@ Download: Github [Release](https://github.com/tumuyan/RealSR-NCNN-Android/releas
 
 This repository contains 7 project:  
 1. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell of the follow programs.
-2. RealSR-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android. This program can use realsr models and real-esrgan models.
-3. RealCUGAN-NCNN-Android-CLI  can build a program that can be used by the console (for example, Termux) for Android.
-4. SRMD-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android.
-5. Waifu2x-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android (models not packaged in APK).
-6. Resize-NCNN-Android-CLI can build a program that can be used by the console (for example, Termux) for Android. use ncnn only to reduce the elf file size. Contains classical interpolation mode `nearest` `bilinear` `bicubic` and `avir` `lancir`
-7. Resize-CLI just a demo like the Resize-NCNN-Android-CLI, but it not need ncnn and could build by VS
+2. RealSR-NCNN-Android-CLI can build programs that can be used by the console (for example, Termux) for Android.It contains 5 models (RealSR, SRMD, SRMD, Waifu2x and Resize)   
+  - The RealSR program could use realsr models and real-esrgan models.  
+  - The Resize program contains classical interpolation mode `nearest` `bilinear` `bicubic` and `avir` `lancir`.
+3. Resize-CLI just a demo like the Resize-NCNN-Android-CLI, but it not need ncnn and could build by VS.
 
 ### How to use RealSR-NCNN-Android-GUI
 Two ways of selecting files:
@@ -89,20 +87,23 @@ extract `ncnn-yyyymmdd-android-vulkan-shared.zip` into `../3rdparty/ncnn-android
 extract the source of libwebp into `../3rdparty/libwebp`
 
 ```
-RealSR-NCNN-Android\RealSR-NCNN-Android-GUI\app\src\main\assets\
+RealSR-NCNN-Android
 ├─3rdparty
 │   ├─libwebp
 │   └─ncnn-android-vulkan-shared
 │       └─arm64-v8a
-├─RealCUGAN-NCNN-Android-CLI  
-├─SRMD-NCNN-Android-CLI
-├─Waifu2x-NCNN-Android-CLI 
-├─Resize-NCNN-Android-CLI  
-└─RealSR-NCNN-Android-CLI
+├─RealSR-NCNN-Android-CLI
+│   ├─RealCUGAN
+│   ├─Waifu2x
+│   ├─RealSR
+│   ├─SRMD
+│   └─ReSize
+└─RealSR-NCNN-Android-GUI
 ```
 
 ### step3
-open this project with Android Studio, rebuild it and then you could find the program in `RealSR-NCNN-Android-CLI\app\build\intermediates\cmake\release\obj\arm64-v8a`
+Open this project with Android Studio, rebuild it and then you could find the program in `RealSR-NCNN-Android-CLI\*\build\intermediates\cmake\release\obj\arm64-v8a` or `RealSR-NCNN-Android-CLI\*\build\intermediates\cmake\debug\obj\arm64-v8a`  
+Click `3rdparty/copy_cli_build_result.bat` and it could copy the build result to GUI project.
 
 
 ## How to use RealSR-NCNN-Android-CLI
@@ -116,14 +117,14 @@ or download and unzip them by your self.
 
 
 ### Example Command
-
-make sure the elf file has execute permission. Then input command
+Make sure the elf file has execute permission. Then input command
 
 ```shell
 ./realsr-ncnn -i input.jpg -o output.jpg
 ```
 
 ### Full Usages
+The usage of others program is same as realsr-ncnn.
 ```console
 Usage: realsr-ncnn -i infile -o outfile [options]...
 
@@ -149,7 +150,7 @@ Usage: realsr-ncnn -i infile -o outfile [options]...
 If you encounter crash or error, try to upgrade your derive
 
 ## How to build RealSR-NCNN-Android-GUI
-download [models & elf files](https://huggingface.co/spaces/tumuyan/RealSR/resolve/main/assets.zip), unzip and put them to this folder, then build it with Android Studio. 
+Download [models & elf files](https://huggingface.co/spaces/tumuyan/RealSR/resolve/main/assets.zip), unzip and put them to this folder, then build it with Android Studio. 
 
 ```
 RealSR-NCNN-Android-GUI\app\src\main\assets\
@@ -245,11 +246,6 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
             srmd_x4.param
 
 ```
-
-
-
-## Others project in this Repository
-Building and usage is same as RealSR-NCNN-Android-CLI
 
 ## Acknowledgement
 ### original super-resolution projects

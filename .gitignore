@@ -4,3 +4,5 @@
 *.apk
 *.zip
 3rdparty/libwebp/*
+/*/*/build
+/*/*/.cxx
