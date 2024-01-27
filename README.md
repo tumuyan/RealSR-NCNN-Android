@@ -4,13 +4,13 @@
 
 RealSR-NCNN-Android is a simple Android application that based on [Waifu2x-NCNN](https://github.com/nihui/waifu2x-ncnn-vulkan), [SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan), [RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan), [RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan), & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).  
 The application does not collect any private information from your device.  
-Download: Github [Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases) or [CoolApk](https://www.coolapk.com/apk/292197)
+Download: Github [Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases) 
 
-This repository contains 7 project:  
-1. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell of the follow programs.
-2. RealSR-NCNN-Android-CLI can build programs that can be used by the console (for example, Termux) for Android.It contains 5 models (RealSR, SRMD, SRMD, Waifu2x and Resize)   
+This repository contains 3 project:  
+1. RealSR-NCNN-Android-CLI can build programs that can be used by the console (for example, Termux) for Android.It contains 5 models (RealSR, SRMD, SRMD, Waifu2x and Resize)   
   - The RealSR program could use realsr models and real-esrgan models.  
   - The Resize program contains classical interpolation mode `nearest` `bilinear` `bicubic` and `avir` `lancir`.
+2. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell for the programs build from RealSR-NCNN-Android-CLI.
 3. Resize-CLI just a demo like the Resize-NCNN-Android-CLI, but it not need ncnn and could build by VS.
 
 ### How to use RealSR-NCNN-Android-GUI
@@ -26,7 +26,7 @@ input & output
 ![](Screenshot.jpg)
 
 ### Add more models to RealSR-NCNN-Android-GUI
-RealSR-NCNN-Android-GUI could load extra models from sdcard automatily in ver 1.7.6. You could download more models from https://huggingface.co/tumuyan/realsr .
+RealSR-NCNN-Android-GUI could load extra models from sdcard automatily in ver 1.7.6. You could download more models from https://github.com/tumuyan/realsr-models .
 1. Make a directory in sdcard.
 2. Input the directory path to `Path for custom models (RealSR/ESRGAN/Waifu2x)` and save.
 3. Download and copy models to the directory you make.
@@ -46,11 +46,6 @@ models-Real-ESRGAN-AnimeSharp  // directory should have a suffix of models-Real-
 ├─x4.param
 ```
 * This tool can only convert ESRGAN models, not Real-ESRGAN models. If there are Real-ESRGAN models with perfect effect that need to be converted, I can help you convert them manually.
-
-### Web UI
-https://huggingface.co/spaces/tumuyan/RealSR
-The hugging face repository contains the model and executable file for Windows/Linux platform, you can clone the repository and open a web UI in the python (instead of the original command line program)
-Also you could try online demo! [![Hugging Face](https://img.shields.io/badge/Demo-%F0%9F%A4%97%20Hugging%20Face-blue)](https://huggingface.co/spaces/tumuyan/realsr-docker)
 
 
 ### About Real-ESRGAN 
@@ -108,13 +103,7 @@ Click `3rdparty/copy_cli_build_result.bat` and it could copy the build result to
 
 ## How to use RealSR-NCNN-Android-CLI
 ### Download models
-
-You could run this command in shell (termux) to download and unzip program and models:
-`curl https://huggingface.co/spaces/tumuyan/RealSR/raw/main/install_realsr_android.sh | bash`
-
-or download and unzip them by your self.
-`https://huggingface.co/spaces/tumuyan/RealSR/resolve/main/assets.zip`
-
+You could download `assets.zip` from github release page and unzip it to get models, or download models from https://github.com/tumuyan/realsr-models .
 
 ### Example Command
 Make sure the elf file has execute permission. Then input command
@@ -150,7 +139,9 @@ Usage: realsr-ncnn -i infile -o outfile [options]...
 If you encounter crash or error, try to upgrade your derive
 
 ## How to build RealSR-NCNN-Android-GUI
-Download [models & elf files](https://huggingface.co/spaces/tumuyan/RealSR/resolve/main/assets.zip), unzip and put them to this folder, then build it with Android Studio. 
+Download `assets.zip` from github release page, the zip file contains models & elf files. Unzip and put them to this folder, then build it with Android Studio. 
+The direct download link for current version: https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.9.1/assets.zip
+
 
 ```
 RealSR-NCNN-Android-GUI\app\src\main\assets\

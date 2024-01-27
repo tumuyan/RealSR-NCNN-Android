@@ -18,18 +18,13 @@
   ✅ 图片处理过程完全在本地运行，无需担心隐私泄漏、服务器排队、服务收费；处理耗时取于决选择的模型、图片大小以及设备的性能。  
 
 ### 下载地址 
-[酷安](https://www.coolapk.com/apk/292197) 或 [Github Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases)  
-
-### Web UI
-https://huggingface.co/spaces/tumuyan/RealSR
-上方链接仓库集成了Windows和Linux平台下的ncnn版本超分程序，可以clone仓库，在python环境下打开一个web UI来使用（代替原版程序的命令行方式）
-你也可以在线体验docker版本（由于使用双核CPU运算，速度相当慢）[![Hugging Face](https://img.shields.io/badge/Demo-%F0%9F%A4%97%20Hugging%20Face-blue)](https://huggingface.co/spaces/tumuyan/realsr-docker)
+[Github Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases)  
 
 ### 仓库结构
-1. RealSR-NCNN-Android-GUI 可以编译出APK文件，这样用户可以在图形环境下操作。（不过他的本质就是在给命令行程序套壳，而不是通过JNI调用库文件）
-2. RealSR-NCNN-Android-CLI 包含RealSR、SRMD、SRMD、Waifu2x、Resize五个模块，可以分别编译出对应的命令行程序，编译结果可以在安卓设备的Termux等虚拟终端中使用。其中:
+1. RealSR-NCNN-Android-CLI 包含RealSR、SRMD、SRMD、Waifu2x、Resize五个模块，可以分别编译出对应的命令行程序，编译结果可以在安卓设备的Termux等虚拟终端中使用。其中:
   - RealSR 可以使用RealSR和Real-ESRGAN的模型。
   - Resize 可以使用了`nearest/最邻近`、`bilinear/两次线性`、`bicubic/两次立方`三种经典放大（interpolation/插值）算法，以及Lanczos插值算法相似的`avir/lancir`。特别的，nearest和bilinear可以通过`-n`参数，不使用ncnn进行运算，得到点对点放大的结果;当不使用`-n`。参数时，`-s`参数可以使用小数。
+2. RealSR-NCNN-Android-GUI 可以编译出APK文件，这样用户可以在图形环境下操作。（不过他的本质就是在给上述命令行程序套壳，而不是通过JNI调用库文件）
 3. Resize-CLI 可以编译出resize命令行程序，包含`nearest/最邻近`、`bilinear/两次线性`两种算法，不需要ncnn，编译体积较大。此工程除Android使用外，也可使用VS2019编译，在PC端快速验证。
 
 ## 如何使用 RealSR-NCNN-Android-GUI
@@ -51,7 +46,7 @@ https://huggingface.co/spaces/tumuyan/RealSR
 
 ## 为 RealSR-NCNN-Android-GUI 增加更多模型
 RealSR-NCNN-Android-GUI 在 ver 1.7.6 以上的版本可以自动加载自定义模型。
-你可以从 https://huggingface.co/tumuyan/realsr 下载更多模型：
+你可以从 https://github.com/tumuyan/realsr-models 下载更多模型：
 1. 在文件管理器里新建一个目录
 2. 在App的设置中，自定义模型路径的选项里填入刚才新建目录的路径，点击保存
 3. 下载模型并复制到刚才新建的目录里
@@ -123,12 +118,7 @@ RealSR-NCNN-Android
 
 ## 如何使用 RealSR-NCNN-Android-CLI
 ### 下载模型
-你可以在终端 (termux) 中使用如下命令自动下载并解压程序和模型:
-`curl https://huggingface.co/spaces/tumuyan/RealSR/raw/main/install_realsr_android.sh | bash`
-
-也可以直接下载压缩包，自行解压得到这些文件：
-`https://huggingface.co/spaces/tumuyan/RealSR/resolve/main/assets.zip`
-
+你可以从 github release 页面下载 `assets.zip`, 或者从 https://github.com/tumuyan/realsr-models 下载所需模型，需要注意不同程序需要用对应的模型
 
 ### 命令范例
 确认程序有执行权限，然后输入命令：
@@ -156,7 +146,8 @@ RealSR-NCNN-Android
 ```
 
 ## 如何编译 RealSR-NCNN-Android-GUI
-下载[模型和CLI程序](https://huggingface.co/spaces/tumuyan/RealSR/resolve/main/assets.zip)，放置到如下路径, 然后使用 Android Studio 进行编译。
+从 github release 页面下载 `assets.zip` , 其中包含了模型和CLI程序, 解压并放置到如下路径, 然后使用 Android Studio 进行编译。
+当前版本的下载连接为 https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.9.1/assets.zip
 
 ```
 RealSR-NCNN-Android-GUI\app\src\main\assets\
