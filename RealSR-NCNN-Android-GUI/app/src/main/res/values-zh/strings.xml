@@ -150,6 +150,13 @@
             <item>classical-avir-x4</item>
             <item>classical-avir-lancir-x2</item>
             <item>classical-avir-lancir-x4</item>
+
+            <item>Anime4k-x2</item>
+            <item>Anime4k-x2-预处理-高斯模糊+双边滤镜</item>
+            <item>Anime4k-x2-后处理-高斯模糊+双边滤镜</item>
+            <item>Anime4k-x4</item>
+            <item>Anime4k-x4-预处理-高斯模糊弱+双边滤镜</item>
+            <item>Anime4k-x4-后处理-高斯模糊弱+双边滤镜</item>
         </string-array>-->
     <string-array name="name">
         <item>算法-时间</item>

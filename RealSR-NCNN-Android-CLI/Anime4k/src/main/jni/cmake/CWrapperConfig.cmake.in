@@ -1,0 +1,8 @@
+set(Build_Static_C_Wrapper @Build_Static_C_Wrapper@)
+
+if(Build_Static_C_Wrapper)
+    get_filename_component(Anime4KCPPCore_TARGET_DIR "${CMAKE_CURRENT_LIST_DIR}/../../core/cmake" REALPATH)
+    include(${Anime4KCPPCore_TARGET_DIR}/Anime4KCPPCoreConfig.cmake)
+endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/ac.cmake)

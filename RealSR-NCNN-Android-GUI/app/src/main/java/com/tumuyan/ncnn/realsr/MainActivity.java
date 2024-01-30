@@ -124,6 +124,12 @@ public class MainActivity extends AppCompatActivity {
             "./resize-ncnn -i input.png -o output.png  -m nearest  -n -s 4",
             "./resize-ncnn -i input.png -o output.png  -m bilinear -n -s 2",
             "./resize-ncnn -i input.png -o output.png  -m bilinear -n -s 4",
+            "./Anime4k -i input.png -o output.png -z 2 ",
+            "./Anime4k -i input.png -o output.png -z 2 -a -e 48",
+            "./Anime4k -i input.png -o output.png -z 2 -b -r 48",
+            "./Anime4k -i input.png -o output.png -z 4 ",
+            "./Anime4k -i input.png -o output.png -z 4 -a -e 40",
+            "./Anime4k -i input.png -o output.png -z 4 -b -r 40",
     };
     private int tileSize;
     private boolean useCPU;
@@ -990,7 +996,7 @@ public class MainActivity extends AppCompatActivity {
             os.writeBytes("cd " + dir + "; chmod 777 *ncnn\n");
             os.flush();
 
-            if (cmd.startsWith("./magick") || save) {
+            if (cmd.startsWith("./magick") || cmd.startsWith("./Anime4k") || save) {
                 os.writeBytes("export LD_LIBRARY_PATH=" + dir + "\n");
                 os.flush();
             }
