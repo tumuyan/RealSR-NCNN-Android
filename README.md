@@ -2,12 +2,12 @@
 
 [中文说明](https://github.com/tumuyan/RealSR-NCNN-Android/blob/master/README_CHS.md)  
 
-RealSR-NCNN-Android is a simple Android application that based on [Waifu2x-NCNN](https://github.com/nihui/waifu2x-ncnn-vulkan), [SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan), [RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan), [RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan), & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).  
+RealSR-NCNN-Android is a simple Android application that based on [Waifu2x-NCNN](https://github.com/nihui/waifu2x-ncnn-vulkan), [SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan), [RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan), [RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan), & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN), [Anime4KCPP](https://github.com/TianZerL/Anime4KCPP).  
 The application does not collect any private information from your device.  
 Download: Github [Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases) 
 
 This repository contains 3 project:  
-1. RealSR-NCNN-Android-CLI can build programs that can be used by the console (for example, Termux) for Android.It contains 5 models (RealSR, SRMD, SRMD, Waifu2x and Resize)   
+1. RealSR-NCNN-Android-CLI can build programs that can be used by the console (for example, Termux) for Android.It contains 6 models (Anime4k, RealSR, SRMD, SRMD, Waifu2x and Resize)   
   - The RealSR program could use realsr models and real-esrgan models.  
   - The Resize program contains classical interpolation mode `nearest` `bilinear` `bicubic` and `avir` `lancir`.
 2. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell for the programs build from RealSR-NCNN-Android-CLI.
@@ -70,24 +70,39 @@ Real-ESRGAN is a Practical Algorithms for General Image Restoration.
 [[project]](https://github.com/bilibili/ailab/tree/main/Real-CUGAN)  
 Real-CUGAN is an AI super resolution model for anime images, trained in a million scale anime dataset, using the same architecture as Waifu2x-CUNet. 
 
+## About Anime4kCPP
+[[Project]](- https://github.com/TianZerL/Anime4KCPP)
+Anime4KCPP provides an optimized [bloc97's Anime4K](https://github.com/bloc97/Anime4K) algorithm version 0.9, and it also provides its own CNN algorithm [ACNet](https://github.com/TianZerL/Anime4KCPP/wiki/ACNet), it provides a variety of way to use, including preprocessing and real-time playback, it aims to be a high performance tools to process both image and video.  
+This project is for learning and the exploration task of algorithm course in SWJTU.
+- Anime4K is a simple high-quality anime upscale algorithm. The version 0.9 does not use any machine learning approaches, and can be very fast in real-time processing or pretreatment.
+- ACNet is a CNN based anime upscale algorithm. It aims to provide both high-quality and high-performance.
+HDN mode can better denoise, HDN level is from 1 to 3, higher for better denoising but may cause blur and lack of detail. 
+![demo](https://github.com/TianZerL/Anime4KCPP/raw/master/images/example.png)
+
+
 ## How to build RealSR-NCNN-Android-CLI
 ### step1
 https://github.com/Tencent/ncnn/releases  
 download ncnn-yyyymmdd-android-vulkan-shared.zip.  
 https://github.com/webmproject/libwebp
 download the source of libwebp.  
+https://opencv.org/releases/
+download opencv-android-sdk. (for anime4k)
 
 ### step2
 extract `ncnn-yyyymmdd-android-vulkan-shared.zip` into `../3rdparty/ncnn-android-vulkan-shared`  
-extract the source of libwebp into `../3rdparty/libwebp`
-
+extract the source of libwebp into `../3rdparty/libwebp`  
+extract `opencv-version-android-sdk` into `../3rdparty/opencv-android-sdk`
 ```
 RealSR-NCNN-Android
 ├─3rdparty
+│   ├─opencv-android-sdk
+│   │   └─sdk
 │   ├─libwebp
 │   └─ncnn-android-vulkan-shared
 │       └─arm64-v8a
 ├─RealSR-NCNN-Android-CLI
+│   ├─Anime4k
 │   ├─RealCUGAN
 │   ├─Waifu2x
 │   ├─RealSR
@@ -146,6 +161,7 @@ The direct download link for current version: https://github.com/tumuyan/RealSR-
 ```
 RealSR-NCNN-Android-GUI\app\src\main\assets\
 └─realsr
+    │  Anime4k
     │  colors.xml
     │  delegates.xml
     │  libc++_shared.so
@@ -244,6 +260,7 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
 - https://github.com/jixiaozhong/RealSR
 - https://github.com/cszn/SRMD
 - https://github.com/bilibili/ailab/tree/main/Real-CUGAN
+- https://github.com/bloc97/Anime4K
 
 ### ncnn projects and models
 Most of the C code is copied from Nihui, cause of the directory structure had to be adjusted, the original git was broken  
@@ -251,6 +268,7 @@ Most of the C code is copied from Nihui, cause of the directory structure had to
 - https://github.com/nihui/srmd-ncnn-vulkan
 - https://github.com/nihui/waifu2x-ncnn-vulkan
 - https://github.com/nihui/realcugan-ncnn-vulkan
+- https://github.com/TianZerL/Anime4KCPP
 
 ## Other Open-Source Code Used
 -   [https://github.com/Tencent/ncnn](https://github.com/Tencent/ncnn)  for fast neural network inference on ALL PLATFORMS

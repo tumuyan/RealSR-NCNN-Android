@@ -1,21 +1,21 @@
 cmake_minimum_required(VERSION 3.9)
 project(Anime4KCPP LANGUAGES CXX)
+#set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -s -Wall -g -ggdb -Wl,-rpath=./")
+#set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wl,-rpath=./")
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wl,-rpath=./")
 if(APPLE)
     # using brew's llvm (see https://stackoverflow.com/a/54715120/1410221)
     include_directories("/usr/local/include" "/usr/local/opt/llvm/include")
     link_directories("/usr/local/lib" "/usr/local/opt/llvm/lib")
 endif()
 
+set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/OpenCV-android-sdk/sdk/native/jni)
 set(ncnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/ncnn-android-vulkan-shared/${ANDROID_ABI})
 add_library(ncnn SHARED IMPORTED)
 include_directories(${ncnn_DIR}/include/ncnn)
 set_target_properties(ncnn PROPERTIES IMPORTED_LOCATION
         ${ncnn_DIR}/lib/libncnn.so)
-
-set(OpenCV_DIR "C:\\Lib\\OpenCV-android-sdk\\sdk\\native\\jni")
-#include_directories("C:\\Lib\\OpenCV-android-sdk\\sdk\native\\jni\\include\\opencv2" "C:\\Lib\\OpenCV-android-sdk\\sdk\\native\\jni")
-#link_directories("C:\\Lib\\OpenCV-android-sdk\\sdk\\native\\staticlibs")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)

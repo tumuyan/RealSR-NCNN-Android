@@ -1,12 +1,11 @@
 <resources>
     <string name="app_name">RealSR BigImage</string>
     <string name="default_log">\n
-        This is a simple Android application that uses Realsr-NCNN, SRMD-NCNN, Real-CUGAN-NCNN, Real-ESRGAN, Waifu2x-NCNN and ImageMagick.
+        This is a simple Android application that uses Realsr-NCNN, SRMD-NCNN, Real-CUGAN-NCNN, Real-ESRGAN, Waifu2x-NCNN, Anime4kCPP and ImageMagick.
 
         \nThe application does not collect any private information from your device.
         \nAdd more models: https://github.com/tumuyan/RealSR-NCNN-Android#add-more-models-to-realsr-ncnn-android-gui
         \nGithub: https://github.com/tumuyan/RealSR-NCNN-Android
-        \nCoolApk: https://www.coolapk.com/apk/292197
         \nSponsor: https://afdian.net/a/tumuyan (No additional functionality will be provided)
         \n
         \nYou can run these programs:
@@ -169,9 +168,13 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
         <item>Anime4k-x2</item>
         <item>Anime4k-x2-pre-gaussian_blur-bilateral</item>
         <item>Anime4k-x2-post-gaussian_blur-bilateral</item>
+        <item>Anime4k-x2-ACNet</item>
+        <item>Anime4k-x2-ACNet-HDN</item>
         <item>Anime4k-x4</item>
         <item>Anime4k-x4-pre-gaussian_blur_weak-bilateral</item>
         <item>Anime4k-x4-post-gaussian_blur_weak-bilateral</item>
+        <item>Anime4k-x4-ACNet</item>
+        <item>Anime4k-x4-ACNet-HDN</item>
     </string-array>
     <string-array name="oriental_item">
         <item>Default</item>

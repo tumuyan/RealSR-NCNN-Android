@@ -442,7 +442,7 @@ std::string Anime4KCPP::OpenCL::ACNet::getInfo() const
 {
     std::ostringstream oss;
     oss << AC::getInfo()
-        << "----------------------------------------------" << '\n'
+        << "------------------------" << '\n'
         << "OpenCL Platform ID:" << detail::pID << '\n'
         << "OpenCL Device ID:" << detail::dID << '\n'
         << "Zoom Factor: " << param.zoomFactor << '\n'
@@ -450,7 +450,7 @@ std::string Anime4KCPP::OpenCL::ACNet::getInfo() const
         << "HDN Level: " << (param.HDN ? param.HDNLevel : 0) << '\n'
         << "Number of OpenCL Command Queues:" << detail::commandQueueNum << '\n'
         << "OpenCL Parallel IO Command Queues:" << std::boolalpha << detail::parallelIO << '\n'
-        << "----------------------------------------------" << '\n';
+        << "------------------------" << '\n';
     return oss.str();
 }
 
@@ -458,9 +458,9 @@ std::string Anime4KCPP::OpenCL::ACNet::getFiltersInfo() const
 {
     std::ostringstream oss;
     oss << AC::getFiltersInfo()
-        << "----------------------------------------------" << '\n'
+        << "------------------------" << '\n'
         << "Filter not supported" << '\n'
-        << "----------------------------------------------" << '\n';
+        << "------------------------" << '\n';
     return oss.str();
 }
 

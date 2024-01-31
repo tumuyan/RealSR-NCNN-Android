@@ -321,7 +321,7 @@ std::string Anime4KCPP::OpenCL::Anime4K09::getInfo() const
 {
     std::ostringstream oss;
     oss << AC::getInfo()
-        << "----------------------------------------------" << '\n'
+        << "------------------------" << '\n'
         << "OpenCL Platform ID:" << detail::pID << '\n'
         << "OpenCL Device ID:" << detail::dID << '\n'
         << "Passes: " << param.passes << '\n'
@@ -332,7 +332,7 @@ std::string Anime4KCPP::OpenCL::Anime4K09::getInfo() const
         << "Strength Gradient: " << param.strengthGradient << '\n'
         << "Number of OpenCL Command Queues:" << detail::commandQueueNum << '\n'
         << "OpenCL Parallel IO Command Queues:" << std::boolalpha << detail::parallelIO << '\n'
-        << "----------------------------------------------" << '\n';
+        << "------------------------" << '\n';
     return oss.str();
 }
 
@@ -341,9 +341,9 @@ std::string Anime4KCPP::OpenCL::Anime4K09::getFiltersInfo() const
     std::ostringstream oss;
 
     oss << AC::getFiltersInfo()
-        << "----------------------------------------------" << '\n'
+        << "------------------------" << '\n'
         << "Preprocessing filters list:" << '\n'
-        << "----------------------------------------------" << '\n';
+        << "------------------------" << '\n';
     if (!param.preprocessing)
         oss << "Preprocessing disabled" << '\n';
     else
@@ -356,9 +356,9 @@ std::string Anime4KCPP::OpenCL::Anime4K09::getFiltersInfo() const
                 oss << filters << '\n';
     }
 
-    oss << "----------------------------------------------" << '\n'
+    oss << "------------------------" << '\n'
         << "Postprocessing filters list:" << '\n'
-        << "----------------------------------------------" << '\n';
+        << "------------------------" << '\n';
     if (!param.postprocessing)
         oss << "Postprocessing disabled" << '\n';
     else

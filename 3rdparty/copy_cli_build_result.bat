@@ -31,6 +31,13 @@ for /d %%D in (..\RealSR-NCNN-Android-CLI\*) do (
     )
 )
 
+    if exist "..\RealSR-NCNN-Android-CLI\Anime4k\build\intermediates\cmake\debug\obj\arm64-v8a\Anime4k" (
+        xcopy "..\RealSR-NCNN-Android-CLI\Anime4k\build\intermediates\cmake\debug\obj\arm64-v8a\*" "%target_dir%" /Y
+    )
 
+    if exist "..\RealSR-NCNN-Android-CLI\Anime4k\build\intermediates\cmake\release\obj\arm64-v8a\Anime4k" (
+        xcopy "..\RealSR-NCNN-Android-CLI\Anime4k\build\intermediates\cmake\release\obj\arm64-v8a\*" "%target_dir%" /Y
+    )
+    
 echo Done.
 pause

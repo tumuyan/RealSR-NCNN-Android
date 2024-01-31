@@ -87,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
     private String[] formats;
 
     private String[] command = null;
+    private String log = "";
 
     private final String[] bench_mark_commands = new String[]{
             "./realsr-ncnn -c 46 -i img/PM5544.jpeg -o input.png  -m models-Real-ESRGAN",
@@ -127,9 +128,13 @@ public class MainActivity extends AppCompatActivity {
             "./Anime4k -i input.png -o output.png -z 2 ",
             "./Anime4k -i input.png -o output.png -z 2 -a -e 48",
             "./Anime4k -i input.png -o output.png -z 2 -b -r 48",
+            "./Anime4k -i input.png -o output.png -z 2 -w",
+            "./Anime4k -i input.png -o output.png -z 2 -w -H",
             "./Anime4k -i input.png -o output.png -z 4 ",
             "./Anime4k -i input.png -o output.png -z 4 -a -e 40",
             "./Anime4k -i input.png -o output.png -z 4 -b -r 40",
+            "./Anime4k -i input.png -o output.png -z 4 -w",
+            "./Anime4k -i input.png -o output.png -z 4 -w -H",
     };
     private int tileSize;
     private boolean useCPU;
@@ -479,7 +484,7 @@ public class MainActivity extends AppCompatActivity {
 
         for (String f : magickFilters) {
             for (String s : magickResize) {
-                cmdList.add("./magick input.png -filter " + f + " -resize " + s + " output.png");
+                cmdList.add("./magick input.png -filter " + f + " -resize " + s + " output.png ");
                 cmdLabel.add("Magick-" + f + "-x" + s.replaceFirst("(\\d+)00%", "$1"));
             }
         }
@@ -702,6 +707,7 @@ public class MainActivity extends AppCompatActivity {
             menuProgress.setTitle("");
             {
                 stopCommand();
+                log = "";
                 StringBuffer cmd;
 
                 if (selectCommand >= command.length) {
@@ -745,10 +751,10 @@ public class MainActivity extends AppCompatActivity {
 
                         boolean showImgView = (cmd.toString().contains("output.png"));
                         if (showImgView) {
-                            if (outputFile.exists()) {
-                                updateImage(dir + "/output.png", String.format("%s\n%s", getString(R.string.hr), logTextView.getText()), false);
+                            if (outputFile.exists() && outputFile.isFile()) {
+                                updateImage(dir + "/output.png", String.format("%s\n%s", getString(R.string.hr), log), false);
                             } else {
-                                updateImage(dir + "/input.png", String.format("%s\n%s", getString(R.string.lr), logTextView.getText()), false);
+                                updateImage(dir + "/input.png", String.format("%s\n%s", getString(R.string.lr), log), false);
                             }
                         }
                         if (!showImgView)
@@ -916,7 +922,7 @@ public class MainActivity extends AppCompatActivity {
     // 主要的运行命令的方式
     public synchronized boolean run20(@NonNull String cmd, boolean bench_mark_mode) {
         newTask = false;
-        Log.i("run20", "cmd = ");
+        Log.i("run20", "cmd = " + cmd);
         final long timeStart = System.currentTimeMillis();
         boolean output_savePath = false;
 
@@ -926,6 +932,7 @@ public class MainActivity extends AppCompatActivity {
                 || cmd.startsWith("./resize-ncnn")
                 || cmd.startsWith("./waifu2x-ncnn")
                 || cmd.startsWith("./magick input")
+                || cmd.startsWith("./Anime4k")
         ) {
             if (cmd.contains(" input.png ") && cmd.contains(" output.png ")) {
                 if (inputFile.isDirectory()) {
@@ -942,7 +949,13 @@ public class MainActivity extends AppCompatActivity {
             if (cmd.matches(".+\\s-m(\\s+)[^\\s]*models-.+")) {
                 modelName = cmd.replaceFirst(".+\\s-m(\\s+)[^\\s]*models-([^\\s]+).*", "$2");
             }
-            if (modelName.matches("(se|nose|pro)")) {
+            if (cmd.startsWith("./Anime4k")) {
+                modelName = "Anime4k";
+                if (cmd.contains("-w"))
+                    modelName += "-ACNet";
+                if (cmd.contains("-H"))
+                    modelName += "-HDN";
+            } else if (modelName.matches("(se|nose|pro)")) {
                 modelName = "Real-CUGAN-" + modelName;
             } else if (cmd.matches(".+\\s-m(\\s+)(bicubic|bilinear|nearest|avir|de-nearest).*")) {
                 modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest|lancir|avir|de-nearest).*", "Classical-$2");
@@ -956,11 +969,6 @@ public class MainActivity extends AppCompatActivity {
             }
         } else
             modelName = "SR";
-
-        // 对应process进程的3个流
-        BufferedReader successResult;
-        BufferedReader errorResult;
-        DataOutputStream os;
 
         // 保存的执行结果
         StringBuilder result = new StringBuilder();
@@ -979,52 +987,53 @@ public class MainActivity extends AppCompatActivity {
         final boolean save = save_output;
 
         try {
-            process = Runtime.getRuntime().exec("sh");
+            ProcessBuilder processBuilder = new ProcessBuilder("sh");
+            processBuilder.redirectErrorStream(true); // 合并标准输出和标准错误
+            process = processBuilder.start();
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
 
-        successResult = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        errorResult = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-        os = new DataOutputStream(process.getOutputStream());
+        BufferedReader outputReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        OutputStream os = process.getOutputStream();
+
 
         try {
             // 写入要执行的命令
             os.flush();
 
-            os.writeBytes("cd " + dir + "; chmod 777 *ncnn\n");
+            os.write(("cd " + dir + "; chmod 777 *ncnn\n").getBytes());
             os.flush();
 
-            if (cmd.startsWith("./magick") || cmd.startsWith("./Anime4k") || save) {
-                os.writeBytes("export LD_LIBRARY_PATH=" + dir + "\n");
+            if (cmd.startsWith("./magick") || save) {
+                os.write(("export LD_LIBRARY_PATH=" + dir + "\n").getBytes());
                 os.flush();
             }
 
             Log.i("run20", "write cmd start");
 
             if (save) {
-                os.write((cmd + " ; " + saveOutputCmd()).getBytes());
-                os.writeBytes("\n");
+                os.write((cmd + " ; " + saveOutputCmd() + "\n").getBytes());
             } else {
                 os.write(cmd.getBytes());
-                os.writeBytes("\n");
+                os.write('\n');
                 outputSavePath = "";
             }
             os.flush();
 
             Log.i("run20", "write cmd finish");
 
-            os.writeBytes("exit\n");
+            os.write("exit\n".getBytes());
             os.flush();
             os.close();
 
             String line;
             Log.i("run20", "process.getErrorStream() start");
 
-            // 读取错误输出
+            // 读取输出
             try {
-                while ((line = errorResult.readLine()) != null) {
+                while ((line = outputReader.readLine()) != null) {
                     if (line.contains("unused DT entry"))
                         continue;
 
@@ -1063,32 +1072,35 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             } finally {
                 try {
-                    errorResult.close();
+                    outputReader.close();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
 
-            Log.i("run20", "process.getErrorStream() finish");
-
+            Log.i("run20", "process output stream finish");
+/*
             try {
                 while ((line = successResult.readLine()) != null) {
-                    if (line.contains("unused DT entry"))
+                    if (line.contains("unused DT entry") || line.equals("------------------------") || line.isEmpty())
                         continue;
-
                     result.append(line).append("\n");
 
                     boolean p = run_ncnn && line.matches("\\d([0-9.]*)%");
                     progressText = line;
 
-                    String finalLine = line;
-                    runOnUiThread(() -> {
-                        logTextView.setText(result);
-                        if (p) {
-                            menuProgress.setTitle(progressText);
-                            sendNotification(this, finalLine);
-                        }
-                    });
+//                    if (!cmd.startsWith("./Anime4k"))
+                    {
+                        String finalLine = line;
+                        runOnUiThread(() -> {
+                            logTextView.setText(result);
+                            if (p) {
+                                menuProgress.setTitle(progressText);
+                                sendNotification(this, finalLine);
+                            }
+                        });
+                    }
+
 
                     Log.d("run20 successResult", line);
                 }
@@ -1102,7 +1114,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             Log.i("run20", "process.getSuccessStream() finish");
-
+*/
         } catch (Exception e) {
             e.printStackTrace();
             sendNotification(this, ERR);
@@ -1118,8 +1130,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (newTask || process == null) {
+            log = result.append("\nbreak").toString();
             runOnUiThread(() -> {
-                logTextView.setText(result.append("\nbreak"));
+                logTextView.setText(log);
                 menuProgress.setTitle("");
             });
 
@@ -1141,9 +1154,10 @@ public class MainActivity extends AppCompatActivity {
         } else Log.i("run20 finish", "run_ncnn=false");
 
         boolean finalOutput_savePath = output_savePath;
+        log = result.toString();
         runOnUiThread(() -> {
 
-            logTextView.setText(result);
+            logTextView.setText(log);
             menuProgress.setTitle(DONE);
             sendNotification(this, DONE);
 

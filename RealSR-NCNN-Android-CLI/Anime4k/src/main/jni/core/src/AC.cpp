@@ -770,13 +770,13 @@ void Anime4KCPP::AC::process()
 std::string Anime4KCPP::AC::getInfo() const
 {
     std::ostringstream oss;
-    oss << "----------------------------------------------" << '\n'
+    oss << "------------------------" << '\n'
         << "Parameter information" << '\n'
-        << "----------------------------------------------" << '\n';
+        << "------------------------" << '\n';
     if (orgImg.cols && orgImg.rows)
     {
         oss << orgImg.cols << "x" << orgImg.rows << " to " << width << "x" << height << '\n'
-            << "----------------------------------------------" << '\n';
+            << "------------------------" << '\n';
     }
     oss << "Processor info: \n "
         << getProcessorInfo() << '\n';
@@ -787,9 +787,9 @@ std::string Anime4KCPP::AC::getInfo() const
 std::string Anime4KCPP::AC::getFiltersInfo() const
 {
     std::ostringstream oss;
-    oss << "----------------------------------------------" << '\n'
+    oss << "------------------------" << '\n'
         << "Filter information" << '\n'
-        << "----------------------------------------------" << '\n';
+        << "------------------------" << '\n';
 
     return oss.str();
 }

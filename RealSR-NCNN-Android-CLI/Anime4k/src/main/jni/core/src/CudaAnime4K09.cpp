@@ -41,7 +41,7 @@ std::string Anime4KCPP::Cuda::Anime4K09::getInfo() const
 {
     std::ostringstream oss;
     oss << AC::getInfo()
-        << "----------------------------------------------" << '\n'
+        << "------------------------" << '\n'
         << "CUDA Device ID:" << cuGetDeviceID() << '\n'
         << "Passes: " << param.passes << '\n'
         << "pushColorCount: " << param.pushColorCount << '\n'
@@ -49,7 +49,7 @@ std::string Anime4KCPP::Cuda::Anime4K09::getInfo() const
         << "Fast Mode: " << std::boolalpha << param.fastMode << '\n'
         << "Strength Color: " << param.strengthColor << '\n'
         << "Strength Gradient: " << param.strengthGradient << '\n'
-        << "----------------------------------------------" << '\n';
+        << "------------------------" << '\n';
     return oss.str();
 }
 
@@ -58,9 +58,9 @@ std::string Anime4KCPP::Cuda::Anime4K09::getFiltersInfo() const
     std::ostringstream oss;
 
     oss << AC::getFiltersInfo()
-        << "----------------------------------------------" << '\n'
+        << "------------------------" << '\n'
         << "Preprocessing filters list:" << '\n'
-        << "----------------------------------------------" << '\n';
+        << "------------------------" << '\n';
     if (!param.preprocessing)
         oss << "Preprocessing disabled" << '\n';
     else
@@ -73,9 +73,9 @@ std::string Anime4KCPP::Cuda::Anime4K09::getFiltersInfo() const
                 oss << filters << '\n';
     }
 
-    oss << "----------------------------------------------" << '\n'
+    oss << "------------------------" << '\n'
         << "Postprocessing filters list:" << '\n'
-        << "----------------------------------------------" << '\n';
+        << "------------------------" << '\n';
     if (!param.postprocessing)
         oss << "Postprocessing disabled" << '\n';
     else

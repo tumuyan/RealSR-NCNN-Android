@@ -4,5 +4,6 @@
 *.apk
 *.zip
 3rdparty/libwebp/*
+3rdparty/OpenCV-android-sdk/*
 /*/*/build
 /*/*/.cxx

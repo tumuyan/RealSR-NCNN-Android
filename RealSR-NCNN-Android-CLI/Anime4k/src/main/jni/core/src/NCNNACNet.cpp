@@ -160,12 +160,12 @@ std::string Anime4KCPP::NCNN::ACNet::getInfo() const
 {
     std::ostringstream oss;
     oss << AC::getInfo()
-        << "----------------------------------------------" << '\n'
+        << "------------------------" << '\n'
         << "NCNN device product ID: " << (detail::vkdev ? std::to_string(detail::vkdev->info.device_id()) : "-1") << '\n'
         << "Zoom Factor: " << param.zoomFactor << '\n'
         << "HDN Mode: " << std::boolalpha << param.HDN << '\n'
         << "HDN Level: " << (param.HDN ? param.HDNLevel : 0) << '\n'
-        << "----------------------------------------------" << '\n';
+        << "------------------------" << '\n';
     return oss.str();
 }
 
@@ -173,9 +173,9 @@ std::string Anime4KCPP::NCNN::ACNet::getFiltersInfo() const
 {
     std::ostringstream oss;
     oss << AC::getFiltersInfo()
-        << "----------------------------------------------" << '\n'
+        << "------------------------" << '\n'
         << "Filter not supported" << '\n'
-        << "----------------------------------------------" << '\n';
+        << "------------------------" << '\n';
     return oss.str();
 }
 

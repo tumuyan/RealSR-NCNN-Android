@@ -73,12 +73,12 @@ std::string Anime4KCPP::Cuda::ACNet::getInfo() const
 {
     std::ostringstream oss;
     oss << AC::getInfo()
-        << "----------------------------------------------" << '\n'
+        << "------------------------" << '\n'
         << "CUDA Device ID: " << cuGetDeviceID() << '\n'
         << "Zoom Factor: " << param.zoomFactor << '\n'
         << "HDN Mode: " << std::boolalpha << param.HDN << '\n'
         << "HDN Level: " << (param.HDN ? param.HDNLevel : 0) << '\n'
-        << "----------------------------------------------" << '\n';
+        << "------------------------" << '\n';
     return oss.str();
 }
 
@@ -86,9 +86,9 @@ std::string Anime4KCPP::Cuda::ACNet::getFiltersInfo() const
 {
     std::ostringstream oss;
     oss << AC::getFiltersInfo()
-        << "----------------------------------------------" << '\n'
+        << "------------------------" << '\n'
         << "Filter not supported" << '\n'
-        << "----------------------------------------------" << '\n';
+        << "------------------------" << '\n';
     return oss.str();
 }
 

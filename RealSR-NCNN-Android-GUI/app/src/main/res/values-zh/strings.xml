@@ -3,13 +3,12 @@
     <string name="app_name">RealSR放大图片</string>
     <string name="default_log">
         \n这是一个兼具人工智能和传统插值算法的图片放大的应用。
-        \n\n最初使用了Real ESRGAN和RealSR NCNN的成果实现安卓本地超分，后来又添加了SRMD NCNN和Real CUGAN NCNN，再往后又加入了传统插值缩放算法nearest/bilinear/bicubic和sinc类型插值算法avir/avir-lancir，最后更是直接加入了强大的图标处理工具ImageMagick，逐步成为一个算法完善的图片放大的工具。
+        \n\n最初使用了Real ESRGAN和RealSR NCNN的成果实现安卓本地超分，后来又添加了SRMD NCNN和Real CUGAN NCNN，再往后又加入了传统插值缩放算法nearest/bilinear/bicubic和sinc类型插值算法avir/avir-lancir，最后更是直接加入了强大的图标处理工具ImageMagick以及Anime4kCPP，逐步成为一个算法完善的图片放大的工具。
         \n在内置的超分模型中，本人对其中的Real ESRGAN最为推崇。Real ESRGAN所实现的放大和修复做到了一定程度上化腐朽为神奇。
 
         \n\n与借助云计算的商业服务相比，图片处理过程完全在本地运行，处理耗时取决于图片大小以及设备的性能；但正因此，使用本应用可以进行可靠稳定的运算，并且没有被收集隐私的隐忧。
 
         \n项目地址：https://github.com/tumuyan/RealSR-NCNN-Android
-        \n酷安下载：https://www.coolapk.com/apk/292197
         \n常见错误：https://note.youdao.com/s/3xv6h5iv
         \n模型和算法的说明：https://note.youdao.com/s/6XlIFbWt
         \n添加更多模型: https://note.youdao.com/s/XEv68sBU (包含waifu2x realsr real-esrgan模型，欢迎在酷安、github或者这篇笔记的评论区讨论这些额外的模型)
@@ -154,9 +153,13 @@
             <item>Anime4k-x2</item>
             <item>Anime4k-x2-预处理-高斯模糊+双边滤镜</item>
             <item>Anime4k-x2-后处理-高斯模糊+双边滤镜</item>
+            <item>Anime4k-x2-ACNet</item>
+            <item>Anime4k-x2-ACNet-HDN</item>
             <item>Anime4k-x4</item>
             <item>Anime4k-x4-预处理-高斯模糊弱+双边滤镜</item>
             <item>Anime4k-x4-后处理-高斯模糊弱+双边滤镜</item>
+            <item>Anime4k-x2-ACNet</item>
+            <item>Anime4k-x2-ACNet-HDN</item>
         </string-array>-->
     <string-array name="name">
         <item>算法-时间</item>

@@ -7,7 +7,7 @@
 为了获得更加高质量的视觉体验，或者出于更为基本的目的看清楚图片，图像恢复/超分辨率算法应运而生。而手机作为目前我们生活中最常使用的智能设备，显然有使用这一技术的迫切需求。  
 
 这个仓库正是为安卓设备构建的一个图像超分辨率的应用。具有如下特点：  
-  ✅ 内置超分算法和模型多。最初使用了[RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan)和[Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)的成果，后来又添加了[SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan)和[RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan)。同时也内置了[waifu2x-ncnn](https://github.com/nihui/waifu2x-ncnn-vulkan)（但是没有内置模型和预设命令，如有需求自行下载并添加）  
+  ✅ 内置超分算法和模型多。最初使用了[RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan)和[Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)的成果，后来又添加了[SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan)和[RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan), [Anime4KCPP](https://github.com/TianZerL/Anime4KCPP)。同时也内置了[waifu2x-ncnn](https://github.com/nihui/waifu2x-ncnn-vulkan)（但是没有内置模型和预设命令，如有需求自行下载并添加）  
   ✅ 兼顾传统插值算法。包括常见的nearest、bilinear、bicubic算法，以及imagemagick的二十多种filter。  
   ✅ 内置缩小算法。除使用用户指定倍率和算法的缩小方式外，resize-ncnn设计了一种自动缩小的算法de-nearest。参见[笔记](https://note.youdao.com/s/6XlIFbWt)  
   ✅ 支持图形界面和命令行两种操作方式使用。  
@@ -21,7 +21,7 @@
 [Github Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases)  
 
 ### 仓库结构
-1. RealSR-NCNN-Android-CLI 包含RealSR、SRMD、SRMD、Waifu2x、Resize五个模块，可以分别编译出对应的命令行程序，编译结果可以在安卓设备的Termux等虚拟终端中使用。其中:
+1. RealSR-NCNN-Android-CLI 包含RealSR、SRMD、SRMD、Waifu2x、Resize和Animk4k共6个模块，可以分别编译出对应的命令行程序，编译结果可以在安卓设备的Termux等虚拟终端中使用。其中:
   - RealSR 可以使用RealSR和Real-ESRGAN的模型。
   - Resize 可以使用了`nearest/最邻近`、`bilinear/两次线性`、`bicubic/两次立方`三种经典放大（interpolation/插值）算法，以及Lanczos插值算法相似的`avir/lancir`。特别的，nearest和bilinear可以通过`-n`参数，不使用ncnn进行运算，得到点对点放大的结果;当不使用`-n`。参数时，`-s`参数可以使用小数。
 2. RealSR-NCNN-Android-GUI 可以编译出APK文件，这样用户可以在图形环境下操作。（不过他的本质就是在给上述命令行程序套壳，而不是通过JNI调用库文件）
@@ -86,24 +86,37 @@ Real ESRGAN是一个实用的图像修复算法，可以用来对低分辨率图
 [[项目地址]](https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
 Real-CUGAN是一个使用百万级动漫数据进行训练的，结构与Waifu2x兼容的通用动漫图像超分辨率模型。
 
+## 关于 Anime4kCPP
+[[项目地址]](- https://github.com/TianZerL/Anime4KCPP)
+Anime4KCPP提供一个改进后的[bloc97的Anime4K](https://github.com/bloc97/Anime4K)算法0.9版本，同时也提供自己的CNN算法[ACNet](https://github.com/TianZerL/Anime4KCPP/wiki/ACNet)。Anime4KCPP提供多种使用方式，包括预处理与实时播放，其致力于成为高性能的视频或图像处理工具。
+- Anime4K算法是一种简单且高质量的动漫类图像超分辨率算法，它并不使用机器学习，因此速度非常快，可用于实时处理和预处理。
+- ACNet是一个基于卷积神经网络的超分辨率算法，旨在同时提供高质量和高性能。其中HDN模式能更好的降噪，HDN等级从1到3，越高降噪效果越好，但可能导致模糊和缺少细节。
+![demo](https://github.com/TianZerL/Anime4KCPP/raw/master/images/example.png)
+
 ## 如何编译 RealSR-NCNN-Android-CLI
 ### step1
 https://github.com/Tencent/ncnn/releases  
 下载 `ncnn-yyyymmdd-android-vulkan-shared.zip` 或者你自己编译ncnn为so文件  
 https://github.com/webmproject/libwebp  
 下载libwebp的源码
-
+https://opencv.org/releases/
+下载opencv-android-sdk(供Anime4k使用)
 ### step2
 解压 `ncnn-yyyymmdd-android-vulkan-shared.zip` 到 `../3rdparty/ncnn-android-vulkan-shared`  
-解压libwebp源码到`../3rdparty/libwebp`
+解压libwebp源码到`../3rdparty/libwebp`  
+解压 `opencv-version-android-sdk` 到 `../3rdparty/opencv-android-sdk`
 
 ```
 RealSR-NCNN-Android
 ├─3rdparty
+
+│   ├─opencv-android-sdk
+│   │   └─sdk
 │   ├─libwebp
 │   └─ncnn-android-vulkan-shared
 │       └─arm64-v8a
 ├─RealSR-NCNN-Android-CLI
+│   ├─Anime4k
 │   ├─RealCUGAN
 │   ├─Waifu2x
 │   ├─RealSR
@@ -152,6 +165,7 @@ RealSR-NCNN-Android
 ```
 RealSR-NCNN-Android-GUI\app\src\main\assets\
 └─realsr
+    │  Anime4k
     │  colors.xml
     │  delegates.xml
     │  libc++_shared.so
@@ -163,7 +177,7 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
     │  resize-ncnn
     │  srmd-ncnn
     │  waifu2x-ncnn
-    │  
+    |
     ├─models-nose
     │      up2x-no-denoise.bin
     │      up2x-no-denoise.param
@@ -251,6 +265,7 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
 - https://github.com/jixiaozhong/RealSR
 - https://github.com/cszn/SRMD
 - https://github.com/bilibili/ailab/tree/main/Real-CUGAN
+- https://github.com/bloc97/Anime4K
 
 ### ncnn项目以及模型
 大部分C代码都来自nihui。由于Android直接编译比较困难，必须对项目目录做调整，因此破坏了原有Git。  
@@ -258,6 +273,7 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
 - https://github.com/nihui/srmd-ncnn-vulkan
 - https://github.com/nihui/waifu2x-ncnn-vulkan
 - https://github.com/nihui/realcugan-ncnn-vulkan
+- https://github.com/TianZerL/Anime4KCPP
 
 ## 使用的其他开源项目
 - [https://github.com/Tencent/ncnn](https://github.com/Tencent/ncnn)  for fast neural network inference on ALL PLATFORMS
