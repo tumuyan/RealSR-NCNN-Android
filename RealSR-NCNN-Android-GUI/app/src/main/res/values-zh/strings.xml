@@ -92,6 +92,7 @@
     <string name="menu_help">帮助</string>
     <string name="menu_out">显示处理后的图片</string>
     <string name="menu_in">显示处理前的图片</string>
+    <string name="menu_nearest4">Nearest放大4倍</string>
     <string name="menu_de_nearest">DeNearest缩小</string>
     <string name="menu_magick4">Magick缩小到1/4</string>
     <string name="menu_magick3">Magick缩小到1/3</string>
@@ -138,18 +139,6 @@
             <item>real-cugan-x4-conservative</item>
             <item>real-cugan-x4-noise0</item>
             <item>real-cugan-x4-noise3</item>
-            <item>classical-nearest-x2</item>
-            <item>classical-nearest-x4</item>
-            <item>classical-bilinear-x2</item>
-            <item>classical-bilinear-x4</item>
-            <item>classical-bicubic-x2</item>
-            <item>classical-bicubic-x4</item>
-            <item>classical-avir-x0.5</item>
-            <item>classical-avir-x2</item>
-            <item>classical-avir-x4</item>
-            <item>classical-avir-lancir-x2</item>
-            <item>classical-avir-lancir-x4</item>
-
             <item>Anime4k-x2</item>
             <item>Anime4k-x2-预处理-高斯模糊+双边滤镜</item>
             <item>Anime4k-x2-后处理-高斯模糊+双边滤镜</item>

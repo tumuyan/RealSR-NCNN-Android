@@ -78,6 +78,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="path_not_exist">Not exist this directory</string>
     <string name="path_not_dir">The path is a file, not a directory</string>
     <string name="menu_out2in" translatable="false"><![CDATA[Output -> Input]]></string>
+    <string name="menu_nearest4">Nearest 400%</string>
     <string name="menu_de_nearest">De Nearest</string>
     <string name="menu_magick4">Magick 25%</string>
     <string name="menu_magick3">Magick 33.3%</string>
@@ -161,10 +162,6 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
         <item>real-cugan-pro-x3-conservative</item>
         <item>real-cugan-pro-x3-noise0</item>
         <item>real-cugan-pro-x3-noise3</item>
-        <item>classical-nearest-x2</item>
-        <item>classical-nearest-x4</item>
-        <item>classical-bilinear-x2</item>
-        <item>classical-bilinear-x4</item>
         <item>Anime4k-x2</item>
         <item>Anime4k-x2-pre-gaussian_blur-bilateral</item>
         <item>Anime4k-x2-post-gaussian_blur-bilateral</item>

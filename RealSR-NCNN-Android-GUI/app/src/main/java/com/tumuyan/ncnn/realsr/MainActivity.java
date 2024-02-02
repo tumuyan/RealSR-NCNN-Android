@@ -121,10 +121,6 @@ public class MainActivity extends AppCompatActivity {
             "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 3  -n -1",
             "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 3  -n 0",
             "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 3  -n 3",
-            "./resize-ncnn -i input.png -o output.png  -m nearest  -n -s 2",
-            "./resize-ncnn -i input.png -o output.png  -m nearest  -n -s 4",
-            "./resize-ncnn -i input.png -o output.png  -m bilinear -n -s 2",
-            "./resize-ncnn -i input.png -o output.png  -m bilinear -n -s 4",
             "./Anime4k -i input.png -o output.png -z 2 ",
             "./Anime4k -i input.png -o output.png -z 2 -a -e 48",
             "./Anime4k -i input.png -o output.png -z 2 -b -r 48",
@@ -175,6 +171,8 @@ public class MainActivity extends AppCompatActivity {
             return false;
         } else if (v == R.id.menu_avir2) {
             q = "./resize-ncnn -i input.png -o output.png  -m avir -s 0.5";
+        } else if (v == R.id.menu_nearest4) {
+            q = "./resize-ncnn -i input.png -o output.png  -m nearest -s 4";
         } else if (v == R.id.menu_de_nearest) {
             q = "./resize-ncnn -i input.png -o output.png  -m de-nearest";
         } else if (v == R.id.menu_magick2) {
@@ -454,9 +452,9 @@ public class MainActivity extends AppCompatActivity {
         List<String> cmdLabel = new ArrayList<>();
 
         // 增加resize-ncnn经典插值放大的命令
-        String[] classicalFilters = {"bicubic", "avir", "avir-lancir",};
+        String[] classicalFilters = {"nearest", "bilinear", "bicubic", "avir", "avir-lancir",};
 
-        String[] classicalResize = {"2", "4"};
+        String[] classicalResize = {"2", "4", "10"};
 
         for (String f : classicalFilters) {
             for (String s : classicalResize) {
