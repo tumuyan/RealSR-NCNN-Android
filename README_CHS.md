@@ -99,12 +99,13 @@ https://github.com/Tencent/ncnn/releases
 下载 `ncnn-yyyymmdd-android-vulkan-shared.zip` 或者你自己编译ncnn为so文件  
 https://github.com/webmproject/libwebp  
 下载libwebp的源码
-https://opencv.org/releases/
-下载opencv-android-sdk(供Anime4k使用)
+https://opencv.org/releases/  
+下载opencv-android-sdk(供Anime4k使用)  
+
 ### step2
 解压 `ncnn-yyyymmdd-android-vulkan-shared.zip` 到 `../3rdparty/ncnn-android-vulkan-shared`  
 解压libwebp源码到`../3rdparty/libwebp`  
-解压 `opencv-version-android-sdk` 到 `../3rdparty/opencv-android-sdk`
+解压 `opencv-version-android-sdk` 到 `../3rdparty/opencv-android-sdk`  
 
 ```
 RealSR-NCNN-Android
