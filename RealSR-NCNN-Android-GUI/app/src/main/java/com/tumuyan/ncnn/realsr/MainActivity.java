@@ -101,11 +101,9 @@ public class MainActivity extends AppCompatActivity {
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 3",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 4",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime -s 2",
-            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime",
+            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime -s 4",
+            "./realsr-ncnn -i input.png -o output.png  -m models-ESRGAN-Nomos8kSC -s 4",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-SourceBook -s 2",
-            "./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 4",
-            "./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 3",
-            "./srmd-ncnn -i input.png -o output.png  -m models-srmd -s 2",
             "./realcugan-ncnn -i input.png -o output.png  -m models-nose -s 2  -n 0",
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 2  -n -1",
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 2  -n 0",
@@ -497,20 +495,27 @@ public class MainActivity extends AppCompatActivity {
                 for (File folder : folders) {
                     String name = folder.getName();
                     if (folder.isDirectory() && name.startsWith("models")) {
-
-                        // 匹配realsr模型
+                        // 默认匹配realsr/real-esrgan模型目录
                         String model = name.replace("models-", "");
                         String scaleMatcher = ".*x(\\d+).*";
                         String noiseMatcher = "";
                         String command = "./realsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
 
-                        // 匹配waifu2x模型
                         if (name.matches("models-(cugan|cunet|upconv).*")) {
+                            // 匹配waifu2x模型目录
                             model = name.replace("models-", "Waifu2x-");
                             scaleMatcher = ".*scale(\\d+).*";
                             command = "./waifu2x-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
                             noiseMatcher = "noise(\\d+).*";
+                        } else if (name.matches("models-srmd.*")) {
+                            // 匹配srmd模型目录
+                            if (name.equals("models-srmd"))
+                                model = "SRMD";
+                            else
+                                model = name.replace("models-srmd", "SRMD-");
+                            command = "./srmd-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
                         } else if (name.startsWith("models-DF2K")) {
+                            // 匹配realsr模型目录
                             model = name.replace("models-", "RealSR-");
                         }
 

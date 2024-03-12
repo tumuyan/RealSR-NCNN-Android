@@ -26,7 +26,7 @@ input & output
 ![](Screenshot.jpg)
 
 ### Add more models to RealSR-NCNN-Android-GUI
-RealSR-NCNN-Android-GUI could load extra models from sdcard automatily in ver 1.7.6. You could download more models from https://github.com/tumuyan/realsr-models .
+RealSR-NCNN-Android-GUI could load extra models from sdcard automatily in ver 1.7.6. You could download more models from https://huggingface.co/tumuyan2/realsr-models .
 1. Make a directory in sdcard.
 2. Input the directory path to `Path for custom models (RealSR/ESRGAN/Waifu2x)` and save.
 3. Download and copy models to the directory you make.
@@ -157,7 +157,6 @@ If you encounter crash or error, try to upgrade your derive
 Download `assets.zip` from github release page, the zip file contains models & elf files. Unzip and put them to this folder, then build it with Android Studio. 
 The direct download link for current version: https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.9.1/assets.zip
 
-
 ```
 RealSR-NCNN-Android-GUI\app\src\main\assets\
 └─realsr
@@ -214,44 +213,33 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
     │      x4.bin
     │      x4.param
     │      
-    ├─models-se
-    │      up2x-conservative.bin
-    │      up2x-conservative.param
-    │      up2x-denoise1x.bin
-    │      up2x-denoise1x.param
-    │      up2x-denoise2x.bin
-    │      up2x-denoise2x.param
-    │      up2x-denoise3x.bin
-    │      up2x-denoise3x.param
-    │      up2x-no-denoise.bin
-    │      up2x-no-denoise.param
-    │      up3x-conservative.bin
-    │      up3x-conservative.param
-    │      up3x-denoise3x.bin
-    │      up3x-denoise3x.param
-    │      up3x-no-denoise.bin
-    │      up3x-no-denoise.param
-    │      up4x-conservative.bin
-    │      up4x-conservative.param
-    │      up4x-denoise3x.bin
-    │      up4x-denoise3x.param
-    │      up4x-no-denoise.bin
-    │      up4x-no-denoise.param
-    │      
-    └─models-srmd
-            srmdnf_x2.bin
-            srmdnf_x2.param
-            srmdnf_x3.bin
-            srmdnf_x3.param
-            srmdnf_x4.bin
-            srmdnf_x4.param
-            srmd_x2.bin
-            srmd_x2.param
-            srmd_x3.bin
-            srmd_x3.param
-            srmd_x4.bin
-            srmd_x4.param
-
+    ├─models-ESRGAN-Nomos8kSC
+    │      x4.bin
+    │      x4.param
+    |
+    └─models-se
+           up2x-conservative.bin
+           up2x-conservative.param
+           up2x-denoise1x.bin
+           up2x-denoise1x.param
+           up2x-denoise2x.bin
+           up2x-denoise2x.param
+           up2x-denoise3x.bin
+           up2x-denoise3x.param
+           up2x-no-denoise.bin
+           up2x-no-denoise.param
+           up3x-conservative.bin
+           up3x-conservative.param
+           up3x-denoise3x.bin
+           up3x-denoise3x.param
+           up3x-no-denoise.bin
+           up3x-no-denoise.param
+           up4x-conservative.bin
+           up4x-conservative.param
+           up4x-denoise3x.bin
+           up4x-denoise3x.param
+           up4x-no-denoise.bin
+           up4x-no-denoise.param
 ```
 
 ## Acknowledgement

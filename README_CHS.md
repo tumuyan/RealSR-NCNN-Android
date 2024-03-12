@@ -46,13 +46,13 @@
 
 ## 为 RealSR-NCNN-Android-GUI 增加更多模型
 RealSR-NCNN-Android-GUI 在 ver 1.7.6 以上的版本可以自动加载自定义模型。
-你可以从 https://github.com/tumuyan/realsr-models 下载更多模型：
+你可以从 https://huggingface.co/tumuyan2/realsr-models 下载更多模型：
 1. 在文件管理器里新建一个目录
 2. 在App的设置中，自定义模型路径的选项里填入刚才新建目录的路径，点击保存
 3. 下载模型并复制到刚才新建的目录里
 5. 返回App，可以看到下拉菜单增加了新的模型
 
-![](Screenshot_models.jpg)
+![目录结构](Screenshot_models.jpg)
 
 你自己也可以把pth格式的模型转换为本应用可用的ncnn模型。
 1. 从 [https://upscale.wiki/wiki/Model_Database](https://upscale.wiki/wiki/Model_Database) 下载模型并解压
@@ -178,7 +178,7 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
     │  resize-ncnn
     │  srmd-ncnn
     │  waifu2x-ncnn
-    |
+    │  
     ├─models-nose
     │      up2x-no-denoise.bin
     │      up2x-no-denoise.param
@@ -219,46 +219,34 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
     │      x4.bin
     │      x4.param
     │      
-    ├─models-se
-    │      up2x-conservative.bin
-    │      up2x-conservative.param
-    │      up2x-denoise1x.bin
-    │      up2x-denoise1x.param
-    │      up2x-denoise2x.bin
-    │      up2x-denoise2x.param
-    │      up2x-denoise3x.bin
-    │      up2x-denoise3x.param
-    │      up2x-no-denoise.bin
-    │      up2x-no-denoise.param
-    │      up3x-conservative.bin
-    │      up3x-conservative.param
-    │      up3x-denoise3x.bin
-    │      up3x-denoise3x.param
-    │      up3x-no-denoise.bin
-    │      up3x-no-denoise.param
-    │      up4x-conservative.bin
-    │      up4x-conservative.param
-    │      up4x-denoise3x.bin
-    │      up4x-denoise3x.param
-    │      up4x-no-denoise.bin
-    │      up4x-no-denoise.param
-    │      
-    └─models-srmd
-            srmdnf_x2.bin
-            srmdnf_x2.param
-            srmdnf_x3.bin
-            srmdnf_x3.param
-            srmdnf_x4.bin
-            srmdnf_x4.param
-            srmd_x2.bin
-            srmd_x2.param
-            srmd_x3.bin
-            srmd_x3.param
-            srmd_x4.bin
-            srmd_x4.param
-
+    ├─models-ESRGAN-Nomos8kSC
+    │      x4.bin
+    │      x4.param
+    |
+    └─models-se
+           up2x-conservative.bin
+           up2x-conservative.param
+           up2x-denoise1x.bin
+           up2x-denoise1x.param
+           up2x-denoise2x.bin
+           up2x-denoise2x.param
+           up2x-denoise3x.bin
+           up2x-denoise3x.param
+           up2x-no-denoise.bin
+           up2x-no-denoise.param
+           up3x-conservative.bin
+           up3x-conservative.param
+           up3x-denoise3x.bin
+           up3x-denoise3x.param
+           up3x-no-denoise.bin
+           up3x-no-denoise.param
+           up4x-conservative.bin
+           up4x-conservative.param
+           up4x-denoise3x.bin
+           up4x-denoise3x.param
+           up4x-no-denoise.bin
+           up4x-no-denoise.param
 ```
-
 
 ## 感谢
 ### 原始超分辨率项目

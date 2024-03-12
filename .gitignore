@@ -7,3 +7,4 @@
 3rdparty/OpenCV-android-sdk/*
 /*/*/build
 /*/*/.cxx
+/RealSR-NCNN-Android-GUI/app/debug
