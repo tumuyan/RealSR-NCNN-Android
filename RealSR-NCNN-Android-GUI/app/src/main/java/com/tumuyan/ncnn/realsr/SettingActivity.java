@@ -19,7 +19,7 @@ public class SettingActivity extends AppCompatActivity {
     SharedPreferences mySharePerferences;
     private int selectCommand;
 
-    EditText editDefaultCommand;
+    EditText editDefaultCommand, editMagickFilters, editClassicalFilters;
     EditText editTile;
     EditText editThread;
     EditText editExtraCommand;
@@ -46,12 +46,14 @@ public class SettingActivity extends AppCompatActivity {
         mySharePerferences = getSharedPreferences("config", Activity.MODE_PRIVATE);
         selectCommand = mySharePerferences.getInt("selectCommand", 0);
         int tileSize = mySharePerferences.getInt("tileSize", 0);
+        String extraCommand = mySharePerferences.getString("extraCommand", "");
         String defaultCommand = mySharePerferences.getString("defaultCommand", "");
+        String classicalFilters = mySharePerferences.getString("classicalFilters", getString(R.string.default_classical_filters));
+        String magickFilters = mySharePerferences.getString("magickFilters", getString(R.string.default_magick_filters));
         String threadCount = mySharePerferences.getString("threadCount", "");
         boolean keepScreen = mySharePerferences.getBoolean("keepScreen", false);
-        boolean useNotification = mySharePerferences.getBoolean("useNotification",false);
+        boolean useNotification = mySharePerferences.getBoolean("useNotification", false);
         boolean prePng = mySharePerferences.getBoolean("PrePng", true);
-        String extraCommand = mySharePerferences.getString("extraCommand", "");
         String extraPath = mySharePerferences.getString("extraPath", "");
         String savePath = mySharePerferences.getString("savePath", "");
         boolean useCPU = mySharePerferences.getBoolean("useCPU", false);
@@ -61,15 +63,19 @@ public class SettingActivity extends AppCompatActivity {
         int name = mySharePerferences.getInt("name", 0);
         int name2 = mySharePerferences.getInt("name2", 0);
         int orientation = mySharePerferences.getInt("ORIENTATION", 0);
-        int notify =  mySharePerferences.getInt("notify", 0);
+        int notify = mySharePerferences.getInt("notify", 0);
 
         editTile = findViewById(R.id.editTile);
         editTile.setText(String.format("%d", tileSize));
-        editDefaultCommand = findViewById(R.id.editDefaultCommand);
-        editDefaultCommand.setText(defaultCommand);
         editExtraCommand = findViewById(R.id.editExtraCommand);
         editExtraCommand.setText(extraCommand);
         editExtraCommand.setHint("./waifu2x-ncnn -i input.png -o output.png -m " + galleryPath + "cunet");
+        editDefaultCommand = findViewById(R.id.editDefaultCommand);
+        editDefaultCommand.setText(defaultCommand);
+        editClassicalFilters = findViewById(R.id.editClassicalFilters);
+        editClassicalFilters.setText(classicalFilters);
+        editMagickFilters = findViewById(R.id.editMagickFilters);
+        editMagickFilters.setText(magickFilters);
         editExtraPath = findViewById(R.id.editExtraPath);
         editExtraPath.setText(extraPath);
         editSavePath = findViewById(R.id.editSavePath);
@@ -140,6 +146,8 @@ public class SettingActivity extends AppCompatActivity {
             editThread.setText("");
             editExtraPath.setText("");
             editDefaultCommand.setText("./realsr-ncnn -i input.png -o output.png -m models-Real-ESRGANv3-anime -s 2");
+            editClassicalFilters.setText(getString(R.string.default_classical_filters));
+            editMagickFilters.setText(getString(R.string.default_magick_filters));
             save();
         });
 
@@ -156,6 +164,8 @@ public class SettingActivity extends AppCompatActivity {
             editThread.setText("1:1:1");
             editExtraPath.setText("");
             editDefaultCommand.setText("");
+            editClassicalFilters.setText(getString(R.string.default_classical_filters));
+            editMagickFilters.setText(getString(R.string.default_magick_filters));
             save();
         });
 
@@ -187,6 +197,15 @@ public class SettingActivity extends AppCompatActivity {
         editExtraCommand.setText(extraCommand);
         editor.putString("extraCommand", extraCommand);
 
+
+        String classicalFilters = editClassicalFilters.getText().toString().trim().replaceAll("\\s+", " ");
+        editClassicalFilters.setText(classicalFilters);
+        editor.putString("classicalFilters", classicalFilters);
+
+        String magickFilters = editMagickFilters.getText().toString().trim().replaceAll("\\s+", " ");
+        editMagickFilters.setText(magickFilters);
+        editor.putString("magickFilters", magickFilters);
+
         String threadCount = editThread.getText().toString().trim().replaceAll("[\\s/]+", ":");
         if (threadCount.length() > 0) {
             if (!threadCount.matches("(\\d+):(\\d+):(\\d+)")) {
@@ -217,7 +236,7 @@ public class SettingActivity extends AppCompatActivity {
         editor.putInt("name", (int) spinnerName.getSelectedItemId());
         editor.putInt("name2", (int) spinnerName2.getSelectedItemId());
         editor.putInt("ORIENTATION", (int) spinnerOrientation.getSelectedItemId());
-        editor.putInt("notify",(int) spinnerNotify.getSelectedItemId());
+        editor.putInt("notify", (int) spinnerNotify.getSelectedItemId());
         editor.apply();
     }
 

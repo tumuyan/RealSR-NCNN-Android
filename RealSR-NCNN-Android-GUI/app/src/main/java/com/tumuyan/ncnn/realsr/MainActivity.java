@@ -339,6 +339,8 @@ public class MainActivity extends AppCompatActivity {
         List<String> extraCmd = getExtraCommands(
                 mySharePerferences.getString("extraPath", "").trim()
                 , mySharePerferences.getString("extraCommand", "").trim()
+                , mySharePerferences.getString("classicalFilters", getString(R.string.default_classical_filters)).split("\\s+")
+                , mySharePerferences.getString("magickFilters", getString(R.string.default_magick_filters)).split("\\s+")
         );
 
         if (extraCmd.size() > 0) {
@@ -441,16 +443,23 @@ public class MainActivity extends AppCompatActivity {
      * @param extraCommand 用户预设命令
      * @return 全部扩展命令
      */
-    private List<String> getExtraCommands(String extraPath, String extraCommand) {
+
+    /**
+     * 生成用户自定义命令. 自定义模型路径的命令与App预设命令有一样的外观和特性
+     *
+     * @param extraPath        自定义模型路径
+     * @param extraCommand     用户预设命令
+     * @param classicalFilters 经典插值算法列表（resize-ncnn）
+     * @param magickFilters    Magick算法列表
+     * @return
+     */
+    private List<String> getExtraCommands(String extraPath, String extraCommand, String[] classicalFilters, String[] magickFilters) {
 
         // 解析结果，包含模型目录、用户自定义命令（命令列表）
         List<String> cmdList = new ArrayList<>();
 
         // 解析模型目录的结果（下拉列表中的label）
         List<String> cmdLabel = new ArrayList<>();
-
-        // 增加resize-ncnn经典插值放大的命令
-        String[] classicalFilters = {"nearest", "bilinear", "bicubic", "avir", "avir-lancir",};
 
         String[] classicalResize = {"2", "4", "10"};
 
@@ -461,21 +470,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // 增加magick插值放大的命令
-        String[] magickFilters = {
-                "Hermite",
-                "Hermite",
-                "Hamming",
-                "Lanczos",
-                "LanczosRadius",
-                "Lanczos2",
-                "LanczosSharp",
-                "Lanczos2Sharp",
-                "Lagrange",
-                "Mitchell",
-                "Blackman",
-        };
-
         String[] magickResize = {"200%", "400%", "1000%"};
 
         for (String f : magickFilters) {
@@ -484,7 +478,6 @@ public class MainActivity extends AppCompatActivity {
                 cmdLabel.add("Magick-" + f + "-x" + s.replaceFirst("(\\d+)00%", "$1"));
             }
         }
-
 
         if (!extraPath.isEmpty()) {
             File[] folders = new File(extraPath).listFiles();

@@ -78,7 +78,7 @@
     <string name="thread_count_err">不符合“数字:数字:数字”的格式</string>
     <string name="keep_screen">工作时保持屏幕常亮</string>
     <string name="extra_command">在命令列表中添加命令</string>
-    <string name="partners_for_preset_command">预设命令的附加参数</string>
+    <string name="partners_for_preset_command">超分辨率算法的附加参数</string>
     <string name="custom_command">自定义命令</string>
     <string name="use_cpu">尝试使用CPU完成运算(CPU和GPU哪个更稳定是不确定的，但是CPU运算一定更慢)</string>
     <string name="save_format">导出时使用的格式</string>
@@ -119,6 +119,9 @@
     <string name="cpu_model">处理器</string>
     <string name="ram_size">设备运存</string>
     <string name="temperature">温度</string>
+    <string name="magick_filters">Magick内置算法</string>
+    <string name="classical_interpolation">经典插值算法</string>
+    <string name="interpolation">插值算法</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>
