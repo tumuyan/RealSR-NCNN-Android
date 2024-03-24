@@ -15,6 +15,10 @@ set_target_properties(ncnn PROPERTIES IMPORTED_LOCATION
         ${ncnn_DIR}/${ANDROID_ABI}/lib/libncnn.so)
 
 
+set(OpenCV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/OpenCV-android-sdk/sdk/native/jni/)
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_DIR}/include)
+
 #include_directories(${CMAKE_CURRENT_BINARY_DIR})
 option(USE_SYSTEM_WEBP "build with system libwebp" OFF)
 if(NOT USE_SYSTEM_WEBP)
@@ -44,4 +48,4 @@ endif()
 
 add_executable(waifu2x-ncnn main.cpp waifu2x.cpp)
 
-target_link_libraries(waifu2x-ncnn webp ncnn)
+target_link_libraries(waifu2x-ncnn webp ncnn ${OpenCV_LIBS})

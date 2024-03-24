@@ -97,6 +97,9 @@ static std::vector<int> parse_optarg_int_array(const char* optarg)
 #include "realcugan.h"
 
 #include "filesystem_utils.h"
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/hal/interface.h>
+using namespace cv;
 
 static void print_usage()
 {
@@ -389,7 +392,31 @@ void* save(void* args)
 
         path_t ext = get_file_extension(v.outpath);
 
-        if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP"))
+        if (ext != PATHSTR("gif")) {
+            // 使用opencv保存图片，速度比默认的stb更快
+            cv::Mat image;
+            switch (v.outimage.elempack) {
+                case 1:
+                    image = cv::Mat( v.outimage.h, v.outimage.w, CV_8UC1, v.outimage.data); // 单通道图像
+                    break;
+                case 3:
+                    image = cv::Mat(v.outimage.h, v.outimage.w, CV_8UC3, v.outimage.data); // 3通道图像
+                    cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+                    break;
+                case 4:
+                    image = cv::Mat(v.outimage.h, v.outimage.w, CV_8UC4, v.outimage.data); // 4通道图像
+                    cv::cvtColor(image, image, cv::COLOR_RGBA2BGRA);
+                    break;
+            }
+            if (image.empty()) {
+                std::cerr << "Error: Image data not loaded." << std::endl;
+                success = false;
+            } else {
+                success = imwrite(v.outpath.c_str(), image);
+            }
+
+
+        }else if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP"))
         {
             success = webp_save(v.outpath.c_str(), v.outimage.w, v.outimage.h, v.outimage.elempack, (const unsigned char*)v.outimage.data);
         }

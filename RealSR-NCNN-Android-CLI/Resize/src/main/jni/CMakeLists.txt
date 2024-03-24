@@ -16,7 +16,6 @@ if (WIN32)
     endif ()
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../Lib/valkan/Include)
-
     set(ncnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/ncnn-windows-vs2019-shared)
 
     add_library(ncnn SHARED IMPORTED)
@@ -25,11 +24,16 @@ if (WIN32)
             ${ncnn_DIR}/${TARG_CPU}/lib/ncnn.lib)
 else ()
     set(ncnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/ncnn-android-vulkan-shared)
-
     add_library(ncnn SHARED IMPORTED)
     include_directories(${ncnn_DIR}/${ANDROID_ABI}/include/ncnn)
     set_target_properties(ncnn PROPERTIES IMPORTED_LOCATION
             ${ncnn_DIR}/${ANDROID_ABI}/lib/libncnn.so)
+
+    set(OpenCV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/OpenCV-android-sdk/sdk/native/jni/)
+
+    find_package(OpenCV REQUIRED)
+    include_directories(${OpenCV_DIR}/include)
+
 endif ()
 #set(libwebp_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libwebp)
 set(libwebp_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/libwebp)
@@ -64,4 +68,8 @@ add_executable(resize-ncnn
         main.cpp
         )
 
-target_link_libraries(resize-ncnn webp ncnn)
+if (WIN32)
+    target_link_libraries(resize-ncnn webp ncnn)
+else ()
+    target_link_libraries(resize-ncnn webp ncnn ${OpenCV_LIBS})
+endif ()

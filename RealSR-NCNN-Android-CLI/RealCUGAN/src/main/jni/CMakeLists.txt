@@ -15,6 +15,9 @@ include_directories(${ncnn_DIR}/${ANDROID_ABI}/include/ncnn)
 set_target_properties(ncnn PROPERTIES IMPORTED_LOCATION
         ${ncnn_DIR}/${ANDROID_ABI}/lib/libncnn.so)
 
+set(OpenCV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/OpenCV-android-sdk/sdk/native/jni/)
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_DIR}/include)
 
 #include_directories(${CMAKE_CURRENT_BINARY_DIR})
 option(USE_SYSTEM_WEBP "build with system libwebp" OFF)
@@ -44,4 +47,4 @@ endif()
 
 add_executable(realcugan-ncnn main.cpp realcugan.cpp)
 
-target_link_libraries(realcugan-ncnn webp ncnn)
+target_link_libraries(realcugan-ncnn webp ncnn ${OpenCV_LIBS})

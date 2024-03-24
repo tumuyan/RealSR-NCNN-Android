@@ -30,6 +30,10 @@
 
 #include "stb_image_write.h"
 
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/hal/interface.h>
+using namespace cv;
+
 #endif // _WIN32
 
 #include "webp_image.h"
@@ -829,12 +833,38 @@ int main(int argc, char **argv)
             high_resolution_clock::time_point save_begin = high_resolution_clock::now();
 
             {
-
-
                 int success = 0;
 
                 path_t ext = get_file_extension(imagepath);
 
+#if _WIN32
+
+#else
+                if (ext != PATHSTR("gif")) {
+                    // 使用opencv保存图片，速度比默认的stb更快
+                    cv::Mat image;
+                    switch (c) {
+                        case 1:
+                            image = cv::Mat( out_h, out_w, CV_8UC1, buf); // 单通道图像
+                            break;
+                        case 3:
+                            image = cv::Mat(out_h, out_w, CV_8UC3, buf); // 3通道图像
+                            cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+                            break;
+                        case 4:
+                            image = cv::Mat(out_h, out_w, CV_8UC4, buf); // 4通道图像
+                            cv::cvtColor(image, image, cv::COLOR_RGBA2BGRA);
+                            break;
+                    }
+                    if (image.empty()) {
+                        std::cerr << "Error: Image data not loaded." << std::endl;
+                        success = false;
+                    } else {
+                        success = imwrite(outputpath.c_str(), image);
+                        fprintf(stderr, "opencv save image success, c=%d, w=%d, h=%d\n", c, w, h);
+                    }
+                }else
+#endif
                 if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP")) {
                     success = webp_save(outputpath.c_str(), out_w, out_h, c, buf);
 
