@@ -26,13 +26,17 @@
         \n./magick input.png -filter filter -resize n% output.png
         \nfilter could be Box Cubic Hamming Jinc Lanczos Lagrange Mitchell Sinc, etc，intpu ./magick -list filter and see more filter, or visit https://legacy.imagemagick.org/Usage/filter
 
+        \n\n4、Anime4K https://github.com/TianZerL/Anime4KCPP
+        \nIt contains Anime4K 0.9 (not the latest) and ACNet.
+        \nPlease visit the wiki to get more information. https://github.com/TianZerL/Anime4KCPP/wiki/CLI
 
-        \n\n4.Show image/info
+        \n\n5.Show image/info
         \n in
         \n out
         \n show
         \n help
-        \n\n5.Shell command
+
+        \n\n6.Shell command
         \nls head cp rm etc.
      \n\n
         Tips.

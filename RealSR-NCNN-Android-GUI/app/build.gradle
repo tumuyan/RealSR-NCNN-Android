@@ -9,8 +9,8 @@ android {
         applicationId "com.tumuyan.ncnn.realsr"
         minSdk 24
         targetSdk 28
-        versionCode 38
-        versionName '1.9.3'
+        versionCode 39
+        versionName '1.9.4'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

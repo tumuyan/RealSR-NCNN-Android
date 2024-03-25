@@ -548,22 +548,21 @@ int main(int argc, char **argv)
                 } else {
                     not_use_ncnn = false;
                     if (abs(scale_y - scale_x) < 1)
-                        scale_d = round((scale_x + scale_y) / 2);
+                        scale = round((scale_x + scale_y) / 2);
                     else if (scale_x > scale_y)
-                        scale_d = round(scale_y);
+                        scale = round(scale_y);
                     else
-                        scale_d = round(scale_x);
+                        scale = round(scale_x);
 
-                    fprintf(stderr, "image might be interpolated by nearest x%.0f\n", scale_d);
                     scale_d = 1 / scale_d;
+                    fprintf(stderr, "image might be interpolated by nearest x%d\n", scale);
                 }
             }
         }
 
 
         int out_w, out_h;
-        if (scale != scale_d || !not_use_ncnn) {
-//            fprintf(stderr, "reset scale\n");
+        if ( scale_d<1 ) {
             out_w = (int) (w * scale_d);
             out_h = (int) (h * scale_d);
         } else {
@@ -629,13 +628,12 @@ int main(int argc, char **argv)
                         }
                     }
                 } else {
-
+                    if(scale_d>=1)
                     {
                         int p = 0;
                         int q = 0;
                         //row
                         for (int i = 0; i < h; i++) {
-
                             //line
                             void *l = buf + q;
                             for (int j = 0; j < w; j++) {
@@ -645,36 +643,25 @@ int main(int argc, char **argv)
                                     memcpy(buf + q, pixeldata + p, sizeof(unsigned char) * c);
                                     q += c;
                                 }
-
-                                if (verbose) {
-                                    fprintf(stderr, "i:%d j:%d :", i, j);
-                                    for (int i = 0; i < 32; i++) {
-                                        fprintf(stderr, " %02X", buf[i]
-                                        );
-                                    }
-                                    fprintf(stderr, " ,m=%d %d\n", p, q);
-                                }
-
                                 p += c;
                             }
-
-
-
                             // mult-line
                             for (int k = 1; k < scale; k++) {
                                 memcpy(buf + q, l, sizeof(unsigned char) * out_line_size);
                                 q += out_line_size;
                             }
-
-
-                            /*
-                             * print
-                                w++;
-                                if(w==100){
-                                    w=0;
-                                    fprintf(stderr, "%.2f%%\n", (i+1)*1e2/h);
-                                }
-                             */
+                        }
+                    }else{
+                        // de-nearest
+                        int p=(scale-1)/2, q=0;
+                        double step = 1/scale_d;
+                        // row
+                        for(int i=0;i<out_h;i++){
+                            for(int j=0;j<out_w;j++){
+                                memcpy(buf + q, pixeldata + p+j*scale, sizeof(unsigned char) * c);
+                                q+=c;
+                            }
+                            p+=w*c;
                         }
                     }
                 }
@@ -861,7 +848,7 @@ int main(int argc, char **argv)
                         success = false;
                     } else {
                         success = imwrite(outputpath.c_str(), image);
-                        fprintf(stderr, "opencv save image success, c=%d, w=%d, h=%d\n", c, w, h);
+                        fprintf(stderr, "opencv save image success, c=%d, w=%d, h=%d\n", c, out_w, out_h);
                     }
                 }else
 #endif

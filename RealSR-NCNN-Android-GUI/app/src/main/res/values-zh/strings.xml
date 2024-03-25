@@ -45,12 +45,18 @@
         \n算法包含但不限于不限于Box Cubic Hamming Jinc Lanczos Lagrange Mitchell Sinc，可以通过命令./magick -list filter查看支持的全部算法。也可以参阅说明 https://legacy.imagemagick.org/Usage/filter
         \nImageMagick的功能非常强大，示例命令仅仅是缩放图片的调用。
 
-        \n\n四、显示指定信息
+        \n\n四、Anime4K
+        \n本应用内置了Anime4KCPP https://github.com/TianZerL/Anime4KCPP
+        \n这个项目包含了Anime4K 0.9 算法（也就是说并非最新版）以及 ACNet （一个基于卷积神经网络的超分辨率算法）
+        \n它所支持的参数详见说明 https://github.com/TianZerL/Anime4KCPP/wiki/CLI
+
+        \n\n五、显示指定信息
         \n in 显示输入的图像
         \n out 显示输出的图像
         \n show （跟随图像的路径作为参数）显示指定路径的图像
         \n help 显示帮助信息
-        \n\n五、调用shell命令
+
+        \n\n六、调用shell命令
         \n 如ls head cp rm等等
         </string>
     <string name="input_command">输入shell命令,如 ./realsr-ncnn -i input.png -o output.png</string>
