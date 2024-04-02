@@ -41,6 +41,10 @@
         android:title="@string/menu_bench_mark"
         app:showAsAction="never" />
     <item
+        android:id="@+id/menu_reset_cache"
+        android:title="@string/menu_reset_cache"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/menu_in"
         android:title="@string/menu_in"
         app:showAsAction="never" />

@@ -117,6 +117,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="interpolation">Interpolation</string>
     <string name="default_classical_filters" translatable="false">nearest bilinear bicubic avir avir-lancir</string>
     <string name="default_magick_filters" translatable="false">Hermite Hermite Hamming anczos LanczosRadius Lanczos2 LanczosSharp Lanczos2Sharp Lagrange Mitchell Blackman</string>
+    <string name="menu_reset_cache">Reset Cache</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>

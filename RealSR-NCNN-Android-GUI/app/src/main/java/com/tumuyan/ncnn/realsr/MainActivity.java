@@ -62,6 +62,8 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1;
     private static final int MY_PERMISSIONS_REQUEST = 100;
+
+    private static String CMD_RESET_CACHE = "echo Cache has been reset.;ls";
     private int selectCommand = 0;
     private String threadCount = "";
     private SubsamplingScaleImageView imageView;
@@ -154,6 +156,7 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
 
@@ -188,6 +191,9 @@ public class MainActivity extends AppCompatActivity {
             q = "out";
         } else if (v == R.id.menu_help) {
             q = "help";
+        } else if (v == R.id.menu_reset_cache) {
+            q = CMD_RESET_CACHE;
+            imageName = "";
         } else if (v == R.id.menu_bench_mark) {
             String append_param = "";
             if (tileSize > 0)
@@ -212,6 +218,9 @@ public class MainActivity extends AppCompatActivity {
             String finalImageName = imageName;
             boolean final_bench_mark_mode = bench_mark_mode;
             new Thread(() -> {
+                if (q == CMD_RESET_CACHE) {
+                    AssetsCopyer.releaseAssets(this, "realsr", dir, false);
+                }
                 run20(q, final_bench_mark_mode);
                 final File finalfile = new File(dir + finalImageName);
                 if (finalfile.exists() && (!finalfile.isDirectory())) {
@@ -1283,13 +1292,20 @@ public class MainActivity extends AppCompatActivity {
             }
             showImage(file, getString(R.string.show) + path);
 
+        } else if (q.equals("none")) {
+            showImage(null, getString(R.string.menu_reset_cache));
+        } else if (q.equals(CMD_RESET_CACHE)) {
+            showImage(null, getString(R.string.menu_reset_cache));
+            return false;
         } else return false;
         return true;
     }
 
     private void showImage(File file, String info) {
-        if (file == null) imageView.setVisibility(View.GONE);
-        else if (file.exists() && (!file.isDirectory())) {
+        if (file == null) {
+            imageView.setVisibility(View.GONE);
+            logTextView.setText(info);
+        } else if (file.exists() && (!file.isDirectory())) {
             imageView.setVisibility(View.VISIBLE);
             imageView.setImage(ImageSource.uri(file.getAbsolutePath()));
             logTextView.setText(info);
