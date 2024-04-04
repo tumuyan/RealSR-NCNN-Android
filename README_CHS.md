@@ -21,7 +21,7 @@
 [Github Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases)  
 
 ### 仓库结构
-1. RealSR-NCNN-Android-CLI 包含RealSR、SRMD、SRMD、Waifu2x、Resize和Animk4k共6个模块，可以分别编译出对应的命令行程序，编译结果可以在安卓设备的Termux等虚拟终端中使用。其中:
+1. RealSR-NCNN-Android-CLI 包含RealSR、RealCUGAN、SRMD、Waifu2x、Resize和Animk4k共6个模块，可以分别编译出对应的命令行程序，编译结果可以在安卓设备的Termux等虚拟终端中使用。其中:
   - RealSR 可以使用RealSR和Real-ESRGAN的模型。
   - Resize 可以使用了`nearest/最邻近`、`bilinear/两次线性`、`bicubic/两次立方`三种经典放大（interpolation/插值）算法，以及Lanczos插值算法相似的`avir/lancir`。特别的，nearest和bilinear可以通过`-n`参数，不使用ncnn进行运算，得到点对点放大的结果;当不使用`-n`。参数时，`-s`参数可以使用小数。
 2. RealSR-NCNN-Android-GUI 可以编译出APK文件，这样用户可以在图形环境下操作。（不过他的本质就是在给上述命令行程序套壳，而不是通过JNI调用库文件）
@@ -272,3 +272,6 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
 - [https://github.com/avaneev/avir](https://github.com/avaneev/avir) AVIR image resizing algorithm designed by Aleksey Vaneev
 - [https://github.com/ImageMagick/ImageMagick6](https://github.com/ImageMagick/ImageMagick6) Use ImageMagick® to resize/convert images.
 - [https://github.com/MolotovCherry/Android-ImageMagick7](https://github.com/MolotovCherry/Android-ImageMagick7) 
+
+## 使用的其他模型
+- Real-ESRGAN 模型 [Nomos8kSC](https://github.com/Phhofm/models/tree/main/4xNomos8kSC), 由 Phhofm 训练的一个适合处理相片的模型.

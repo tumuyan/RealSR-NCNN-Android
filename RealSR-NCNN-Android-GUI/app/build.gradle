@@ -3,11 +3,12 @@ plugins {
 }
 
 android {
-    compileSdk 28
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.tumuyan.ncnn.realsr"
         minSdk 24
+        //noinspection ExpiredTargetSdkVersion
         targetSdk 28
         versionCode 39
         versionName '1.9.4'

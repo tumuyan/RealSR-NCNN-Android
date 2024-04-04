@@ -1295,7 +1295,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (q.equals("none")) {
             showImage(null, getString(R.string.menu_reset_cache));
         } else if (q.equals(CMD_RESET_CACHE)) {
-            showImage(null, getString(R.string.menu_reset_cache));
+            showImage(null, getString(R.string.menu_reset_cache) + "...");
             return false;
         } else return false;
         return true;

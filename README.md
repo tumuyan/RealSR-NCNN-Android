@@ -7,7 +7,7 @@ The application does not collect any private information from your device.
 Download: Github [Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases) 
 
 This repository contains 3 project:  
-1. RealSR-NCNN-Android-CLI can build programs that can be used by the console (for example, Termux) for Android.It contains 6 models (Anime4k, RealSR, SRMD, SRMD, Waifu2x and Resize)   
+1. RealSR-NCNN-Android-CLI can build programs that can be used by the console (for example, Termux) for Android.It contains 6 modules (Anime4k, RealSR, RealCUGAN, SRMD, Waifu2x and Resize)   
   - The RealSR program could use realsr models and real-esrgan models.  
   - The Resize program contains classical interpolation mode `nearest` `bilinear` `bicubic` and `avir` `lancir`.
 2. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell for the programs build from RealSR-NCNN-Android-CLI.
@@ -258,7 +258,7 @@ Most of the C code is copied from Nihui, cause of the directory structure had to
 - https://github.com/nihui/realcugan-ncnn-vulkan
 - https://github.com/TianZerL/Anime4KCPP
 
-## Other Open-Source Code Used
+## Others Open-Source Code Used
 -   [https://github.com/Tencent/ncnn](https://github.com/Tencent/ncnn)  for fast neural network inference on ALL PLATFORMS
 -   [https://github.com/nothings/stb](https://github.com/nothings/stb)  for decoding and encoding image on Linux / MacOS
 -   [https://github.com/tronkko/dirent](https://github.com/tronkko/dirent)  for listing files in directory on Windows
@@ -266,3 +266,6 @@ Most of the C code is copied from Nihui, cause of the directory structure had to
 -   [https://github.com/avaneev/avir](https://github.com/avaneev/avir) AVIR image resizing algorithm designed by Aleksey Vaneev
 -   [https://github.com/ImageMagick/ImageMagick6](https://github.com/ImageMagick/ImageMagick6) Use ImageMagick® to resize/convert images.
 -   [https://github.com/MolotovCherry/Android-ImageMagick7](https://github.com/MolotovCherry/Android-ImageMagick7) 
+
+## Others packaged models
+- Real-ESRGAN model [Nomos8kSC](https://github.com/Phhofm/models/tree/main/4xNomos8kSC) trained by Phhofm.  
