@@ -47,6 +47,12 @@ if(NOT USE_SYSTEM_WEBP)
 endif()
 
 
-add_executable(srmd-ncnn main.cpp srmd.cpp)
+add_executable(${PROJECT_NAME}  main.cpp srmd.cpp)
 
-target_link_libraries(srmd-ncnn webp ncnn ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} webp ncnn ${OpenCV_LIBS})
+
+add_custom_command(TARGET ${PROJECT_NAME}  POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../RealSR-NCNN-Android-GUI/app/src/main/assets/realsr
+)

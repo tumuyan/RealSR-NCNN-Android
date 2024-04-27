@@ -370,7 +370,7 @@ int main(int argc, char **argv)
         const path_t &imagepath = input_files[i];
         path_t &outputpath = output_files[i];
 
-        int webp = 0;
+//        int webp = 0;
 
         unsigned char *pixeldata = 0;
         int w;
@@ -399,9 +399,9 @@ int main(int argc, char **argv)
 
             if (filedata) {
                 pixeldata = webp_load(filedata, length, &w, &h, &c);
-                if (pixeldata) {
-                    webp = 1;
-                } else {
+                if (!pixeldata) {
+//                    webp = 1;
+//                } else {
                     // not webp, try jpg png etc.
 #if _WIN32
                     pixeldata = wic_decode_image(imagepath.c_str(), &w, &h, &c);
@@ -457,7 +457,7 @@ int main(int argc, char **argv)
         if (pixeldata) {
             if (model.find(PATHSTR("de-nearest")) != path_t::npos) {
                 double lost_y[h - 1], lost_x[w - 1];
-                double avg_y, avg_x;
+                double avg_y = 0, avg_x = 0;
                 double scale_y = 1, scale_x = 1;
                 int line_size = w * c;
 
@@ -654,7 +654,7 @@ int main(int argc, char **argv)
                     }else{
                         // de-nearest
                         int p=(scale-1)/2, q=0;
-                        double step = 1/scale_d;
+                        // double step = 1/scale_d;
                         // row
                         for(int i=0;i<out_h;i++){
                             for(int j=0;j<out_w;j++){
@@ -788,7 +788,7 @@ int main(int argc, char **argv)
 
             high_resolution_clock::time_point process_end = high_resolution_clock::now();
             duration<double> process_time_span = duration_cast<duration<double>>(process_end - process_begin);
-            fprintf(stderr, "%s use time: %.2f\n", model.c_str(),process_time_span);
+            fprintf(stderr, "%s use time: %.3lf\n", model.c_str(),process_time_span.count());
 
 
 
@@ -891,7 +891,7 @@ int main(int argc, char **argv)
 
             high_resolution_clock::time_point save_end = high_resolution_clock::now();
             duration<double> time_span = duration_cast<duration<double>>(save_end - save_begin);
-            fprintf(stderr, "Total use time: %.3f\n",time_span);
+            fprintf(stderr, "Total use time: %.3lf\n",time_span.count());
 
 
 

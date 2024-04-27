@@ -1,9 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 24
+    compileSdk 34
 
     defaultConfig {
+        minSdk 24
+        targetSdk 34
+        versionCode 40
         applicationId "com.tumuyan.ncnn.realsr"
         archivesBaseName = "$applicationId"
 
@@ -11,7 +14,6 @@ android {
             moduleName "ncnn"
             abiFilters "arm64-v8a" //, "armeabi-v7a", "x86"
         }
-        minSdkVersion 24
     }
 
     externalNativeBuild {
@@ -21,4 +23,5 @@ android {
         }
     }
     ndkVersion '25.2.9519653'
+    namespace 'com.tumuyan.ncnn.realsr'
 }

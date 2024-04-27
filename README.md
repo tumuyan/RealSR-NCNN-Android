@@ -87,7 +87,7 @@ download ncnn-yyyymmdd-android-vulkan-shared.zip.
 https://github.com/webmproject/libwebp
 download the source of libwebp.  
 https://opencv.org/releases/
-download opencv-android-sdk. (for anime4k)
+download opencv-android-sdk. 
 
 ### step2
 extract `ncnn-yyyymmdd-android-vulkan-shared.zip` into `../3rdparty/ncnn-android-vulkan-shared`  

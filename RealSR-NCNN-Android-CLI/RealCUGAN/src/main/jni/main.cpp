@@ -439,7 +439,7 @@ void* save(void* args)
         if (success)
         {
             float end = clock();
-            fprintf(stderr, "save result use time: %.3f\n", (end - begin) / CLOCKS_PER_SEC);
+            fprintf(stderr, "save result use time: %.3lf\n", (end - begin) / CLOCKS_PER_SEC);
 
             if (verbose)
             {

@@ -210,7 +210,7 @@ void *load(void *args) {
     for (int i = 0; i < count; i++) {
         const path_t &imagepath = ltp->input_files[i];
 
-        int webp = 0;
+//        int webp = 0;
 
         unsigned char *pixeldata = 0;
         int w;
@@ -239,9 +239,9 @@ void *load(void *args) {
 
             if (filedata) {
                 pixeldata = webp_load(filedata, length, &w, &h, &c);
-                if (pixeldata) {
-                    webp = 1;
-                } else {
+                if (!pixeldata) {
+//                    webp = 1;
+//                } else {
                     // not webp, try jpg png etc.
 #if _WIN32
                     pixeldata = wic_decode_image(imagepath.c_str(), &w, &h, &c);
@@ -530,7 +530,7 @@ void *save(void *args) {
         if (success) {
             high_resolution_clock::time_point end = high_resolution_clock::now();
             duration<double> time_span = duration_cast<duration<double>>(end - begin);
-            fprintf(stderr, "save result use time: %.3f\n", time_span);
+            fprintf(stderr, "save result use time: %.3lf\n", time_span.count());
 
             if (verbose) {
 #if _WIN32
@@ -965,7 +965,7 @@ int main(int argc, char **argv)
             // cpu only
             tilesize[i] = 200;
             if (verbose)
-                fprintf(stderr, "init cpu tilesize %d/%d = %d\n", i, tilesize.size(), tilesize[i]);
+                fprintf(stderr, "init cpu tilesize %d/%lu = %d\n", i, tilesize.size(), tilesize[i]);
             continue;
         }
 
@@ -1106,7 +1106,7 @@ int main(int argc, char **argv)
 
     high_resolution_clock::time_point prg_end = high_resolution_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(prg_end - prg_start);
-    fprintf(stderr, "Total use time: %.3f\n", time_span);
+    fprintf(stderr, "Total use time: %.3lf\n", time_span.count());
 
 
     return 0;

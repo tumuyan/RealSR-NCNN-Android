@@ -39,4 +39,18 @@ if(Build_CLI)
         RUNTIME DESTINATION bin
     )
 
+    add_custom_command(TARGET ${PROJECT_NAME}  POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../RealSR-NCNN-Android-GUI/app/src/main/assets/realsr
+    )
+
+#    add_custom_command(TARGET ${PROJECT_NAME}  POST_BUILD
+#            COMMAND ${CMAKE_COMMAND} -E copy_directory
+#            ${CMAKE_CURRENT_SOURCE_DIR}/../../../../build/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib/arm64-v8a
+#            ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../RealSR-NCNN-Android-GUI/app/src/main/assets/realsr
+#            COMMENT "Copying libncnn.so libomp.so  to assets directory"
+#    )
+
+
 endif()

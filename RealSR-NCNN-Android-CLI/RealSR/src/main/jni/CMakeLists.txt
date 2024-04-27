@@ -47,9 +47,29 @@ if(NOT USE_SYSTEM_WEBP)
 endif()
 
 
-add_executable(realsr-ncnn
-        main.cpp
-        realsr.cpp
-        )
+add_executable(${PROJECT_NAME} main.cpp realsr.cpp)
 
-target_link_libraries(realsr-ncnn webp ncnn ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME}  webp ncnn ${OpenCV_LIBS})
+
+add_custom_command(TARGET ${PROJECT_NAME}  POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../RealSR-NCNN-Android-GUI/app/src/main/assets/realsr
+)
+
+
+# 获取 Android 构建根目录
+get_property(ANDROID_BINARY_DIR GLOBAL PROPERTY ANDROID_BINARY_DIR)
+# 构建最终输出目录路径
+#set(FINAL_OUTPUT_DIR "${ANDROID_BINARY_DIR}/build/intermediates/cxx/RelWithDebInfo/${ANDROID_ABI}/obj")
+#
+#add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E copy_directory
+#        ${CMAKE_CURRENT_BINARY_DIR}
+#        ${FINAL_OUTPUT_DIR}
+#        COMMENT "Copying all build artifacts to final output directory"
+#)
+message(CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR})
+
+message(ANDROID_BINARY_DIR: ${ANDROID_BINARY_DIR})
+

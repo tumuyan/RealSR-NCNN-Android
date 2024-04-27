@@ -100,7 +100,7 @@ https://github.com/Tencent/ncnn/releases
 https://github.com/webmproject/libwebp  
 下载libwebp的源码
 https://opencv.org/releases/  
-下载opencv-android-sdk(供Anime4k使用)  
+下载opencv-android-sdk
 
 ### step2
 解压 `ncnn-yyyymmdd-android-vulkan-shared.zip` 到 `../3rdparty/ncnn-android-vulkan-shared`  
