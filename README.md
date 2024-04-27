@@ -155,7 +155,7 @@ If you encounter crash or error, try to upgrade your derive
 
 ## How to build RealSR-NCNN-Android-GUI
 Download `assets.zip` from github release page, the zip file contains models & elf files. Unzip and put them to this folder, then build it with Android Studio. 
-The direct download link for current version: https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.9.1/assets.zip
+The direct download link for current version: https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.9.6/assets.zip
 
 ```
 RealSR-NCNN-Android-GUI\app\src\main\assets\

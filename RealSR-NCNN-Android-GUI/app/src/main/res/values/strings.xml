@@ -148,6 +148,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string-array name="style_array">
         <item>real-esrgan-anime-x4</item>
         <item>real-esrgan-x4</item>
+        <item>realsr-general-v3</item>
         <item>real-esrganv3-anime-x2</item>
         <item>real-esrganv3-anime-x3</item>
         <item>real-esrganv3-anime-x4</item>

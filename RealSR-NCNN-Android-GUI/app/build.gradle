@@ -10,8 +10,8 @@ android {
         minSdk 24
         //noinspection ExpiredTargetSdkVersion
         targetSdk 28
-        versionCode 40
-        versionName '1.9.5'
+        versionCode 41
+        versionName '1.9.6'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -39,7 +39,6 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
     namespace 'com.tumuyan.ncnn.realsr'
-    buildToolsVersion '34.0.0'
 }
 
 dependencies {

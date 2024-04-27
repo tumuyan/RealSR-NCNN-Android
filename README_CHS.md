@@ -161,7 +161,7 @@ RealSR-NCNN-Android
 
 ## 如何编译 RealSR-NCNN-Android-GUI
 从 github release 页面下载 `assets.zip` , 其中包含了模型和CLI程序, 解压并放置到如下路径, 然后使用 Android Studio 进行编译。
-当前版本的下载连接为 https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.9.1/assets.zip
+当前版本的下载连接为 https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.9.6/assets.zip
 
 ```
 RealSR-NCNN-Android-GUI\app\src\main\assets\

@@ -99,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
     private final String[] command_0 = new String[]{
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-anime",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN",
+            "./realsr-ncnn -i input.png -o output.png  -m models-RealeSR-general-v3 -s 4",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 2",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 3",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 4",
