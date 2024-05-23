@@ -48,9 +48,9 @@ int RealSR::load(const std::wstring& parampath, const std::wstring& modelpath)
 int RealSR::load(const std::string& parampath, const std::string& modelpath)
 #endif
 {
-    net.opt.use_vulkan_compute = vkdev ? true : false;
+    net.opt.use_vulkan_compute = vkdev != nullptr;
     net.opt.use_fp16_packed = true;
-    net.opt.use_fp16_storage = vkdev ? true : false;
+    net.opt.use_fp16_storage = vkdev != nullptr;
     net.opt.use_fp16_arithmetic = false;
     net.opt.use_int8_storage = true;
 
@@ -205,6 +205,8 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
 
     const size_t in_out_tile_elemsize = opt.use_fp16_storage ? 2u : 4u;
     high_resolution_clock::time_point begin = high_resolution_clock::now();
+    high_resolution_clock::time_point time_print_progress;
+
 
     //#pragma omp parallel for num_threads(2)
     for (int yi = 0; yi < ytiles; yi++)
@@ -337,9 +339,12 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                 {
                     ncnn::Extractor ex = net.create_extractor();
 
+
+
                     ex.set_blob_vkallocator(blob_vkallocator);
                     ex.set_workspace_vkallocator(blob_vkallocator);
                     ex.set_staging_vkallocator(staging_vkallocator);
+
 
                     ex.input("data", in_tile_gpu[ti]);
 
@@ -522,16 +527,21 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                 }
             }
 
-            if (xtiles > 1)
-            {
+            if (xtiles > 1) {
                 cmd.submit_and_wait();
                 cmd.reset();
             }
             high_resolution_clock::time_point end = high_resolution_clock::now();
-            double time_span = duration_cast<duration<double>>(end - begin).count();
-            double progress = (float)(yi * xtiles + xi +1) / (ytiles * xtiles);
-            fprintf(stderr, "%5.2f%%\t[%5.2fs /%5.2f ETA]\n", progress * 100, time_span, time_span / progress - time_span);
-
+            float time_span_print_progress = duration_cast<duration<double>>(
+                    end - time_print_progress).count();
+            float progress_tile = (float) (yi * xtiles + xi + 1);
+            if (time_span_print_progress > 0.5 || (yi + 1 == ytiles && xi + 3 > xtiles)) {
+                double progress = progress_tile / (ytiles * xtiles);
+                double time_span = duration_cast<duration<double>>(end - begin).count();
+                fprintf(stderr, "%5.2f%%\t[%5.2fs /%5.2f ETA]\n", progress * 100, time_span,
+                        time_span / progress - time_span);
+                time_print_progress = end;
+            }
         }
 
         // download
@@ -597,6 +607,9 @@ int RealSR::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
 
         int in_tile_y0 = std::max(yi * TILE_SIZE_Y - prepadding, 0);
         int in_tile_y1 = std::min((yi + 1) * TILE_SIZE_Y + prepadding, h);
+
+        high_resolution_clock::time_point begin = high_resolution_clock::now();
+        high_resolution_clock::time_point time_print_progress;
 
         for (int xi = 0; xi < xtiles; xi++)
         {
@@ -899,6 +912,18 @@ int RealSR::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     out.to_pixels((unsigned char*)outimage.data + yi * scale * TILE_SIZE_Y * w * scale * channels + xi * scale * TILE_SIZE_X * channels, ncnn::Mat::PIXEL_RGBA, w * scale * channels);
 #endif
                 }
+            }
+
+            high_resolution_clock::time_point end = high_resolution_clock::now();
+            float time_span_print_progress = duration_cast<duration<double>>(
+                    end - time_print_progress).count();
+            float progress_tile = (float) (yi * xtiles + xi + 1);
+            if (time_span_print_progress > 0.5 || (yi + 1 == ytiles && xi + 3 > xtiles)) {
+                double progress = progress_tile / (ytiles * xtiles);
+                double time_span = duration_cast<duration<double>>(end - begin).count();
+                fprintf(stderr, "%5.2f%%\t[%5.2fs /%5.2f ETA]\n", progress * 100, time_span,
+                        time_span / progress - time_span);
+                time_print_progress = end;
             }
         }
     }

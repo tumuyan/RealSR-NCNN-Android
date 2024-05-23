@@ -848,6 +848,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    std::cout << "build time: " << __DATE__ << " " << __TIME__ << std::endl;
 
     int scales[] = {4, 2, 1, 8};
     int sp = 0;
@@ -970,6 +971,8 @@ int main(int argc, char **argv)
         }
 
         uint32_t heap_budget = ncnn::get_gpu_device(gpuid[i])->get_heap_budget();
+        const char* gpu_name = ncnn::get_gpu_info(i).device_name();
+        const bool is_adreno = nullptr != strstr(gpu_name, "Adreno");
 
         // more fine-grained tilesize policy here
         if (model.find(PATHSTR("models-Real-ESRGANv")) != path_t::npos) {
@@ -979,13 +982,17 @@ int main(int argc, char **argv)
                 tilesize[i] = 200;
             else if (heap_budget > 550)
                 tilesize[i] = 100;
-            else if (heap_budget > 190)
+            else if (heap_budget > 200)
                 tilesize[i] = 64;
             else
                 tilesize[i] = 32;
         } else {
-            if (heap_budget > 2800)
-                tilesize[i] = 200;
+            if (heap_budget > 2800) {
+                if(is_adreno)
+                    tilesize[i] = 160;
+                else
+                    tilesize[i] = 200;
+            }
             else if (heap_budget > 900)
                 tilesize[i] = 100;
             else if (heap_budget > 300)

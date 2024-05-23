@@ -39,6 +39,9 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
     namespace 'com.tumuyan.ncnn.realsr'
+    buildFeatures {
+        buildConfig true
+    }
 }
 
 dependencies {

@@ -43,7 +43,6 @@ import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -73,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
                     + File.separator + "RealSR";
     private File outputFile, inputFile, titleFile;
-    private String dir;
+    private String dir, cache_dir;
     // dir="/data/data/com.tumuyan.ncnn.realsr/cache/realsr";
     private String modelName = "SR";
     private SearchView searchView;
@@ -203,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
                 append_param += (" -g -1");
 
             append_param += ";";
-            q = "rm *.png; rm *.png/*; rmdir *.png;" + bench_mark_commands[0] + append_param + bench_mark_commands[1] + append_param;
+            q = "rm -rf *.png; ls *.png; " + bench_mark_commands[0] + append_param + bench_mark_commands[1] + append_param;
 
             imageName = "/img/realsr.png";
             bench_mark_mode = true;
@@ -220,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
             boolean final_bench_mark_mode = bench_mark_mode;
             new Thread(() -> {
                 if (q == CMD_RESET_CACHE) {
-                    AssetsCopyer.releaseAssets(this, "realsr", dir, false);
+                    AssetsCopyer.releaseAssets(this, "realsr", cache_dir, false);
                 }
                 run20(q, final_bench_mark_mode);
                 final File finalfile = new File(dir + finalImageName);
@@ -612,11 +611,8 @@ public class MainActivity extends AppCompatActivity {
         String defaultCommand = mySharePerferences.getString("defaultCommand", "");
         searchView.setQuery(defaultCommand, false);
 
-        dir = this.getCacheDir().getAbsolutePath();
-        AssetsCopyer.releaseAssets(this,
-                "realsr", dir
-                , version == BuildConfig.VERSION_CODE
-        );
+        cache_dir = this.getCacheDir().getAbsolutePath();
+        AssetsCopyer.releaseAssets(this, "realsr", cache_dir, version == BuildConfig.VERSION_CODE);
 
         SharedPreferences.Editor editor = mySharePerferences.edit();
         editor.putInt("version", BuildConfig.VERSION_CODE);
@@ -633,7 +629,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-        dir = dir + "/realsr";
+        dir = cache_dir + "/realsr";
 
         outputFile = new File(dir, "output.png");
         inputFile = new File(dir, "input.png");

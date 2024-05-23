@@ -23,14 +23,14 @@ public class AssetsCopyer {
 //		Log.d(TAG, "context: " + context + ", " + assetsDir);
         if (TextUtils.isEmpty(releaseDir)) {
             return;
-        } else if (releaseDir.endsWith("/")) {
-            releaseDir = releaseDir.substring(0, releaseDir.length() - 1);
         }
+
+        releaseDir = releaseDir.replaceFirst("/+$","");
 
         if (TextUtils.isEmpty(assetsDir) || assetsDir.equals("/")) {
             assetsDir = "";
-        } else if (assetsDir.endsWith("/")) {
-            assetsDir = assetsDir.substring(0, assetsDir.length() - 1);
+        } else {
+            assetsDir = assetsDir.replaceFirst("/+$","");
         }
 
         AssetManager assets = context.getAssets();
@@ -74,6 +74,8 @@ public class AssetsCopyer {
                 if (skipExistFile) {
                     Log.d(TAG, "skip file: " + fileName);
                     return bRet;
+                }else{
+                    file.delete();
                 }
             } else if (!file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
