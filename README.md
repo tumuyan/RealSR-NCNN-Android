@@ -80,8 +80,8 @@ RealSR-NCNN-Android
 ```
 
 ### step3
-Open this project with Android Studio, rebuild it and then you could find the program in `RealSR-NCNN-Android-CLI\*\build\intermediates\cmake\release\obj\arm64-v8a` or `RealSR-NCNN-Android-CLI\*\build\intermediates\cmake\debug\obj\arm64-v8a`  
-Click `3rdparty/copy_cli_build_result.bat` and it could copy the build result to GUI project.
+Open this project with Android Studio, rebuild it and the build result in `RealSR-NCNN-Android-CLI\*\build\intermediates\cmake\release\obj\arm64-v8a` or `RealSR-NCNN-Android-CLI\*\build\intermediates\cmake\debug\obj\arm64-v8a` could copy to the GUI project automatilly.    
+Click `3rdparty/copy_cli_build_result.bat` and it could copy the other files to GUI project.
 
 
 ## How to use RealSR-NCNN-Android-CLI
@@ -123,7 +123,7 @@ If you encounter crash or error, try to upgrade your derive
 
 ## How to build RealSR-NCNN-Android-GUI
 Download `assets.zip` from github release page, the zip file contains models & elf files. Unzip and put them to this folder, then build it with Android Studio. 
-The direct download link for current version: https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.9.6/assets.zip
+The direct download link for current version: https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.10.0/assets.zip
 
 ```
 RealSR-NCNN-Android-GUI\app\src\main\assets\

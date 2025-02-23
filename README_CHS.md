@@ -99,8 +99,8 @@ RealSR-NCNN-Android
 ```
 
 ### step3
-用 Android Studio 打开工程, rebuild 然后你就可以在 `RealSR-NCNN-Android-CLI\*\build\intermediates\cmake\release\obj\arm64-v8a` 或 `RealSR-NCNN-Android-CLI\*\build\intermediates\cmake\debug\obj\arm64-v8a` 找到编译好的二进制文件。  
-点击 `3rdparty/copy_cli_build_result.bat` 可以自动复制编译结果到 GUI 工程目录中
+用 Android Studio 打开工程, rebuild 然后你就可以在 `RealSR-NCNN-Android-CLI\*\build\intermediates\cmake\release\obj\arm64-v8a` 或 `RealSR-NCNN-Android-CLI\*\build\intermediates\cmake\debug\obj\arm64-v8a` 找到编译好的二进制文件，这些文件会被编译脚本自动复制到 GUI 工程目录中。  
+点击 `3rdparty/copy_cli_build_result.bat` 可以更新其他库文件的二进制文件到 GUI 工程目录中
 
 ## 如何使用 RealSR-NCNN-Android-CLI
 ### 下载模型
@@ -133,7 +133,7 @@ RealSR-NCNN-Android
 
 ## 如何编译 RealSR-NCNN-Android-GUI
 从 github release 页面下载 `assets.zip` , 其中包含了模型和CLI程序, 解压并放置到如下路径, 然后使用 Android Studio 进行编译。
-当前版本的下载连接为 https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.9.6/assets.zip
+当前版本的下载连接为 https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.10.0/assets.zip
 
 ```
 RealSR-NCNN-Android-GUI\app\src\main\assets\
