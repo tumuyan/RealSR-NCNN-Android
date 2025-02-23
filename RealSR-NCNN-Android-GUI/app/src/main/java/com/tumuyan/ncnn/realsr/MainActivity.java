@@ -779,8 +779,8 @@ public class MainActivity extends AppCompatActivity {
                         if (showImgView) {
                             if (outputFile.exists() && outputFile.isFile()) {
                                 updateImage(dir + "/output.png", String.format("%s\n%s", getString(R.string.hr), log), false);
-                            } else if (inputIsGifAnimation && new File(outputSavePath).exists()) {
-                                updateImage(outputSavePath, String.format("%s\n%s", getString(R.string.hr), log), false);
+                            } else if (inputIsGifAnimation && outputFile.exists() && outputFile.isDirectory() && outputFile.listFiles().length>1) {
+                                updateImage(outputFile.listFiles()[0].getPath(), String.format("%s\n%s", getString(R.string.hr), log), false);
                             } else {
                                 updateImage(dir + "/input.png", String.format("%s\n%s", getString(R.string.lr), log), false);
                             }
@@ -1077,7 +1077,7 @@ public class MainActivity extends AppCompatActivity {
             if (save) {
                 String export_cmd = saveOutputCmd();
                 if (inputIsGifAnimation)
-                    cmd = cmd + ";" + "echo convert gif file;./magick convert output.png/* -delay " + inputGifDelay + " -loop 0 '" + outputSavePath +"'";
+                    cmd = cmd + ";./magick convert -delay " + inputGifDelay + " output.png/* -loop 0 '" + outputSavePath +"'";
                 else
                     cmd = cmd + ";" + export_cmd;
             } else {
