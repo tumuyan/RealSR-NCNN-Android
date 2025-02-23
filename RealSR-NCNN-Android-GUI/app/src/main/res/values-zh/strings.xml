@@ -129,6 +129,8 @@
     <string name="classical_interpolation">经典插值算法</string>
     <string name="interpolation">插值算法</string>
     <string name="menu_reset_cache">重置缓存</string>
+    <string name="preprocess_frames">预处理动图（只支持处理单个gif）</string>
+    <string name="not_support_animation">不支持动画</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>

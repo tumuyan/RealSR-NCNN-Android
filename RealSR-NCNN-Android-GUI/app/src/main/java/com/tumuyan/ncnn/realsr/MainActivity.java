@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private final String galleryPath =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
                     + File.separator + "RealSR";
-    private File outputFile, inputFile, titleFile;
+    private File outputFile, outputGif, inputFile, titleFile;
     private String dir, cache_dir;
     // dir="/data/data/com.tumuyan.ncnn.realsr/cache/realsr";
     private String modelName = "SR";
@@ -136,6 +136,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean useCPU;
     private boolean keepScreen;
     private boolean prePng;
+    private boolean preFrame;
     private boolean autoSave;
     private boolean showSearchView;
     private String savePath = galleryPath;
@@ -168,7 +169,10 @@ public class MainActivity extends AppCompatActivity {
             stopCommand();
             return false;
         } else if (v == R.id.menu_share) {
-            shareImage("output.png");
+            if(inputIsGifAnimation)
+                shareImage("output.gif");
+            else
+                shareImage("output.png");
             return false;
         } else if (v == R.id.menu_avir2) {
             q = "./resize-ncnn -i input.png -o output.png  -m avir -s 0.5";
@@ -183,8 +187,14 @@ public class MainActivity extends AppCompatActivity {
         } else if (v == R.id.menu_magick4) {
             q = "./magick input.png -resize 25% output.png";
         } else if (v == R.id.menu_out2in) {
-            q = "cp output.png input.png";
-            imageName = "/input.png";
+            if(inputIsGifAnimation) {
+                Toast.makeText(this, R.string.not_support_animation, Toast.LENGTH_SHORT);
+                return false;
+            }
+            else{
+                q = "cp output.png input.png";
+                imageName = "/input.png";
+            }
         } else if (v == R.id.menu_in) {
             q = "in";
         } else if (v == R.id.menu_out) {
@@ -221,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
                 if (q == CMD_RESET_CACHE) {
                     AssetsCopyer.releaseAssets(this, "realsr", cache_dir, false);
                 }
-                run20(q, final_bench_mark_mode);
+                run20(q, final_bench_mark_mode,false);
                 final File finalfile = new File(dir + finalImageName);
                 if (finalfile.exists() && (!finalfile.isDirectory())) {
                     runOnUiThread(() -> {
@@ -332,6 +342,7 @@ public class MainActivity extends AppCompatActivity {
         threadCount = mySharePerferences.getString("threadCount", "");
         keepScreen = mySharePerferences.getBoolean("keepScreen", false);
         prePng = mySharePerferences.getBoolean("PrePng", true);
+        preFrame = mySharePerferences.getBoolean("PreFrame", true);
         useCPU = mySharePerferences.getBoolean("useCPU", false);
         autoSave = mySharePerferences.getBoolean("autoSave", false);
         showSearchView = mySharePerferences.getBoolean("showSearchView", false);
@@ -395,7 +406,7 @@ public class MainActivity extends AppCompatActivity {
 
             SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");
             String time = f.format(new Date());
-
+            int k=0;
             for (int i = 0; i < imageUris.size(); i++) {
                 Uri uri = imageUris.get(i);
                 inputFileName = getFileName(uri, this).replaceFirst("\\.[^\\.]+$", "");
@@ -421,6 +432,7 @@ public class MainActivity extends AppCompatActivity {
                     j++;
                     inputFilePath = dir + "/input.png/" + inputFileName + "_" + j + ".png";
                 }
+                k++;
                 whiteFileFromUri(uri, inputFilePath);
             }
             int inputFileSize = inputFile.listFiles().length;
@@ -607,6 +619,9 @@ public class MainActivity extends AppCompatActivity {
 
 
         SharedPreferences mySharePerferences = getSharedPreferences("config", Activity.MODE_PRIVATE);
+        prePng = mySharePerferences.getBoolean("PrePng", true);
+        preFrame = mySharePerferences.getBoolean("PreFrame", true);
+
         int version = mySharePerferences.getInt("version", 0);
         String defaultCommand = mySharePerferences.getString("defaultCommand", "");
         searchView.setQuery(defaultCommand, false);
@@ -632,6 +647,7 @@ public class MainActivity extends AppCompatActivity {
         dir = cache_dir + "/realsr";
 
         outputFile = new File(dir, "output.png");
+        outputGif = new File(dir, "output.gif");
         inputFile = new File(dir, "input.png");
         titleFile = new File(dir, "img/realsr.png");
         showImage(titleFile, getString(R.string.default_log));
@@ -661,7 +677,7 @@ public class MainActivity extends AppCompatActivity {
 
                 if (!run_fake_command(q)) {
                     stopCommand();
-                    new Thread(() -> run20(query, false)).start();
+                    new Thread(() -> run20(query, false,true)).start();
                 }
                 return false;
             }
@@ -686,16 +702,16 @@ public class MainActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btn_save).setOnClickListener(view -> {
-                    if (!outputFile.exists()) {
+                    File f = inputIsGifAnimation ? outputGif:outputFile;
+
+                    if (!f.exists()) {
                         Toast.makeText(this, R.string.output_not_exits, Toast.LENGTH_SHORT).show();
                         return;
-                    } else if (outputFile.isDirectory()) {
-                        File[] files = outputFile.listFiles();
+                    } else if (f.isDirectory()) {
+                        File[] files = f.listFiles();
                         if (files.length < 1) {
-
                             Toast.makeText(this, R.string.output_not_exits, Toast.LENGTH_SHORT).show();
                         } else {
-
                             Toast.makeText(this, R.string.output_is_dir, Toast.LENGTH_SHORT).show();
                         }
                         return;
@@ -731,30 +747,40 @@ public class MainActivity extends AppCompatActivity {
                             cmd.append(" -g -1");
                     }
                 }
-                if (outputFile.exists())
-                    outputFile.delete();
+
+                deleteFile(outputFile);
+                if(inputIsGifAnimation) {
+                    outputGif.delete();
+                    outputFile.mkdir();
+                }
                 if (keepScreen) {
                     logTextView.setKeepScreenOn(true);
                 }
 
                 new Thread(() -> {
 
-                    if (run20(cmd.toString(), false)) {
+                    if (run20(cmd.toString(), false,true)) {
                         if (inputFile.isDirectory()) {
-                            File[] files = inputFile.listFiles();
+                            if (inputIsGifAnimation)
+                                scanFiles(new String[]{outputSavePath});
+                            else {
+                                File[] files = inputFile.listFiles();
 
-                            Log.i("befor scanFiles()", "inputFile size=" + files.length);
-                            List<String> outputPaths = new ArrayList<>();
-                            for (File file : files) {
-                                outputPaths.add(savePath + File.separator + file.getName());
+                                Log.i("befor scanFiles()", "inputFile size=" + files.length);
+                                List<String> outputPaths = new ArrayList<>();
+                                for (File file : files) {
+                                    outputPaths.add(savePath + File.separator + file.getName());
+                                }
+                                scanFiles(outputPaths.toArray(new String[0]));
                             }
-                            scanFiles(outputPaths.toArray(new String[0]));
                         }
 
                         boolean showImgView = (cmd.toString().contains("output.png"));
                         if (showImgView) {
                             if (outputFile.exists() && outputFile.isFile()) {
                                 updateImage(dir + "/output.png", String.format("%s\n%s", getString(R.string.hr), log), false);
+                            } else if (inputIsGifAnimation && new File(outputSavePath).exists()) {
+                                updateImage(outputSavePath, String.format("%s\n%s", getString(R.string.hr), log), false);
                             } else {
                                 updateImage(dir + "/input.png", String.format("%s\n%s", getString(R.string.lr), log), false);
                             }
@@ -860,7 +886,6 @@ public class MainActivity extends AppCompatActivity {
         if (resultCode == RESULT_OK && null != data) {
             Uri url = data.getData();
 
-
             if (requestCode == SELECT_IMAGE && null != url) {
                 deleteFile(inputFile);
                 inputFileName = getFileName(url, this).replaceFirst("\\.[^\\.]+$", "");
@@ -881,6 +906,46 @@ public class MainActivity extends AppCompatActivity {
 
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+
+    // 在主进程执行命令但是不刷新UI，也不被打断
+    public int get_gif_frame_delay(@NonNull String path) {
+
+        String[] cmd = new String[]{"/bin/sh", "-c", "cd " + dir + "; export LD_LIBRARY_PATH=" + dir + " ; " + "./magick  identify  -format  \"%T \" "+path+" "};
+
+        StringBuilder con = new StringBuilder();
+        String result;
+
+        try {
+            Process process = Runtime.getRuntime().exec(cmd);
+            BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            while ((result = br.readLine()) != null) {
+                con.append(result);
+                con.append('\n');
+            }
+
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+
+            Log.d("get_gif_frame_delay()",  "crash; result=" + con);
+            return -1;
+        }
+
+        String[] data = con.toString().strip().split("\s");
+        if(data.length<2)
+            return  0;
+
+        int avg = Integer.parseInt(data[1]);
+        int dif = 0;
+        for(String s :data){
+            dif+=(Integer.parseInt(s)-avg);
+        }
+        avg = avg+ dif/data.length;
+
+        Log.d("get_gif_frame_delay()",  "finish; result=" + con);
+        return avg;
     }
 
     // 在主进程执行命令但是不刷新UI，也不被打断
@@ -922,11 +987,11 @@ public class MainActivity extends AppCompatActivity {
 
 
     // 主要的运行命令的方式
-    public synchronized boolean run20(@NonNull String cmd, boolean bench_mark_mode) {
+    public synchronized boolean run20(@NonNull String cmd, boolean bench_mark_mode,boolean sr) {
         newTask = false;
         Log.i("run20", "cmd = " + cmd);
         final long timeStart = System.currentTimeMillis();
-        boolean output_savePath = false;
+        boolean export_dir = false;
 
         if (cmd.startsWith("./realsr-ncnn")
                 || cmd.startsWith("./srmd-ncnn")
@@ -937,8 +1002,8 @@ public class MainActivity extends AppCompatActivity {
                 || cmd.startsWith("./Anime4k")
         ) {
             if (cmd.contains(" input.png ") && cmd.contains(" output.png ")) {
-                if (inputFile.isDirectory()) {
-                    output_savePath = true;
+                if (inputFile.isDirectory() && !inputIsGifAnimation) {
+                    export_dir = true;
                     cmd = cmd.replace(" output.png ", " '" + savePath + "' ");
                 }
             }
@@ -978,15 +1043,16 @@ public class MainActivity extends AppCompatActivity {
         boolean result_fail = false;
 
         final boolean run_ncnn = bench_mark_mode || !modelName.equals("SR");
-        boolean save_output = run_ncnn && autoSave && cmd.contains("output.png");
+        boolean export_one_file = run_ncnn && (autoSave || (inputFile.isDirectory() && inputIsGifAnimation)) && cmd.contains("output.png");
         if (bench_mark_mode) {
-            save_output = false;
+            export_one_file = false;
             runOnUiThread(() -> {
                 menuProgress.setTitle(BUSY);
                 sendNotification(this, BUSY);
             });
         }
-        final boolean save = save_output;
+        // 根据设置把结果自动导出
+        final boolean save = export_one_file;
 
         try {
             ProcessBuilder processBuilder = new ProcessBuilder("sh");
@@ -1005,27 +1071,24 @@ public class MainActivity extends AppCompatActivity {
             // 写入要执行的命令
             os.flush();
 
-            os.write(("cd " + dir + "; chmod 777 *ncnn\n").getBytes());
+            os.write(("cd " + dir + "; chmod 777 *ncnn; export LD_LIBRARY_PATH=" + dir + "\n").getBytes());
             os.flush();
 
-            if (cmd.startsWith("./magick") || save) {
-                os.write(("export LD_LIBRARY_PATH=" + dir + "\n").getBytes());
-                os.flush();
-            }
-
-            Log.i("run20", "write cmd start");
-
             if (save) {
-                os.write((cmd + " ; " + saveOutputCmd() + "\n").getBytes());
+                String export_cmd = saveOutputCmd();
+                if (inputIsGifAnimation)
+                    cmd = cmd + ";" + "echo convert gif file;./magick convert output.png/* -delay " + inputGifDelay + " -loop 0 '" + outputSavePath +"'";
+                else
+                    cmd = cmd + ";" + export_cmd;
             } else {
-                os.write(cmd.getBytes());
-                os.write('\n');
                 outputSavePath = "";
             }
+
+            Log.i("run20", "write cmd start; final cmd: "+cmd + " [end]");
+            os.write((cmd + "\n").getBytes());
             os.flush();
 
             Log.i("run20", "write cmd finish");
-
             os.write("exit\n".getBytes());
             os.flush();
             os.close();
@@ -1081,42 +1144,6 @@ public class MainActivity extends AppCompatActivity {
             }
 
             Log.i("run20", "process output stream finish");
-/*
-            try {
-                while ((line = successResult.readLine()) != null) {
-                    if (line.contains("unused DT entry") || line.equals("------------------------") || line.isEmpty())
-                        continue;
-                    result.append(line).append("\n");
-
-                    boolean p = run_ncnn && line.matches("\\d([0-9.]*)%");
-                    progressText = line;
-
-//                    if (!cmd.startsWith("./Anime4k"))
-                    {
-                        String finalLine = line;
-                        runOnUiThread(() -> {
-                            logTextView.setText(result);
-                            if (p) {
-                                menuProgress.setTitle(progressText);
-                                sendNotification(this, finalLine);
-                            }
-                        });
-                    }
-
-
-                    Log.d("run20 successResult", line);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    successResult.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            Log.i("run20", "process.getSuccessStream() finish");
-*/
         } catch (Exception e) {
             e.printStackTrace();
             sendNotification(this, ERR);
@@ -1155,7 +1182,8 @@ public class MainActivity extends AppCompatActivity {
             Log.i("run20 finish'", "run_ncnn=" + run_ncnn + ", modelName=" + modelName + ", ..." + result.substring(Math.max(result.length() - 100, 0)));
         } else Log.i("run20 finish", "run_ncnn=false");
 
-        boolean finalOutput_savePath = output_savePath;
+
+        boolean final_export_dir = export_dir; // toast save succeed
         log = result.toString();
         runOnUiThread(() -> {
 
@@ -1169,7 +1197,7 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     checkSaveOutput();
                 }
-            } else if (finalOutput_savePath) {
+            } else if (final_export_dir) {
                 Toast.makeText(getApplicationContext(), R.string.save_succeed, Toast.LENGTH_SHORT).show();
             }
         });
@@ -1186,11 +1214,23 @@ public class MainActivity extends AppCompatActivity {
         }
         newTask = true;
     }
-
+    private boolean inputIsGifAnimation;
+    private int inputGifDelay;
+    /**
+     * 保存文件
+     * @param in    输出的文件流
+     * @param path  输出的文件路径，路径为空时保存为input.png
+     * @return      是否保存成功
+     */
     private boolean saveInputImage(@NonNull InputStream in, String path) {
 
         Log.i("saveInputImage", "start ");
-        if (path.isEmpty()) path = dir + "/input.png";
+        inputIsGifAnimation = false;
+        boolean inputOneImage = false;
+        if (path.isEmpty()) {
+            inputOneImage = true;
+            path = dir + "/input.png";
+        }
         File file = new File(path);
 
         if (file.exists()) {
@@ -1238,7 +1278,21 @@ public class MainActivity extends AppCompatActivity {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                } else run20("./magick tmp '" + path + "'", false);
+                } else if(preFrame && inputOneImage && PreprocessToPng.isGIF(match)){
+                    // 如果输入一个文件，且文件为多帧gif，则预处理为多个图片
+                    inputGifDelay = get_gif_frame_delay(dir + "/tmp");
+                    inputIsGifAnimation = inputGifDelay > 0;
+                    Log.i("inputGifDelay",""+inputGifDelay+", "+inputIsGifAnimation);
+                    if (inputIsGifAnimation) {
+                        deleteFile(inputFile);
+                        inputFile.mkdirs();
+                        run_command("./magick tmp -coalesce -delay 0 input.png/%04d.png");
+                    }
+                    else
+                        run_command("./magick tmp '" + path + "'");
+               }else {
+                    run_command("./magick tmp '" + path + "'");
+                }
             }
 
         } catch (IOException e) {
@@ -1258,11 +1312,24 @@ public class MainActivity extends AppCompatActivity {
         Log.i("saveInputImage", "runOnUiThread");
         File file = new File(path);
         runOnUiThread(() -> {
-            if (file.exists() && (!file.isDirectory())) {
-                imageView.setVisibility(View.VISIBLE);
-                imageView.setImage(ImageSource.uri(path));
-                logTextView.setText(text);
-                Log.i("saveInputImage", "finish");
+            if (file.exists()) {
+                if(file.isDirectory()){
+                    if(file.listFiles().length>0) {
+                        imageView.setVisibility(View.VISIBLE);
+                        imageView.setImage(ImageSource.uri(file.listFiles()[0].getPath()));
+                        Log.i("saveInputImage", "finish, directory");
+                    }else{
+                        imageView.setVisibility(View.GONE);
+                        Log.i("saveInputImage", "finish, empty directory");
+                    }
+                    logTextView.setText(text);
+                }else{
+                    imageView.setVisibility(View.VISIBLE);
+                    imageView.setImage(ImageSource.uri(path));
+                    logTextView.setText(text);
+                    Log.i("saveInputImage", "finish, file");
+                }
+
             } else Log.i("saveInputImage", "skip");
             if (keepScreen) {
                 logTextView.setKeepScreenOn(false);
@@ -1374,7 +1441,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         String cmd;
-        if (format == 0) {
+        if (inputIsGifAnimation){
+            outputSavePath += ".gif";
+            cmd = ("cp " + dir + "/output.gif");
+        }else if (format == 0) {
             outputSavePath += ".png";
             cmd = ("cp " + dir + "/output.png");
         } else {
@@ -1400,6 +1470,7 @@ public class MainActivity extends AppCompatActivity {
 
         return cmd + " '" + outputSavePath + "'";
     }
+
 }
 
 

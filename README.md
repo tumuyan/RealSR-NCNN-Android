@@ -48,38 +48,6 @@ models-Real-ESRGAN-AnimeSharp  // directory should have a suffix of models-Real-
 * This tool can only convert ESRGAN models, not Real-ESRGAN models. If there are Real-ESRGAN models with perfect effect that need to be converted, I can help you convert them manually.
 
 
-### About Real-ESRGAN 
-Real-ESRGAN is a Practical Algorithms for General Image Restoration.
-
-> [[Paper](https://arxiv.org/abs/2107.10833)] [[Project Page]](https://github.com/xinntao/Real-ESRGAN) &emsp; [[YouTube Video](https://www.youtube.com/watch?v=fxHWoDSSvSc)] [[Bilibili](https://www.bilibili.com/video/BV1H34y1m7sS/)] &emsp; [[Poster](https://xinntao.github.io/projects/RealESRGAN_src/RealESRGAN_poster.pdf)] [[PPT slides](https://docs.google.com/presentation/d/1QtW6Iy8rm8rGLsJ0Ldti6kP-7Qyzy6XL/edit?usp=sharing&ouid=109799856763657548160&rtpof=true&sd=true)]<br>
-> [Xintao Wang](https://xinntao.github.io/), Liangbin Xie, [Chao Dong](https://scholar.google.com.hk/citations?user=OSDCB0UAAAAJ), [Ying Shan](https://scholar.google.com/citations?user=4oXBp9UAAAAJ&hl=en) <br>
-> Tencent ARC Lab; Shenzhen Institutes of Advanced Technology, Chinese Academy of Sciences
-
-![img](https://github.com/xinntao/Real-ESRGAN/raw/master/assets/teaser.jpg)
-**Note that RealESRGAN may still fail in some cases as the real-world degradations are really too complex.**
-
-## About RealSR
-[[paper]](http://openaccess.thecvf.com/content_CVPRW_2020/papers/w31/Ji_Real-World_Super-Resolution_via_Kernel_Estimation_and_Noise_Injection_CVPRW_2020_paper.pdf) [[project]](https://github.com/jixiaozhong/RealSR)  [[NTIRE 2020 Challenge on Real-World Image Super-Resolution: Methods and Results]](https://arxiv.org/pdf/2005.01996.pdf)
-
-## About SRMD
-[[paper]](http://openaccess.thecvf.com/content_cvpr_2018/papers/Zhang_Learning_a_Single_CVPR_2018_paper.pdf) [[project]](https://github.com/cszn/SRMD)
-![demo](https://github.com/cszn/SRMD/raw/master/figs/realSR1.png) 
-![demo](https://github.com/cszn/SRMD/raw/master/figs/realSR2.png)
-
-## About Real-CUGAN
-[[project]](https://github.com/bilibili/ailab/tree/main/Real-CUGAN)  
-Real-CUGAN is an AI super resolution model for anime images, trained in a million scale anime dataset, using the same architecture as Waifu2x-CUNet. 
-
-## About Anime4kCPP
-[[Project]](- https://github.com/TianZerL/Anime4KCPP)
-Anime4KCPP provides an optimized [bloc97's Anime4K](https://github.com/bloc97/Anime4K) algorithm version 0.9, and it also provides its own CNN algorithm [ACNet](https://github.com/TianZerL/Anime4KCPP/wiki/ACNet), it provides a variety of way to use, including preprocessing and real-time playback, it aims to be a high performance tools to process both image and video.  
-This project is for learning and the exploration task of algorithm course in SWJTU.
-- Anime4K is a simple high-quality anime upscale algorithm. The version 0.9 does not use any machine learning approaches, and can be very fast in real-time processing or pretreatment.
-- ACNet is a CNN based anime upscale algorithm. It aims to provide both high-quality and high-performance.
-HDN mode can better denoise, HDN level is from 1 to 3, higher for better denoising but may cause blur and lack of detail. 
-![demo](https://github.com/TianZerL/Anime4KCPP/raw/master/images/example.png)
-
-
 ## How to build RealSR-NCNN-Android-CLI
 ### step1
 https://github.com/Tencent/ncnn/releases  
@@ -241,6 +209,20 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
            up4x-no-denoise.bin
            up4x-no-denoise.param
 ```
+## Limitations
+This is a very simple tool, flexible and powerful, has the following shortcomings (and there are no plans for improvement):
+
+### About Batch Processing
+1. You can load multiple images by opening the album, selecting multiple pictures, sharing, and choosing realsr, but you cannot select multiple images within the app.
+2. After loading multiple images, only one image can be previewed; there is no image list.
+3. After processing, the results will not be previewed and will be saved directly to the album.
+4. Magick (including the quick menu in the top right corner) does not support batch processing.
+
+### About GIF Animation
+1. Processing can only be done in GIF animation mode when one GIF is opened; otherwise, only one frame can be processed.
+2. GIFs cannot be previewed.
+3. After processing is complete, the results will not be previewed and will be saved directly to the album.
+4. Magick (including the quick menu in the top right corner) does not support GIF processing.
 
 ## Acknowledgement
 ### original super-resolution projects

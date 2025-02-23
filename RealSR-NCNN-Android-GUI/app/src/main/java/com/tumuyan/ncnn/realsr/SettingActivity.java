@@ -29,6 +29,7 @@ public class SettingActivity extends AppCompatActivity {
 
     ToggleButton toggleCPU;
     ToggleButton togglePrePng;
+    ToggleButton togglePreFrame;
     ToggleButton toggleAutoSave;
     ToggleButton toggleSearchView;
     Spinner spinnerFormat, spinnerName, spinnerName2, spinnerOrientation, spinnerNotify;
@@ -54,6 +55,7 @@ public class SettingActivity extends AppCompatActivity {
         boolean keepScreen = mySharePerferences.getBoolean("keepScreen", false);
         boolean useNotification = mySharePerferences.getBoolean("useNotification", false);
         boolean prePng = mySharePerferences.getBoolean("PrePng", true);
+        boolean preFrame = mySharePerferences.getBoolean("PreFrame", true);
         String extraPath = mySharePerferences.getString("extraPath", "");
         String savePath = mySharePerferences.getString("savePath", "");
         boolean useCPU = mySharePerferences.getBoolean("useCPU", false);
@@ -87,6 +89,8 @@ public class SettingActivity extends AppCompatActivity {
         toggleKeepScreen.setChecked(keepScreen);
         togglePrePng = findViewById(R.id.toggle_pre_png);
         togglePrePng.setChecked(prePng);
+        togglePreFrame = findViewById(R.id.toggle_pre_frames);
+        togglePreFrame.setChecked(preFrame);
         toggleAutoSave = findViewById(R.id.toggle_auto_save);
         toggleAutoSave.setChecked(autoSave);
         toggleCPU = findViewById(R.id.toggle_cpu);
@@ -229,6 +233,7 @@ public class SettingActivity extends AppCompatActivity {
 
         editor.putBoolean("keepScreen", toggleKeepScreen.isChecked());
         editor.putBoolean("PrePng", togglePrePng.isChecked());
+        editor.putBoolean("PreFrame", togglePreFrame.isChecked());
         editor.putBoolean("useCPU", toggleCPU.isChecked());
         editor.putBoolean("autoSave", toggleAutoSave.isChecked());
         editor.putBoolean("showSearchView", toggleSearchView.isChecked());

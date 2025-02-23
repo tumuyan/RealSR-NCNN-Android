@@ -118,6 +118,8 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="default_classical_filters" translatable="false">nearest bilinear bicubic avir avir-lancir</string>
     <string name="default_magick_filters" translatable="false">Hermite Hermite Hamming anczos LanczosRadius Lanczos2 LanczosSharp Lanczos2Sharp Lagrange Mitchell Blackman</string>
     <string name="menu_reset_cache">Reset Cache</string>
+    <string name="preprocess_frames">Preprocess gif with mult frames(only support one gif)</string>
+    <string name="not_support_animation">不支持动画</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>

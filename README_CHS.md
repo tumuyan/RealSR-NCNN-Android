@@ -65,34 +65,6 @@ models-Real-ESRGAN-AnimeSharp  // 目录需要用 models-Real- 或 models-ESRGAN
 ├─x4.param
 ```
 
-## 关于 Real-ESRGAN
-Real ESRGAN是一个实用的图像修复算法，可以用来对低分辨率图片完成四倍放大和修复，化腐朽为神奇。
-> [[论文](https://arxiv.org/abs/2107.10833)] &emsp; [[项目地址]](https://github.com/xinntao/Real-ESRGAN) &emsp; [[YouTube 视频](https://www.youtube.com/watch?v=fxHWoDSSvSc)] &emsp; [[B站讲解](https://www.bilibili.com/video/BV1H34y1m7sS/)] &emsp; [[Poster](https://xinntao.github.io/projects/RealESRGAN_src/RealESRGAN_poster.pdf)] &emsp; [[PPT slides](https://docs.google.com/presentation/d/1QtW6Iy8rm8rGLsJ0Ldti6kP-7Qyzy6XL/edit?usp=sharing&ouid=109799856763657548160&rtpof=true&sd=true)]<br>
-> [Xintao Wang](https://xinntao.github.io/), Liangbin Xie, [Chao Dong](https://scholar.google.com.hk/citations?user=OSDCB0UAAAAJ), [Ying Shan](https://scholar.google.com/citations?user=4oXBp9UAAAAJ&hl=en) <br>
-> Tencent ARC Lab; Shenzhen Institutes of Advanced Technology, Chinese Academy of Sciences
-
-![img](https://github.com/xinntao/Real-ESRGAN/raw/master/assets/teaser.jpg)
-**现在的 Real-ESRGAN 还是有几率失败的，因为现实中的图片的降质过程比较复杂。**  
-
-## 关于 RealSR
-[[论文]](http://openaccess.thecvf.com/content_CVPRW_2020/papers/w31/Ji_Real-World_Super-Resolution_via_Kernel_Estimation_and_Noise_Injection_CVPRW_2020_paper.pdf) [[项目地址]](https://github.com/jixiaozhong/RealSR)  [[NTIRE 2020 Challenge on Real-World Image Super-Resolution: Methods and Results]](https://arxiv.org/pdf/2005.01996.pdf)
-
-## 关于 SRMD
-[[论文]](http://openaccess.thecvf.com/content_cvpr_2018/papers/Zhang_Learning_a_Single_CVPR_2018_paper.pdf) [[项目地址]](https://github.com/cszn/SRMD)  
-![demo](https://github.com/cszn/SRMD/raw/master/figs/realSR1.png)
-![demo](https://github.com/cszn/SRMD/raw/master/figs/realSR2.png)
-
-## 关于 Real-CUGAN
-[[项目地址]](https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
-Real-CUGAN是一个使用百万级动漫数据进行训练的，结构与Waifu2x兼容的通用动漫图像超分辨率模型。
-
-## 关于 Anime4kCPP
-[[项目地址]](- https://github.com/TianZerL/Anime4KCPP)
-Anime4KCPP提供一个改进后的[bloc97的Anime4K](https://github.com/bloc97/Anime4K)算法0.9版本，同时也提供自己的CNN算法[ACNet](https://github.com/TianZerL/Anime4KCPP/wiki/ACNet)。Anime4KCPP提供多种使用方式，包括预处理与实时播放，其致力于成为高性能的视频或图像处理工具。
-- Anime4K算法是一种简单且高质量的动漫类图像超分辨率算法，它并不使用机器学习，因此速度非常快，可用于实时处理和预处理。
-- ACNet是一个基于卷积神经网络的超分辨率算法，旨在同时提供高质量和高性能。其中HDN模式能更好的降噪，HDN等级从1到3，越高降噪效果越好，但可能导致模糊和缺少细节。
-![demo](https://github.com/TianZerL/Anime4KCPP/raw/master/images/example.png)
-
 ## 如何编译 RealSR-NCNN-Android-CLI
 ### step1
 https://github.com/Tencent/ncnn/releases  
@@ -247,6 +219,20 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
            up4x-no-denoise.bin
            up4x-no-denoise.param
 ```
+
+## 局限
+这是一个非常简易的工具，在灵活和强大的同时，存在如下缺陷（并且没有计划去完善）：
+### 关于批量处理
+1. 可以通过打开相册-选择多个图片-分享-realsr来加载多个图片，不能在应用内选多个图片
+2. 加载多个图片后，只能预览1个图片，不会显示图片列表，也无法切换显示不同图片
+3. 处理结束后不会预览处理结果，会直接保存到相册
+4. Magick（包含右上方快捷菜单）不支持多图处理
+
+### 关于gif动图
+1. 仅当打开1张动图时，才能以动图的方式进行处理；否则只能处理1帧
+2. 无法预览动图
+3. 处理结束后不会预览处理结果，会直接保存到相册
+4. Magick（包含右上方快捷菜单）不支持动图处理
 
 ## 感谢
 ### 原始超分辨率项目

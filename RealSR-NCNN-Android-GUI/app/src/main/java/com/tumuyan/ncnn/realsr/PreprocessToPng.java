@@ -1,5 +1,13 @@
 package com.tumuyan.ncnn.realsr;
 
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.ParcelFileDescriptor;
+
+import java.io.File;
+import java.io.IOException;
+
 public class PreprocessToPng {
 // stb_image可以处理  JPG, PNG, TGA, BMP, PSD, HDR, PIC , GIF
 //  但是实测发现gif需要使用不同的加载方式
@@ -10,10 +18,15 @@ public class PreprocessToPng {
     private static byte[] WEBP = {0x52, 0x49, 0x46, 0x46};
     private static byte[] BMP = {0x42, 0x4D};
     private static byte[] HEIF = {0X00 ,0X00, 0X00, 0X18,0X66,0X74 ,0X79 ,0X70 ,0X68 ,0X65 ,0X69 ,0X63 ,0X00};
+    private static byte[] GIF = {0x47,0x49,0x46,0x38};
     public static String[] suffix = {"png","heif"};
 
     public static boolean isHeif(int i){
        return  i ==1;
+    }
+
+    public static boolean isGIF(int i){
+        return  i==2;
     }
 
     /**
@@ -64,6 +77,15 @@ public class PreprocessToPng {
             if (i == bytes.length - 1)
                 return 1;
         }
+
+        bytes = GIF.clone();
+        for (int i = 0; ; i++) {
+            if (bytes[i] != filehead[i])
+                break;
+            if (i == bytes.length - 1)
+                return 2;
+        }
+
 
         return 0;
     }
