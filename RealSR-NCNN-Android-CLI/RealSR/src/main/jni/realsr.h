@@ -33,7 +33,8 @@ public:
     int scale;
     int tilesize;
     int prepadding;
-
+    std::string net_input_name = "data";
+    std::string net_output_name = "output";
 private:
     ncnn::VulkanDevice* vkdev;
     ncnn::Net net;

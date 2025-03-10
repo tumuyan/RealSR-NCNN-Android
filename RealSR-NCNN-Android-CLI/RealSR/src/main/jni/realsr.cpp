@@ -84,6 +84,30 @@ int RealSR::load(const std::string& parampath, const std::string& modelpath)
     net.load_model(modelpath.c_str());
 #endif
 
+    // 获取输入和输出名称
+    const auto& input_names = net.input_names();
+    const auto& output_names = net.output_names();
+
+    if (input_names.empty()) {
+        fprintf(stderr, "model not have input_names\n");
+        return -1;
+    }
+    if (output_names.empty()) {
+        fprintf(stderr, "model not have output_names\n");
+        return -1;
+    }
+
+    // 检查输入名称是否存在
+    if (std::find(input_names.begin(), input_names.end(), net_input_name) == input_names.end()) {
+        fprintf(stderr, "net_input_name %s -> %s\n", net_input_name.c_str(), input_names[0]);
+        net_input_name = input_names[0];
+    }
+
+    // 检查输出名称是否存在
+    if (std::find(output_names.begin(), output_names.end(), net_output_name) == output_names.end()) {
+        fprintf(stderr, "net_output_name %s -> %s\n", net_output_name.c_str(), output_names[0]);
+        net_output_name = output_names[0];
+    }
     // initialize preprocess and postprocess pipeline
     if (vkdev)
     {
@@ -346,7 +370,7 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     ex.set_staging_vkallocator(staging_vkallocator);
 
 
-                    ex.input("data", in_tile_gpu[ti]);
+                    ex.input(net_input_name.c_str(), in_tile_gpu[ti]);
 
                     ex.extract("output", out_tile_gpu[ti], cmd);
 
@@ -470,9 +494,9 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     ex.set_workspace_vkallocator(blob_vkallocator);
                     ex.set_staging_vkallocator(staging_vkallocator);
 
-                    ex.input("data", in_tile_gpu);
+                    ex.input(net_input_name.c_str(), in_tile_gpu);
 
-                    ex.extract("output", out_tile_gpu, cmd);
+                    ex.extract(net_output_name.c_str(), out_tile_gpu, cmd);
                 }
 
                 ncnn::VkMat out_alpha_tile_gpu;
@@ -735,9 +759,9 @@ int RealSR::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                 {
                     ncnn::Extractor ex = net.create_extractor();
 
-                    ex.input("data", in_tile[ti]);
+                    ex.input(net_input_name.c_str(), in_tile[ti]);
 
-                    ex.extract("output", out_tile[ti]);
+                    ex.extract(net_output_name.c_str(), out_tile[ti]);
                 }
 
                 ncnn::Mat out_alpha_tile;
@@ -844,9 +868,9 @@ int RealSR::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                 {
                     ncnn::Extractor ex = net.create_extractor();
 
-                    ex.input("data", in_tile);
+                    ex.input(net_input_name.c_str(), in_tile);
 
-                    ex.extract("output", out_tile);
+                    ex.extract(net_output_name.c_str(), out_tile);
                 }
 
                 ncnn::Mat out_alpha_tile;

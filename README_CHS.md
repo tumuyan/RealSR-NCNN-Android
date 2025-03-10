@@ -54,16 +54,26 @@ RealSR-NCNN-Android-GUI 在 ver 1.7.6 以上的版本可以自动加载自定义
 
 ![目录结构](Screenshot_models.jpg)
 
-你自己也可以把pth格式的模型转换为本应用可用的ncnn模型。
-1. 从 [https://upscale.wiki/wiki/Model_Database](https://upscale.wiki/wiki/Model_Database) 下载模型并解压
+你自己也可以把pth格式的ESRGAN模型转换为本应用可用的ncnn模型。
+1. 从 [OpenModelDB](https://openmodeldb.info/) 下载模型
 2. 下载  [cupscale](https://github.com/n00mkrad/cupscale) 并解压
 3. 打开 CupscaleData\bin\pth2ncnn, 用 pth2ncnn.exe 转换 pth 文件为 ncnn 模型文件
-3. 重命名文件，举例：
+4. 重命名文件，举例：
 ```
-models-Real-ESRGAN-AnimeSharp  // 目录需要用 models-Real- 或 models-ESRGAN- 开头
+models-Real-ESRGAN-AnimeSharp  // 目录需要用 models- 开头
 ├─x4.bin                       // 模型名称为 x[n], n 是放大倍率
 ├─x4.param
 ```
+另一种转换模型的方式可以转换更多种类的模型，但是更加复杂
+1. 从 [OpenModelDB](https://openmodeldb.info/) 下载模型
+2. 下载 [chaiNNer](https://chainner.app/) 并安装（这需要很好的网络）
+3. 打开 chaiNNer，链接节点或者使用我提供的已经链接好的工程 https://github.com/tumuyan/RealSR-NCNN-Android/raw/main/chainner-pth2ncnn.chn
+3. 把模型拖到最左侧的节点上，点击运行按钮，等待 chaiNNer 转换模型为 ncnn 模型。需要注意的是，并非每一个模型都能够转换为ncnn模型。
+4. 重命名文件（与上一种方式相同）。如果使用了我提供的工程文件，无需此步骤。
+   
+实际上只要你使用过 chaiNNer ，就会被 chaiNNer 的强大所吸引 —— 一方面是他支持了太多的模型（当然不是、也不可能是所有的优秀模型）和传统图像的处理方法，链接节点就像堆积木一样实现各种各样的功能。
+
+![](chainner-pth2ncnn.png)
 
 ## 如何编译 RealSR-NCNN-Android-CLI
 ### step1

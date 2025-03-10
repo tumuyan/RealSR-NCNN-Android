@@ -36,7 +36,7 @@ RealSR-NCNN-Android-GUI could load extra models from sdcard automatily in ver 1.
 
 ### Convert pth models by yourself
 Also you could convert ESRGAN pth moddls by yourself.
-1. Download ESRGAN pytorch models from [https://upscale.wiki/wiki/Model_Database](https://upscale.wiki/wiki/Model_Database) and unzip it to somewhere.
+1. Download ESRGAN pytorch models from [OpenModelDB](https://openmodeldb.info/) and unzip it to somewhere.
 2. Download [cupscale](https://github.com/n00mkrad/cupscale) and unzip it in your PC.
 3. Convert pytorch models to ncnn. Open CupscaleData\bin\pth2ncnn, use pth2ncnn.exe to convert pth files to ncnn file.
 3. Rename models, just like this:
@@ -47,6 +47,14 @@ models-Real-ESRGAN-AnimeSharp  // directory should have a suffix of models-Real-
 ```
 * This tool can only convert ESRGAN models, not Real-ESRGAN models. If there are Real-ESRGAN models with perfect effect that need to be converted, I can help you convert them manually.
 
+Another way to convert models:
+1. Download the model from [OpenModelDB](https://openmodeldb.info/).
+2. Download and install [chaiNNer](https://chainner.app/) (this requires a good internet connection).
+3. Open chaiNNer, link the nodes, or use the project I provided: https://github.com/tumuyan/RealSR-NCNN-Android/raw/main/chainner-pth2ncnn.chn
+4. Drag the model onto the leftmost node, click the run button, and wait. Note that not every model can be converted to an ncnn model.
+5. Rename the file (same as the previous method). If you used the project file I provided, this step is unnecessary.
+
+![](chainner-pth2ncnn.png)
 
 ## How to build RealSR-NCNN-Android-CLI
 ### step1
