@@ -8,3 +8,4 @@
 /*/*/build
 /*/*/.cxx
 /RealSR-NCNN-Android-GUI/app/debug
+*.log

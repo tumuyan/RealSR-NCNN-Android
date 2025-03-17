@@ -1,0 +1,23 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace 'com.tumuyan.ncnn.realsr'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 24
+
+        ndk {
+            moduleName "ncnn"
+            abiFilters "arm64-v8a" //, "armeabi-v7a", "x86"
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            version "3.31.6"
+            path file('src/main/jni/CMakeLists.txt')
+        }
+    }
+    ndkVersion '29.0.13113456 rc1'
+}
