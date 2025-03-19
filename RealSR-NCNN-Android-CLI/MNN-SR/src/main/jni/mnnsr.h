@@ -23,7 +23,7 @@ public:
     ~MNNSR();
 
 #if _WIN32
-    int load(const std::wstring& parampath, const std::wstring& modelpath);
+    int load(const std::wstring& parampath);
 #else
     int load(const std::string& modelpath);
 #endif
@@ -44,13 +44,6 @@ public:
     float* output_buffer;
     MNNForwardType backend_type;
 private:
-    ncnn::VulkanDevice* vkdev;
-    ncnn::Net net;
-    ncnn::Pipeline* realsr_preproc;
-    ncnn::Pipeline* realsr_postproc;
-    ncnn::Layer* bicubic_2x;
-    ncnn::Layer* bicubic_3x;
-    ncnn::Layer* bicubic_4x;
     bool tta_mode;
 
     MNN::Interpreter* interpreter;

@@ -4,9 +4,11 @@
 #include "mnnsr.h"
 #include <thread>
 
+//#include <math.h>
 MNNSR::MNNSR(int gpuid, bool tta_mode, int num_threads) {
 
-    pretreat_ = std::shared_ptr<MNN::CV::ImageProcess> (MNN::CV::ImageProcess::create(MNN::CV::BGR, MNN::CV::RGB, meanVals_, 3,normVals_, 3));
+    pretreat_ = std::shared_ptr<MNN::CV::ImageProcess>(
+            MNN::CV::ImageProcess::create(MNN::CV::BGR, MNN::CV::RGB, meanVals_, 3, normVals_, 3));
 
 }
 
@@ -16,6 +18,15 @@ MNNSR::~MNNSR() {
 }
 
 #if _WIN32
+#include <algorithm>
+#include <string>
+#include <codecvt>
+#include <cstring>
+std::string wstringToString(const std::wstring& wstr) {
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    return converter.to_bytes(wstr);
+}
+
 int MNNSR::load(const std::wstring& modelpath)
 #else
 
@@ -40,45 +51,31 @@ int MNNSR::load(const std::string &modelpath)
     const auto start = std::chrono::high_resolution_clock::now();
 
 
+    //interpreter = MNN::Interpreter::createFromFile(modelpath.c_str());
+#if _WIN32
+    interpreter = MNN::Interpreter::createFromFile(std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(modelpath).c_str());
+#else
     interpreter = MNN::Interpreter::createFromFile(modelpath.c_str());
+#endif
     session = interpreter->createSession(config);
 
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::high_resolution_clock::now() - start);
 
     fprintf(stderr, "Load model %.3f ms\n",
-              static_cast<double>(duration.count()));
+            static_cast<double>(duration.count()));
 
     interpreter_input = interpreter->getSessionInput(session, nullptr);
     interpreter->resizeTensor(interpreter_input, 1, 3, tilesize, tilesize);
     interpreter->resizeSession(session);
     interpreter_output = interpreter->getSessionOutput(session, nullptr);
 
-    fprintf(stderr, "load model get tensor\n");
     input_tensor = new MNN::Tensor(interpreter_input, MNN::Tensor::CAFFE);
     output_tensor = new MNN::Tensor(interpreter_output, MNN::Tensor::CAFFE);
 
     input_buffer = input_tensor->host<float>();
     output_buffer = output_tensor->host<float>();
-
-    fprintf(stderr, "load model finish\n");
     return 0;
-}
-
-void MNNSR::preProcessTile(const cv::Mat &tile) {
-
-    fprintf(stderr, "preProcessTile\n");
-    for (int c = 0; c < 3; ++c) {
-
-        fprintf(stderr, "preProcessTile channel %d\n",c);
-        // 获取对应的通道
-        cv::Mat channel(tile.rows, tile.cols, CV_8UC1, tile.data + c);
-
-        fprintf(stderr, "preProcessTile memcpy %d\n",c);
-        // 复制数据到 MNN Tensor
-        std::memcpy(input_tensor->host<float>() + c * tile.rows * tile.cols, channel.data,
-                    tile.rows * tile.cols);
-    }
 }
 
 int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
@@ -99,74 +96,65 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
 
     cv::Mat imageOut(outHeight, outWidth, inimage.type()); // 填充灰色背景
 
-    for (int yi = 0; yi < ytiles; yi++) {
-
-        fprintf(stderr, "process tiles y=%d\n",yi);
-        int in_tile_y0 = std::max(yi * tileHeight, 0);
-        int in_tile_y1 = std::min((yi + 1) * tileHeight + prepadding, inHeight);
+    for (uint yi = 0; yi < ytiles; yi++) {
+        int in_tile_y0 = (yi == 0) ? 0 : yi * tileHeight;
+        int in_tile_y1 = (yi + 1 == ytiles) ? inHeight : (yi + 1) * tileHeight + prepadding;
         int out_tile_y0 = (yi > 0) ? scale * prepadding / 2 : 0;
         int out_y0 = in_tile_y0 * scale + out_tile_y0;
 
-        for (int xi = 0; xi < xtiles; xi++) {
+        for (uint xi = 0; xi < xtiles; xi++) {
+            int in_tile_x0 = (xi == 0) ? 0 : xi * tileWidth;
+            int in_tile_x1 = (xi + 1 == xtiles) ? inWidth : (xi + 1) * tileWidth + prepadding;
 
-            fprintf(stderr, "process tiles y=%d, x=%d\n",yi, xi);
-            int in_tile_x0 = std::max(xi * tileWidth, 0);
-            int in_tile_x1 = std::min((xi + 1) * tileWidth + prepadding, inWidth);
-
-            cv::Mat inputTile = inimage(cv::Rect(in_tile_x0, in_tile_y0, in_tile_x1 - in_tile_x0,
+           cv::Mat inputTile = inimage(cv::Rect(in_tile_x0, in_tile_y0, in_tile_x1 - in_tile_x0,
                                                  in_tile_y1 - in_tile_y0));
 
 
-            fprintf(stderr, "process inputTile y=%d, x=%d\n",yi, xi);
+            fprintf(stderr, "process inputTile y=%d, x=%d\n", yi, xi);
 
             if (inputTile.cols < tilesize || inputTile.rows < tilesize) {
 
-                fprintf(stderr, "process y=%d, x=%d copyMakeBorder\n",yi, xi);
+                fprintf(stderr, "process y=%d, x=%d copyMakeBorder\n", yi, xi);
                 cv::Mat paddedTile;
                 cv::copyMakeBorder(inputTile, paddedTile, 0, tilesize - inputTile.rows, 0,
                                    tilesize - inputTile.cols, cv::BORDER_CONSTANT);
-
-//                preProcessTile(paddedTile);
-
-                pretreat_->convert(paddedTile.data, inputTile.cols, inputTile.rows, 0, input_tensor);
+                pretreat_->convert(paddedTile.data, inputTile.cols, inputTile.rows, 0,
+                                   input_tensor);
 
             } else {
-//                preProcessTile(inputTile);
-
-
                 pretreat_->convert(inputTile.data, inputTile.cols, inputTile.rows, 0, input_tensor);
             }
 
-//            fprintf(stderr, "process y=%d, x=%d copyFromHostTensor\n",yi, xi);
-//            // Feed data to the interpreter
-//            interpreter_input->copyFromHostTensor(input_tensor);
+            interpreter_input->copyFromHostTensor(input_tensor);
 
-            fprintf(stderr, "process y=%d, x=%d runSession\n",yi, xi);
+            fprintf(stderr, "process y=%d, x=%d runSession, size=%d %d %d\n", yi, xi,interpreter_input->size(), input_tensor->size(),sizeof(inputTile.data));
             // Run the interpreter
             interpreter->runSession(session);
 
-            fprintf(stderr, "process y=%d, x=%d copyToHostTensor\n",yi, xi);
+            fprintf(stderr, "process y=%d, x=%d copyToHostTensor\n", yi, xi);
             // Extract result from interpreter
             interpreter_output->copyToHostTensor(output_tensor);
-            fprintf(stderr, "process y=%d, x=%d output_tensor\n",yi, xi);
+            fprintf(stderr, "process y=%d, x=%d output_tensor, size=%d %d\n", yi, xi,interpreter_output->size(), output_tensor->size());
 
             // 直接操作 Tensor 数据
             float *tensor_data = output_tensor->host<float>();
 
-            fprintf(stderr, "process y=%d, x=%d to mat\n",yi, xi);
-// 将 Tensor 数据转换为 OpenCV Mat
-            cv::Mat tile_out;
-            memcpy(tile_out.data, tensor_data, sizeof(tensor_data));
+            fprintf(stderr, "process y=%d, x=%d to float mat, tensor_data size %lu\n", yi, xi, sizeof (tensor_data));
+            for (size_t i = 0; i < sizeof (tensor_data); i++) {
+                printf("%f ", tensor_data[i]);
+            }
+            cv::Mat mat_f32(outHeight, outWidth, CV_32FC3, tensor_data);
 
-            fprintf(stderr, "process y=%d, x=%d to int\n",yi, xi);
-// 如果需要将数据转换为 8 位无符号整型（0-255）
+            fprintf(stderr, "process y=%d, x=%d to 8u mat\n", yi, xi);
+            // 将浮点数转换为 8 位无符号整数
             cv::Mat outputTile;
-            tile_out.convertTo(outputTile, CV_8UC(3), 255.0);
+            mat_f32.convertTo(outputTile, CV_8UC3, 255.0);
+//            mat_f32.convertTo(outputTile, CV_8UC(3), 255.0);
 
             int out_tile_x0 = (xi > 0) ? scale * prepadding / 2 : 0;
             int out_x0 = in_tile_x0 * scale + out_tile_x0;
 
-            fprintf(stderr, "process y=%d, x=%d crop output\n",yi, xi);
+            fprintf(stderr, "process y=%d, x=%d crop output\n", yi, xi);
             if (xi > 0 || yi > 0) {
                 cv::Rect cropRect(out_tile_x0, out_tile_y0, (tilesize * scale - out_tile_x0),
                                   (tilesize * scale - out_tile_y0));

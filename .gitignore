@@ -9,3 +9,6 @@
 /*/*/.cxx
 /RealSR-NCNN-Android-GUI/app/debug
 *.log
+/RealSR-NCNN-Android-CLI/MNN-SR/src/main/jni/.vs/jni
+/RealSR-NCNN-Android-CLI/MNN-SR/src/main/jni/.vs
+/RealSR-NCNN-Android-CLI/MNN-SR/src/main/jni/out

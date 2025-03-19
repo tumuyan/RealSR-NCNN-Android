@@ -1,4 +1,3 @@
-// realsr implemented with ncnn library
 
 #include <stdio.h>
 #include <algorithm>
@@ -111,7 +110,7 @@ static std::vector<int> parse_optarg_int_array(const char *optarg) {
 //#include "gpu.h"
 //#include "platform.h"
 
-#include "realsr.h"
+
 #include "mnnsr.h"
 #include "filesystem_utils.h"
 #include <opencv2/opencv.hpp>
@@ -153,7 +152,7 @@ public:
 
     cv::Mat inimage;
     cv::Mat outimage;
-    ncnn::Mat in;
+
 };
 
 class TaskQueue {
@@ -213,7 +212,6 @@ public:
 
 void *load(void *args) {
 
-    fprintf(stderr, "load() \n");
     const LoadThreadParams *ltp = (const LoadThreadParams *) args;
     const int count = ltp->input_files.size();
     const int scale = ltp->scale;
@@ -359,7 +357,6 @@ public:
 };
 
 void *proc(void *args) {
-    fprintf(stderr, "proc()\n");
     const ProcThreadParams *ptp = (const ProcThreadParams *) args;
     MNNSR *mnnsr = ptp->mnnsr;
 
@@ -371,7 +368,6 @@ void *proc(void *args) {
         if (v.id == -233)
             break;
 
-        fprintf(stderr, "proc() mnnsr->process\n");
         mnnsr->process(v.inimage, v.outimage);
 
         tosave.put(v);
@@ -437,12 +433,8 @@ float compareNcnnMats(const ncnn::Mat &mat1, const ncnn::Mat &mat2) {
 }
 
 void *save(void *args) {
-
-    fprintf(stderr, "save()\n");
     const SaveThreadParams *stp = (const SaveThreadParams *) args;
     const int verbose = stp->verbose;
-    const int check_threshold = stp->check_threshold;
-
     for (;;) {
         Task v;
 
@@ -451,8 +443,6 @@ void *save(void *args) {
         if (v.id == -233)
             break;
 
-
-        fprintf(stderr, "save() tosave.get(v)\n");
         high_resolution_clock::time_point begin = high_resolution_clock::now();
 
         // free input pixel data
@@ -483,7 +473,14 @@ void *save(void *args) {
             std::vector<int> compressionParams;
             compressionParams.push_back(cv::IMWRITE_JPEG_QUALITY); // 指定参数类型
             compressionParams.push_back(90);
-            success = (cv::imwrite(v.outpath.c_str(), v.outimage, compressionParams));
+
+            #if _WIN32
+                        std::wstring outpath_wstr = v.outpath;
+                        std::string outpath_str(outpath_wstr.begin(), outpath_wstr.end());
+                        success = (cv::imwrite(outpath_str, v.outimage, compressionParams));
+            #else
+                        success = (cv::imwrite(v.outpath.c_str(), v.outimage, compressionParams));
+            #endif
         } else {
             if (v.inimage.channels() == 4 && v.outimage.channels() == 4) {
                 // 分离通道
@@ -504,7 +501,14 @@ void *save(void *args) {
                 scaledAlphaChannel.copyTo(outChannels[3]); // 更新 alpha 通道
                 cv::merge(outChannels, v.outimage); // 合并回输出图像
             }
-            success = imwrite(v.outpath.c_str(), v.outimage);
+
+#if _WIN32
+            std::wstring outpath_wstr = v.outpath;
+            std::string outpath_str(outpath_wstr.begin(), outpath_wstr.end());
+            success = (cv::imwrite(outpath_str, v.outimage ));
+#else
+            success = (cv::imwrite(v.outpath.c_str(), v.outimage ));
+#endif
         }
         if (success) {
             high_resolution_clock::time_point end = high_resolution_clock::now();
@@ -846,36 +850,19 @@ int main(int argc, char **argv)
     jobs_load = std::min(jobs_load, cpu_count);
     jobs_save = std::min(jobs_save, cpu_count);
 
-    fprintf(stderr, "jobs_proc\n");
-
     const int use_gpu_count = 1;
     if (jobs_proc.empty()) {
         jobs_proc.resize(use_gpu_count, 2);
     }
-
-    fprintf(stderr, "jobs_proc gpuid size %d\n", gpuid.size());
     int total_jobs_proc = 0;
     total_jobs_proc += jobs_proc[0];
 
-    fprintf(stderr, "jobs_proc total_jobs_proc %d\n", total_jobs_proc);
-
-    if (verbose)
-        fprintf(stderr, "init realsr\n");
-    else
-        fprintf(stderr, "busy...\n");
+    fprintf(stderr, "busy...\n");
     {
-
-        fprintf(stderr, "mnnsr...\n");
         MNNSR mnnsr = MNNSR(0, false, 1);
-
-
-        fprintf(stderr, "mnnsr load\n");
         mnnsr.load(modelfullpath);
-
-
-        fprintf(stderr, "mnnsr set\n");
         mnnsr.scale = scale;
-        if (tilesize = 0)
+        if (tilesize == 0)
             tilesize = 128;
         if (tilesize < 64)
             tilesize = 64;
@@ -883,7 +870,6 @@ int main(int argc, char **argv)
         mnnsr.prepadding = prepadding;
         mnnsr.backend_type = backend_type;
 
-        fprintf(stderr, "ltp\n");
         // main routine
         {
             // load image
@@ -896,28 +882,18 @@ int main(int argc, char **argv)
 
             ncnn::Thread load_thread(load, (void *) &ltp);
 
-
-            fprintf(stderr, "ptp\n");
-
             std::vector<ProcThreadParams> ptp(use_gpu_count);
             for (int i = 0; i < use_gpu_count; i++) {
                 ptp[0].mnnsr = &mnnsr;
             }
-
-            fprintf(stderr, "proc_threads\n");
 
             std::vector<ncnn::Thread *> proc_threads(total_jobs_proc);
             {
                 int total_jobs_proc_id = 0;
 
 
-                for (int i = 0; i < use_gpu_count; i++) {
-
-                    fprintf(stderr,
-                            "proc_threads i=%d gpuid.siez=%d, total_jobs_proc_id=%d, ptp.size=%d\n",
-                            i, gpuid.size(), total_jobs_proc_id, ptp.size());
-
-                    for (int j = 0; j < jobs_proc[i]; j++) {
+                for (uint i = 0; i < use_gpu_count; i++) {
+                    for (uint j = 0; j < jobs_proc[i]; j++) {
                         proc_threads[total_jobs_proc_id++] = new ncnn::Thread(proc,
                                                                               (void *) &ptp[i]);
                     }
@@ -925,7 +901,6 @@ int main(int argc, char **argv)
                 }
             }
 
-            fprintf(stderr, "stp\n");
             // save image
             SaveThreadParams stp;
             stp.verbose = verbose;
@@ -938,7 +913,6 @@ int main(int argc, char **argv)
                 save_threads[i] = new ncnn::Thread(save, (void *) &stp);
             }
 
-            fprintf(stderr, "join\n");
             // end
             load_thread.join();
 
