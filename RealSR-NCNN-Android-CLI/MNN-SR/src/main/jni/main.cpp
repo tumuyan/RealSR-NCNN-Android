@@ -1,12 +1,14 @@
 
 #include <stdio.h>
-#include <algorithm>
+
 #include <queue>
 #include <vector>
 #include <clocale>
-
-
 #include <thread>
+
+#undef min
+#undef max
+
 #include "MNN/Tensor.hpp"
 #include "MNN/MNNForwardType.h"
 #include "MNN/Interpreter.hpp"
@@ -152,7 +154,7 @@ public:
 
     cv::Mat inimage;
     cv::Mat outimage;
-
+    cv::Mat inalpha;
 };
 
 class TaskQueue {
@@ -221,132 +223,92 @@ void *load(void *args) {
     for (int i = 0; i < count; i++) {
         const path_t &imagepath = ltp->input_files[i];
 
-
-        fprintf(stderr, "load %s \n", imagepath.c_str());
-
-//        int webp = 0;
-
-        unsigned char *pixeldata = 0;
-        int w;
-        int h;
-        int c;
-
 #if _WIN32
-        FILE* fp = _wfopen(imagepath.c_str(), L"rb");
+        fprintf(stderr, "load %ws \n", imagepath.c_str());
 #else
-        FILE *fp = fopen(imagepath.c_str(), "rb");
+        fprintf(stderr, "load %s \n", imagepath.c_str());
 #endif
-        if (fp) {
-            // read whole file
-            unsigned char *filedata = 0;
-            int length = 0;
-            {
-                fseek(fp, 0, SEEK_END);
-                length = ftell(fp);
-                rewind(fp);
-                filedata = (unsigned char *) malloc(length);
-                if (filedata) {
-                    fread(filedata, 1, length, fp);
-                }
-                fclose(fp);
-            }
 
-            if (filedata) {
-                pixeldata = webp_load(filedata, length, &w, &h, &c);
-                if (!pixeldata) {
-//                    webp = 1;
-//                } else {
-                    // not webp, try jpg png etc.
-#if _WIN32
-                    pixeldata = wic_decode_image(imagepath.c_str(), &w, &h, &c);
-#else // _WIN32
-                    pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 0);
-                    if (pixeldata) {
-                        if (_VERBOSE_LOG) {
-                            fprintf(stderr, "channel=%d, stbi_load_from_memory\n", c);
-                        }
-                        // stb_image auto channel
-                        if (c == 1) {
-                            // grayscale -> rgb
-                            stbi_image_free(pixeldata);
-                            pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 3);
-                            c = 3;
-                        } else if (c == 2) {
-                            // grayscale + alpha -> rgba
-                            stbi_image_free(pixeldata);
-                            pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 4);
-                            c = 4;
-                        }
-                    } else if (_VERBOSE_LOG) {
-                        fprintf(stderr, "no pixeldata 2\n");
-                    }
-#endif // _WIN32
-                }
-            } else if (_VERBOSE_LOG) {
-#if _WIN32
-                fwprintf(stderr, L"no filedata\n");
-#else // _WIN32
-                fprintf(stderr, "no filedata 1\n");
-#endif // _WIN32
-            }
+        // 读取图像
+        Mat image = imread(imagepath, IMREAD_UNCHANGED);
 
-            free(filedata);
-        } else if (_VERBOSE_LOG) {
-#if _WIN32
-            fwprintf(stderr, L"fopen failed\n");
-#else // _WIN32
-            fprintf(stderr, "fopen failed\n");
-#endif // _WIN32
-        }
-        if (pixeldata) {
-            Task v;
-            v.id = i;
-            v.inpath = imagepath;
-            v.outpath = ltp->output_files[i];
-            v.scale = scale;
-
-            if (c == 3) {
-                cv::Mat inimage(w, h, CV_8UC3, pixeldata);
-                v.inimage = inimage;
-            } else {
-                cv::Mat inimage(w, h, CV_8UC4, pixeldata);
-                v.inimage = inimage;
-            }
-
-//            v.inimage = cv::Mat(w, h, (void *) pixeldata, (size_t) c, c);
-            v.outimage = cv::Mat(w * scale, h * scale, (size_t) c, c);
-
-            fprintf(stderr, "scale=%d, w/h/c %d/%d/%d -> %d/%d/%d\n", scale,
-                    v.inimage.cols, v.inimage.rows, v.inimage.channels(),
-                    v.outimage.cols, v.outimage.rows, v.outimage.channels()
-            );
-
-            path_t ext = get_file_extension(v.outpath);
-            if (c == 4 &&
-                (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") ||
-                 ext == PATHSTR("JPEG"))) {
-                path_t output_filename2 = ltp->output_files[i] + PATHSTR(".png");
-                v.outpath = output_filename2;
-#if _WIN32
-                fwprintf(stderr, L"image %ls has alpha channel ! %ls will output %ls\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
-#else // _WIN32
-                fprintf(stderr, "image %s has alpha channel ! %s will output %s\n",
-                        imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
-#endif // _WIN32
-            }
-
-            toproc.put(v);
-        } else {
+        if (image.empty()) {
 #if _WIN32
             fwprintf(stderr, L"decode image %ls failed\n", imagepath.c_str());
 #else // _WIN32
+
             fprintf(stderr, "decode image %s failed\n", imagepath.c_str());
 #endif // _WIN32
+            continue;
         }
 
 
+        Task v;
+        v.id = i;
+        v.inpath = imagepath;
+        v.outpath = ltp->output_files[i];
+        v.scale = scale;
+
+        cv::Mat inimage;
+        int c = image.channels();
+
+        if (c == 1) {
+            // 如果图像有1个通道，转换为3个通道
+            cvtColor(image, inimage, COLOR_GRAY2BGR);
+            c = 3;
+            v.inimage = inimage;
+        } else if (image.channels() == 4) {
+            // 如果图像有4个通道，分离通道
+            std::vector<cv::Mat> channels;
+            split(image, channels);
+            Mat alphaChannel = channels[3];
+
+            // 判断 alpha 通道是否为单一颜色
+            if (countNonZero(alphaChannel != alphaChannel.at<uchar>(0, 0)) == 0) {
+                fprintf(stderr, "ignore alpha channel, %s\n", imagepath.c_str());
+            } else {
+                v.inalpha = alphaChannel;
+                c = 3;
+            }
+            merge(channels.data(), 3, inimage);
+            v.inimage = inimage;
+        } else if(c==3){
+            v.inimage = image;
+        } else{
+            fprintf(stderr, "[error] channel=%d, %s\n", image.channels(), imagepath.c_str());
+            continue;
+        }
+
+        v.outimage = cv::Mat(v.inimage.rows * scale, v.inimage.cols * scale, CV_8UC3);
+
+        fprintf(stderr, "scale=%d, w/h/c %d/%d/%d -> %d/%d/%d (%d)\n", scale,
+                v.inimage.cols, v.inimage.rows, v.inimage.channels(),
+                v.outimage.cols, v.outimage.rows, v.outimage.channels(), c
+        );
+
+        path_t ext = get_file_extension(v.outpath);
+        if (c == 4 &&
+            (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") ||
+             ext == PATHSTR("JPEG"))) {
+            path_t output_filename2 = ltp->output_files[i] + PATHSTR(".png");
+            v.outpath = output_filename2;
+#if _WIN32
+            fwprintf(stderr, L"image %ls has alpha channel ! %ls will output %ls\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
+#else // _WIN32
+            fprintf(stderr, "image %s has alpha channel ! %s will output %s\n",
+                    imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
+#endif // _WIN32
+        }
+
+        toproc.put(v);
+
+#if _WIN32
+        fprintf(stderr, "load %ls finish\n", imagepath.c_str());
+#else // _WIN32
         fprintf(stderr, "load %s finish\n", imagepath.c_str());
+#endif // _WIN32
     }
+
 
     return 0;
 }
@@ -474,27 +436,20 @@ void *save(void *args) {
             compressionParams.push_back(cv::IMWRITE_JPEG_QUALITY); // 指定参数类型
             compressionParams.push_back(90);
 
-            #if _WIN32
-                        std::wstring outpath_wstr = v.outpath;
-                        std::string outpath_str(outpath_wstr.begin(), outpath_wstr.end());
-                        success = (cv::imwrite(outpath_str, v.outimage, compressionParams));
-            #else
-                        success = (cv::imwrite(v.outpath.c_str(), v.outimage, compressionParams));
-            #endif
+#if _WIN32
+            std::wstring outpath_wstr = v.outpath;
+            std::string outpath_str(outpath_wstr.begin(), outpath_wstr.end());
+            success = (cv::imwrite(outpath_str, v.outimage, compressionParams));
+#else
+            success = (cv::imwrite(v.outpath.c_str(), v.outimage, compressionParams));
+#endif
         } else {
-            if (v.inimage.channels() == 4 && v.outimage.channels() == 4) {
-                // 分离通道
-                std::vector<cv::Mat> channels;
-                cv::split(v.inimage, channels);
-
-                // 获取原始 alpha 通道
-                cv::Mat alphaChannel = channels[3];
+            if (!v.inalpha.empty()) {
 
                 // 放大 alpha 通道
                 cv::Mat scaledAlphaChannel;
-                cv::resize(alphaChannel, scaledAlphaChannel, cv::Size(), v.scale, v.scale,
+                cv::resize(v.inalpha, scaledAlphaChannel, cv::Size(), v.scale, v.scale,
                            cv::INTER_LINEAR);
-
                 // 将放大的 alpha 通道赋值给输出图像的 alpha 通道
                 std::vector<cv::Mat> outChannels;
                 cv::split(v.outimage, outChannels);
@@ -507,7 +462,7 @@ void *save(void *args) {
             std::string outpath_str(outpath_wstr.begin(), outpath_wstr.end());
             success = (cv::imwrite(outpath_str, v.outimage ));
 #else
-            success = (cv::imwrite(v.outpath.c_str(), v.outimage ));
+            success = (cv::imwrite(v.outpath.c_str(), v.outimage));
 #endif
         }
         if (success) {
@@ -785,7 +740,7 @@ int main(int argc, char **argv)
     int prepadding = 0;
 
     if (model.find(PATHSTR("models-")) != path_t::npos) {
-        prepadding = 10;
+        prepadding = 5;
     } else {
         fprintf(stderr, "unknown model dir type\n");
         return -1;
@@ -799,7 +754,7 @@ int main(int argc, char **argv)
 #if _WIN32
     wchar_t modelpath[256];
     swprintf(modelpath, 256, L"%s/x%d.mnn", model.c_str(), scale);
-    fprintf(stderr, "search model: %s\n", modelpath);
+    fprintf(stderr, "search model: %ws\n", modelpath);
 
     path_t modelfullpath = sanitize_filepath(modelpath);
     FILE* mp = _wfopen(modelfullpath.c_str(), L"rb");
@@ -836,7 +791,11 @@ int main(int argc, char **argv)
     };
 
     if (!mp) {
+#if _WIN32
+        fprintf(stderr, "Unknow scale for the model (%ws)\n", modelfullpath.c_str());
+#else
         fprintf(stderr, "Unknow scale for the model (%s)\n", modelfullpath.c_str());
+#endif
         return -1;
     }
 
@@ -860,8 +819,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "busy...\n");
     {
         MNNSR mnnsr = MNNSR(0, false, 1);
-        mnnsr.load(modelfullpath);
-        mnnsr.scale = scale;
+
         if (tilesize == 0)
             tilesize = 128;
         if (tilesize < 64)
@@ -869,6 +827,9 @@ int main(int argc, char **argv)
         mnnsr.tilesize = tilesize;
         mnnsr.prepadding = prepadding;
         mnnsr.backend_type = backend_type;
+
+        mnnsr.scale = scale;
+        mnnsr.load(modelfullpath);
 
         // main routine
         {
@@ -937,8 +898,6 @@ int main(int argc, char **argv)
                 delete save_threads[i];
             }
         }
-
-        mnnsr.finish();
     }
 
 

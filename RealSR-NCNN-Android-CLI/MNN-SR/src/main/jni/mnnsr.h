@@ -23,29 +23,25 @@ public:
     ~MNNSR();
 
 #if _WIN32
-    int load(const std::wstring& parampath);
+    int load(const std::wstring& modelpath);
 #else
     int load(const std::string& modelpath);
 #endif
-    void preProcessTile(const cv::Mat& tile);
+    //void preProcessTile(const cv::Mat& tile);
     int process(const cv::Mat& inimage, cv::Mat& outimage);
-
-    bool finish();
+    void transform(const cv::Mat &mat);
+    void copyOutputTile(cv::Mat outputTile,cv::Mat  outimage, int out_x0, int out_y0);
 
 public:
     int scale;
     int tilesize;
     int prepadding;
-    std::string net_input_name = "data";
-    std::string net_output_name = "output";
-
 
     float* input_buffer;
     float* output_buffer;
     MNNForwardType backend_type;
-private:
-    bool tta_mode;
 
+private:
     MNN::Interpreter* interpreter;
     MNN::Session* session;
     MNN::Tensor* interpreter_input;
@@ -55,6 +51,7 @@ private:
     std::shared_ptr<MNN::CV::ImageProcess> pretreat_ = nullptr;
     const float meanVals_[3] = {127.5f, 127.5f, 127.5f };
     const float normVals_[3] = {0.007843137f, 0.007843137f, 0.007843137f};
+
 };
 
 #endif // MNNSR_H
