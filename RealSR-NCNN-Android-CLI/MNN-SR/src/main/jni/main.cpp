@@ -266,9 +266,9 @@ void *load(void *args) {
             // 判断 alpha 通道是否为单一颜色
             if (countNonZero(alphaChannel != alphaChannel.at<uchar>(0, 0)) == 0) {
                 fprintf(stderr, "ignore alpha channel, %s\n", imagepath.c_str());
+                c = 3;
             } else {
                 v.inalpha = alphaChannel;
-                c = 3;
             }
             merge(channels.data(), 3, inimage);
             v.inimage = inimage;
@@ -407,24 +407,6 @@ void *save(void *args) {
 
         high_resolution_clock::time_point begin = high_resolution_clock::now();
 
-        // free input pixel data
-        {
-            unsigned char *pixeldata = (unsigned char *) v.inimage.data;
-
-
-            fprintf(stderr, "save result...\n");
-
-            if (v.webp == 1) {
-                free(pixeldata);
-            } else {
-#if _WIN32
-                free(pixeldata);
-#else
-                stbi_image_free(pixeldata);
-#endif
-            }
-        }
-
         int success = 0;
 
         path_t ext = get_file_extension(v.outpath);
@@ -446,6 +428,7 @@ void *save(void *args) {
         } else {
             if (!v.inalpha.empty()) {
 
+                fprintf(stderr, "get alpha\n");
                 // 放大 alpha 通道
                 cv::Mat scaledAlphaChannel;
                 cv::resize(v.inalpha, scaledAlphaChannel, cv::Size(), v.scale, v.scale,
@@ -453,8 +436,19 @@ void *save(void *args) {
                 // 将放大的 alpha 通道赋值给输出图像的 alpha 通道
                 std::vector<cv::Mat> outChannels;
                 cv::split(v.outimage, outChannels);
+
+                fprintf(stderr, "copy alpha\n");
                 scaledAlphaChannel.copyTo(outChannels[3]); // 更新 alpha 通道
-                cv::merge(outChannels, v.outimage); // 合并回输出图像
+
+                cv::Mat outputImageWithAlpha(v.outimage.rows, v.outimage.cols, CV_8UC4);
+
+                fprintf(stderr, "merge alpha\n");
+                cv::merge(outChannels, outputImageWithAlpha); // 合并回输出图像
+
+                fprintf(stderr, "merge finishe\n");
+                v.outimage = outputImageWithAlpha;
+
+                fprintf(stderr, "merge alpha done\n");
             }
 
 #if _WIN32

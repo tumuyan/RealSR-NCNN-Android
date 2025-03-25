@@ -84,25 +84,23 @@ int MNNSR::load(const std::string &modelpath)
 
     input_buffer = input_tensor->host<float>();
     output_buffer = output_tensor->host<float>();
-    fprintf(stderr, "tilesize %d\n", tilesize);
-    fprintf(stderr, "input_tensor w %d h %d c%d\n", input_tensor->width(), input_tensor->height(),
-            input_tensor->channel());
-    fprintf(stderr, "output_tensor w %d h %d c%d\n", output_tensor->width(),
-            output_tensor->height(), output_tensor->channel());
-    fprintf(stderr, "input_buffer %d\n", sizeof(input_buffer));
-    fprintf(stderr, "output_buffer %d\n", sizeof(output_buffer));
-    fprintf(stderr, "interpreter_input w %d h %d c%d   %d\n", interpreter_input->size(),
-            interpreter_input->width(), interpreter_input->height(), interpreter_input->channel());
-    fprintf(stderr, "interpreter_output w %d h %d c%d   %d \n", interpreter_output->size(),
-            interpreter_output->width(), interpreter_output->height(),
-            interpreter_output->channel());
+//    fprintf(stderr, "tilesize %d\n", tilesize);
+//    fprintf(stderr, "input_tensor w %d h %d c%d\n", input_tensor->width(), input_tensor->height(),
+//            input_tensor->channel());
+//    fprintf(stderr, "output_tensor w %d h %d c%d\n", output_tensor->width(),
+//            output_tensor->height(), output_tensor->channel());
+//    fprintf(stderr, "input_buffer %d\n", sizeof(input_buffer));
+//    fprintf(stderr, "output_buffer %d\n", sizeof(output_buffer));
+//    fprintf(stderr, "interpreter_input w %d h %d c%d   %d\n", interpreter_input->size(),
+//            interpreter_input->width(), interpreter_input->height(), interpreter_input->channel());
+//    fprintf(stderr, "interpreter_output w %d h %d c%d   %d \n", interpreter_output->size(),
+//            interpreter_output->width(), interpreter_output->height(),
+//            interpreter_output->channel());
     return 0;
 }
 
 void MNNSR::transform(const cv::Mat &mat) {
-//    cv::Mat canvas;
-//    cv::resize(mat, canvas, cv::Size(tilesize, tilesize));
-    // (1,3,224,224)
+
     fprintf(stderr,
             "pretreat_->convert... mat w %d h %d c %d , strip %d, input_tensor w %d h %d c%d\n",
             mat.cols, mat.rows, mat.channels(), mat.step[0], input_tensor->width(),
@@ -116,13 +114,44 @@ void MNNSR::transform(const cv::Mat &mat) {
 
 void MNNSR::copyOutputTile(cv::Mat outputTile, cv::Mat outimage, int out_x0, int out_y0) {
     fprintf(stderr,
-            "process y=%d, x=%d copy output outputTile. outputTile : %d %d %d, outimage: %d %d %d, roi: x0=%d y0=%d x1=%d y1=%d\n",
+            "process y=%d, x=%d crop, outputTile: %d/%d/%d, outimage: %d/%d/%d, desc: x0=%d y0=%d x1=%d y1=%d\n",
             out_x0 / tilesize / scale, out_y0 / tilesize / scale, outputTile.cols, outputTile.rows,
             outputTile.channels(), outimage.cols, outimage.rows, outimage.channels(), out_x0,
             out_y0, out_x0 + outputTile.cols, out_y0 + outputTile.rows);
     outputTile.copyTo(
             outimage(cv::Rect(out_x0, out_y0, outputTile.cols, outputTile.rows)));
 
+}
+
+cv::Mat MNNSR::TensorToCvMat(void) {
+    // 确保数据在主机内存中
+    interpreter_output->copyToHostTensor(output_tensor);
+
+    // 2. 获取 Tensor 维度信息（假设为 NCHW）
+    int C = output_tensor->channel();  // 通道数
+    int H = output_tensor->height();
+    int W = output_tensor->width();
+
+    // 获取数据指针（浮点型，范围通常为0-1或0-255）
+    float *data = output_tensor->host<float>();
+
+    fprintf(stderr, "TensorToCvMat: %d/%d/%d\n", C, H, W);
+
+    cv::Mat r(H, W, CV_32FC1, data + 0 * H * W); // 红色通道
+    cv::Mat g(H, W, CV_32FC1, data + 1 * H * W); // 绿色通道
+    cv::Mat b(H, W, CV_32FC1, data + 2 * H * W); // 蓝色通道
+
+    // 4. 合并为 HWC 格式的 Mat
+    std::vector<cv::Mat> channels{r, g, b};
+    cv::Mat merged;
+    cv::merge(channels, merged); // 合并后维度为 [H, W, 3]
+
+    // 5. 转换数据类型和颜色顺序
+    merged.convertTo(merged, CV_8UC3, 255.0); // float[0~1] -> uint8[0~255]
+    cv::Mat bgr;
+    cv::cvtColor(merged, bgr, cv::COLOR_RGB2BGR); // RGB -> BGR
+
+    return bgr;
 }
 
 int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
@@ -166,8 +195,8 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
     }
 
     fprintf(stderr,
-            "process loops: xtiles %d, ytiles %d, tileWidth %d, tileHeight %d, xPrepadding %d, yPrepadding %d\n",
-            xtiles, ytiles, tileWidth, tileHeight, xPrepadding, yPrepadding);
+            "process tiles: %d %d, tilesize: %d -> %d %d, prepadding: %d -> %d %d\n",
+            xtiles, ytiles, tilesize, tileWidth, tileHeight, prepadding, xPrepadding, yPrepadding);
 
     high_resolution_clock::time_point begin = high_resolution_clock::now();
     high_resolution_clock::time_point time_print_progress;
@@ -204,14 +233,15 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
             int out_x0 = xi * tileWidth * scale;
             int out_tile_w = (xi + 1 == xtiles) ? inWidth * scale - out_x0 : tileWidth * scale;
 
-            fprintf(stderr, "process y=%d, x=%d inputTile, x=%d y=%d %d %d %d %d\n", xi, yi,
-                    in_tile_x0, in_tile_y0, in_tile_x1 - in_tile_x0,
+            fprintf(stderr, "\nprocess y=%d, x=%d inputTile: x0=%d y0=%d x1=%d y1=%d w=%d h=%d\n",
+                    yi, xi,
+                    in_tile_x0, in_tile_y0, in_tile_x1, in_tile_y1, in_tile_x1 - in_tile_x0,
                     in_tile_y1 - in_tile_y0);
 
             cv::Mat inputTile = inimage(cv::Rect(in_tile_x0, in_tile_y0, in_tile_x1 - in_tile_x0,
                                                  in_tile_y1 - in_tile_y0));
 
-            fprintf(stderr, "\nprocess inputTile y=%d, x=%d, inputTile=%d %d %d\n", yi, xi,
+            fprintf(stderr, "process inputTile y=%d, x=%d, inputTile: %d/%d/%d\n", yi, xi,
                     inputTile.cols, inputTile.rows, inputTile.channels());
 
             if (inputTile.cols < tilesize || inputTile.rows < tilesize) {
@@ -230,48 +260,27 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
                                    input_tensor);
 
             } else {
-                pretreat_->convert(inputTile.data, inputTile.cols, inputTile.rows,
-                                   inputTile.cols * inputTile.channels(), input_tensor);
+                cv::Mat paddedTile;
+                cv::copyMakeBorder(inputTile, paddedTile, 0, 0, 0, 0, cv::BORDER_CONSTANT);
+
+                pretreat_->convert(paddedTile.data, paddedTile.cols, paddedTile.rows,
+                                   paddedTile.cols * paddedTile.channels(),
+                                   input_tensor);
+//                pretreat_->convert(inputTile.data, inputTile.cols, inputTile.rows,
+//                                   inputTile.cols * inputTile.channels(), input_tensor);
             }
 
             //  transform(inputTile);
             bool r = interpreter_input->copyFromHostTensor(input_tensor);
             // float* interpreter_input_data = interpreter_input->host<float>();
 
-            fprintf(stderr, "process y=%d, x=%d runSession, size=%d %d %zu\n", yi, xi,
-                    interpreter_input->elementSize(), input_tensor->elementSize(),
-                    inputTile.elemSize());
+//            fprintf(stderr, "process y=%d, x=%d runSession, size=%d %d %zu\n", yi, xi,
+//                    interpreter_input->elementSize(), input_tensor->elementSize(),
+//                    inputTile.elemSize());
 
             // Run the interpreter
             interpreter->runSession(session);
-
-            fprintf(stderr, "process y=%d, x=%d copyToHostTensor\n", yi, xi);
-            // Extract result from interpreter
-            interpreter_output->copyToHostTensor(output_tensor);
-            fprintf(stderr, "process y=%d, x=%d, interpreter_output & output_tensor size=%d %d\n",
-                    yi, xi, interpreter_output->size(), output_tensor->size());
-
-            // 假设output_tensor已经通过MNN库获得，并且是一个三通道的Tensor
-// 获取Tensor的宽度和高度
-            int width = output_tensor->width();
-            int height = output_tensor->height();
-
-// 创建一个三通道的Mat对象，数据类型为CV_32F（浮点型）
-            cv::Mat outputMat(height, width, CV_32FC3);
-
-// 获取Tensor的数据指针
-            float *tensorData = output_tensor->host<float>();
-
-// 将Tensor的数据拷贝到Mat中
-            std::memcpy(outputMat.data, tensorData, width * height * 3 * sizeof(float));
-
-// 如果需要将数据类型转换为8位无符号整数（CV_8UC3），可以进行如下转换
-            cv::Mat outputTile;
-            outputMat.convertTo(outputTile, CV_8UC3, 255.0); // 将浮点数转换为8位无符号整数，并进行缩放
-
-            fprintf(stderr, "process y=%d, x=%d new outputMat8U done, %d %d %d\n", yi, xi,
-                    outputTile.cols, outputTile.rows, outputTile.channels());
-
+            cv::Mat outputTile = TensorToCvMat();
             cv::Rect cropRect(out_tile_x0, out_tile_y0, out_tile_w, out_tile_h);
             cv::Mat croppedTile = outputTile(cropRect);
             copyOutputTile(croppedTile, outimage, out_x0, out_y0);
