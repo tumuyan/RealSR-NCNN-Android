@@ -6,7 +6,7 @@
 随着移动互联网的快速发展，智能设备逐渐普及到生活的每个角落。随之而来的是大量的图像数据。有的图片本身分辨率就比较低，难以看清楚细节；有的在存储和传输的过程中被反复压缩和劣化，最终不再清晰。  
 为了获得更加高质量的视觉体验，或者出于更为基本的目的看清楚图片，图像恢复/超分辨率算法应运而生。而手机作为目前我们生活中最常使用的智能设备，显然有使用这一技术的迫切需求。  
 
-这个仓库正是为安卓设备构建的一个图像超分辨率的应用。具有如下特点：  
+这个仓库正是为安卓设备构建的一个图像超分辨率的应用。具有如下特点：
   ✅ 内置超分算法和模型多。最初使用了[RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan)和[Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)的成果，后来又添加了[SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan)和[RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan), [Anime4KCPP](https://github.com/TianZerL/Anime4KCPP)。同时也内置了[waifu2x-ncnn](https://github.com/nihui/waifu2x-ncnn-vulkan)（但是没有内置模型和预设命令，如有需求自行下载并添加）  
   ✅ 兼顾传统插值算法。包括常见的nearest、bilinear、bicubic算法，以及imagemagick的二十多种filter。  
   ✅ 内置缩小算法。除使用用户指定倍率和算法的缩小方式外，resize-ncnn设计了一种自动缩小的算法de-nearest。参见[笔记](https://note.youdao.com/s/6XlIFbWt)  
@@ -16,6 +16,7 @@
   ✅ 自定义优先选用的超分算法和模型。    
   ✅ 自定义预设命令。  
   ✅ 图片处理过程完全在本地运行，无需担心隐私泄漏、服务器排队、服务收费；处理耗时取于决选择的模型、图片大小以及设备的性能。  
+  
 
 ### 下载地址 
 [Github Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases)  
@@ -44,7 +45,15 @@
 ![](ScreenshotCHS.jpg)
 
 
-## 为 RealSR-NCNN-Android-GUI 增加更多模型
+
+## 为 RealSR-NCNN-Android-GUI 增加更多mnn模型
+✨ ver 1.11 或者更高版本支持  [mnn](https://github.com/alibaba/MNN)  模型。在我的测试中，mnn的速度要比ncnn慢，但是可以兼容更多模型。 
+转换模型的方法可以参考 https://mnn-docs.readthedocs.io/en/latest/tools/convert.html 模型转换工具能够将其他格式的模型（如：ONNX, TFLITE, TorchScript, Tensorflow等）转换为MNN模型
+1. （首先确认你已经安装了Python环境）`pip install mnn`
+2. （举例转换onnx模型到mnn格式）直接输入命令 `MNNConvert -f ONNX  --modelFile "{onnx_path}" --MNNModel "{mnn_path}"  --bizCode biz --fp16  --info  --detectSparseSpeedUp`
+
+
+## 为 RealSR-NCNN-Android-GUI 增加更多ncnn模型
 RealSR-NCNN-Android-GUI 在 ver 1.7.6 以上的版本可以自动加载自定义模型。
 你可以从 https://huggingface.co/tumuyan2/realsr-models 下载更多模型：
 1. 在文件管理器里新建一个目录
@@ -196,6 +205,7 @@ RealSR-NCNN-Android-GUI\app\src\main\assets\
 
 ## 使用的其他开源项目
 - [https://github.com/Tencent/ncnn](https://github.com/Tencent/ncnn)  for fast neural network inference on ALL PLATFORMS
+- [https://github.com/alibaba/MNN](https://github.com/alibaba/MNN) A lightweight deep learning framework, battle-tested by business-critical use cases in Alibaba.  
 - [https://github.com/nothings/stb](https://github.com/nothings/stb)  for decoding and encoding image on Linux / MacOS
 - [https://github.com/tronkko/dirent](https://github.com/tronkko/dirent)  for listing files in directory on Windows
 - [https://github.com/webmproject/libwebp](https://github.com/webmproject/libwebp) for encoding and decoding Webp images on ALL PLATFORMS

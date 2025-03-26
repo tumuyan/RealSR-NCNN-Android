@@ -96,11 +96,6 @@ but it has some problem in VS. **🙏Waiting your help!**
 4. copy models and *.so from mnn_android  to assets dir and build the GUI App.
 5. run mnnsr commands in App
 
-### How to convert mnn models
-refer to https://mnn-docs.readthedocs.io/en/latest/tools/convert.html
-1. `pip install mnn`
-2. `MNNConvert -f ONNX  --modelFile "{onnx_path}" --MNNModel "{mnn_path}"  --bizCode biz --fp16  --info  --detectSparseSpeedUp`
-
 ### Usages
 The usage of others program is same as realsr-ncnn.
 

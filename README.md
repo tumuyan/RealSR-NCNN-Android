@@ -34,7 +34,14 @@ RealSR-NCNN-Android-GUI could load extra models from sdcard automatily in ver 1.
 
 ![](Screenshot_models.jpg)
 
-### Convert pth models by yourself
+### Convert models to mnn format
+✨ ver 1.11 support [mnn](https://github.com/alibaba/MNN) models. MNN could support more models than ncnn, but it is slower in my experiment.  
+refer to https://mnn-docs.readthedocs.io/en/latest/tools/convert.html , you could convert ONNX, TFLITE, TorchScript, Tensorflow models to mnn format.
+1. `pip install mnn`
+2. (for example, convert onnx to mnn) `MNNConvert -f ONNX  --modelFile "{onnx_path}" --MNNModel "{mnn_path}"  --bizCode biz --fp16  --info  --detectSparseSpeedUp`
+
+
+### Convert pth models to ncnn format by yourself
 Also you could convert ESRGAN pth moddls by yourself.
 1. Download ESRGAN pytorch models from [OpenModelDB](https://openmodeldb.info/) and unzip it to somewhere.
 2. Download [cupscale](https://github.com/n00mkrad/cupscale) and unzip it in your PC.
@@ -178,13 +185,13 @@ Most of the C code is copied from Nihui, cause of the directory structure had to
 
 ## Others Open-Source Code Used
 -   [https://github.com/Tencent/ncnn](https://github.com/Tencent/ncnn)  for fast neural network inference on ALL PLATFORMS
+-   [https://github.com/alibaba/MNN](https://github.com/alibaba/MNN) A lightweight deep learning framework, battle-tested by business-critical use cases in Alibaba.  
 -   [https://github.com/nothings/stb](https://github.com/nothings/stb)  for decoding and encoding image on Linux / MacOS
 -   [https://github.com/tronkko/dirent](https://github.com/tronkko/dirent)  for listing files in directory on Windows
 -   [https://github.com/webmproject/libwebp](https://github.com/webmproject/libwebp) for encoding and decoding Webp images on ALL PLATFORMS
 -   [https://github.com/avaneev/avir](https://github.com/avaneev/avir) AVIR image resizing algorithm designed by Aleksey Vaneev
 -   [https://github.com/ImageMagick/ImageMagick6](https://github.com/ImageMagick/ImageMagick6) Use ImageMagick® to resize/convert images.
 -   [https://github.com/MolotovCherry/Android-ImageMagick7](https://github.com/MolotovCherry/Android-ImageMagick7) The repository has been archived, I use this fork [https://github.com/Miseryset/Android-ImageMagick7](https://github.com/Miseryset/Android-ImageMagick7)
-
 
 ## Others packaged models
 - Real-ESRGAN model [Nomos8kSC](https://github.com/Phhofm/models/tree/main/4xNomos8kSC) trained by Phhofm.  

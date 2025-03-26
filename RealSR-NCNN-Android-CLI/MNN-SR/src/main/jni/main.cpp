@@ -29,15 +29,12 @@
 #define STBI_NO_PIC
 #define STBI_NO_STDIO
 
-#include "stb_image.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
-#include "stb_image_write.h"
 
 #endif // _WIN32
 
-#include "webp_image.h"
 #include <chrono>
 
 using namespace std::chrono;
@@ -106,11 +103,6 @@ static std::vector<int> parse_optarg_int_array(const char *optarg) {
 }
 
 #endif // _WIN32
-
-// ncnn
-//#include "cpu.h"
-//#include "gpu.h"
-//#include "platform.h"
 
 
 #include "mnnsr.h"
@@ -217,7 +209,6 @@ void *load(void *args) {
     const LoadThreadParams *ltp = (const LoadThreadParams *) args;
     const int count = ltp->input_files.size();
     const int scale = ltp->scale;
-//    const bool check = ltp->check_threshold > 0;
 
 #pragma omp parallel for schedule(static, 1) num_threads(ltp->jobs_load)
     for (int i = 0; i < count; i++) {
@@ -272,9 +263,9 @@ void *load(void *args) {
             }
             merge(channels.data(), 3, inimage);
             v.inimage = inimage;
-        } else if(c==3){
+        } else if (c == 3) {
             v.inimage = image;
-        } else{
+        } else {
             fprintf(stderr, "[error] channel=%d, %s\n", image.channels(), imagepath.c_str());
             continue;
         }
@@ -345,54 +336,6 @@ public:
     int check_threshold;
 
 };
-
-float compareNcnnMats(const ncnn::Mat &mat1, const ncnn::Mat &mat2) {
-    fprintf(stderr, "check result: mat1 %dx%dx%d, mat2 %dx%dx%d, elempack: %d, elemsize: %zu",
-            mat1.w, mat1.h, mat1.c, mat2.w, mat2.h, mat2.c, mat1.elempack, mat1.elemsize);
-
-    // 检查两个Mat对象的维度是否相同
-    if (mat1.w != mat2.w || mat1.h != mat2.h) {
-        return -1;
-    }
-
-    // 检查两个Mat对象的数据类型是否相同
-    if (mat1.elemsize != mat2.elemsize || mat1.elempack != mat2.elempack) {
-        return -2;
-    }
-
-    // 比较每个通道的像素差异
-    long sum_diff = 0;
-    int channels = std::min(mat1.c, mat2.c);
-    size_t plane_size = mat1.w * mat1.h * mat1.elemsize * mat1.elempack;
-    for (int c = 0; c < channels; c++) {
-
-        const unsigned char *data1 = mat1.channel(c);
-        const unsigned char *data2 = mat2.channel(c);
-
-//        fprintf(stderr, ", q=%d", sizeof(data1) / mat1.w / mat1.h);
-        for (size_t i = 0; i < plane_size; i++) {
-            int diff = abs(data1[i] - data2[i]);
-            sum_diff += diff;
-//            if(i<48)
-//                fprintf(stderr, "compare[%d]: %d, %d, diff=%d\n", i, data1[i],data2[i],diff);
-        }
-    }
-
-/*    for (int c = 0; c < channels; ++c) {
-        const unsigned char *data1 = mat1.channel(c);
-        const unsigned char *data2 = mat2.channel(c);
-        for (int i = 0; i < mat1.h; ++i) {
-            for (int j = 0; j < mat1.w; ++j) {
-                int diff = abs(data1[i * mat1.w + j] - data2[i * mat2.w + j]);
-                sum_diff += diff;
-            }
-        }
-    }*/
-
-    // 计算平均差异
-    float avg_diff = (float) sum_diff / (plane_size * channels);
-    return avg_diff;
-}
 
 void *save(void *args) {
     const SaveThreadParams *stp = (const SaveThreadParams *) args;
@@ -485,9 +428,9 @@ void *save(void *args) {
 }
 
 #if _WIN32
-const std::wstring& optarg_in (L"A:\\Media\\realsr-ncnn-vulkan-20210210-windows\\input3.jpg");
-const std::wstring& optarg_out(L"A:\\Media\\realsr-ncnn-vulkan-20210210-windows\\output3.jpg");
-const std::wstring& optarg_mo (L"A:\\Media\\realsr-ncnn-vulkan-20210210-windows\\models-Real-ESRGAN-anime");
+const std::wstring& optarg_in (L"");
+const std::wstring& optarg_out(L"");
+const std::wstring& optarg_mo (L"");
 #else
 const char *optarg_in = "/sdcard/10086/input3.jpg";
 const char *optarg_out = "/sdcard/10086/output3.jpg";
@@ -507,7 +450,7 @@ int main(int argc, char **argv)
     path_t inputpath;
     path_t outputpath;
     int scale = 4;
-    int tilesize = 128;
+    int tilesize = 0;
 #if _DEMO_PATH
     path_t model = optarg_mo;
 #else
@@ -545,7 +488,10 @@ int main(int argc, char **argv)
             model = optarg;
             break;
         case L'g':
-//            gpuid = parse_optarg_int_array(optarg);
+            gpuid = parse_optarg_int_array(optarg);
+            if(gpuid.size()>0 && gpuid[0]==-1){
+                backend_type = MNN_FORWARD_CPU;
+            }
             break;
         case L'j':
             swscanf(optarg, L"%d:%*[^:]:%d", &jobs_load, &jobs_save);
@@ -563,7 +509,8 @@ int main(int argc, char **argv)
         case L'c':
             check_threshold = _wtoi(optarg);
             break;
-            case L'b':
+        case L'b':
+            if(backend_type != MNN_FORWARD_CPU)
                 backend_type = (MNNForwardType)_wtoi(optarg);
         case L'h':
         default:
@@ -591,7 +538,10 @@ int main(int argc, char **argv)
                 model = optarg;
                 break;
             case 'g':
-//                gpuid = parse_optarg_int_array(optarg);
+                gpuid = parse_optarg_int_array(optarg);
+                if (gpuid.size() > 0 && gpuid[0] == -1) {
+                    backend_type = MNN_FORWARD_CPU;
+                }
                 break;
             case 'j':
                 sscanf(optarg, "%d:%*[^:]:%d", &jobs_load, &jobs_save);
@@ -610,7 +560,8 @@ int main(int argc, char **argv)
                 check_threshold = atoi(optarg);
                 break;
             case 'b':
-                backend_type = (MNNForwardType) atoi(optarg);
+                if (backend_type != MNN_FORWARD_CPU)
+                    backend_type = (MNNForwardType) atoi(optarg);
             case 'h':
             default:
                 print_usage();
@@ -733,7 +684,7 @@ int main(int argc, char **argv)
 
     int prepadding = 0;
 
-    if (model.find(PATHSTR("models-")) != path_t::npos) {
+    if (model.find(PATHSTR("models-")) != path_t::npos ||(  model.size() >= 4 && model.compare(model.size() - 4, 4, ".mnn") == 0)) {
         prepadding = 5;
     } else {
         fprintf(stderr, "unknown model dir type\n");
@@ -747,14 +698,21 @@ int main(int argc, char **argv)
 
 #if _WIN32
     wchar_t modelpath[256];
-    swprintf(modelpath, 256, L"%s/x%d.mnn", model.c_str(), scale);
+    if(model.ends_with(".mnn")){
+        swprintf(modelpath, 256, L"%s", model.c_str());
+    }else{
+        swprintf(modelpath, 256, L"%s/x%d.mnn", model.c_str(), scale);
+    }
     fprintf(stderr, "search model: %ws\n", modelpath);
 
     path_t modelfullpath = sanitize_filepath(modelpath);
     FILE* mp = _wfopen(modelfullpath.c_str(), L"rb");
 #else
     char modelpath[256];
-    sprintf(modelpath, "%s/x%d.mnn", model.c_str(), scale);
+    if ((  model.size() >= 4 && model.compare(model.size() - 4, 4, ".mnn") == 0))
+        sprintf(modelpath, "%s", model.c_str());
+    else
+        sprintf(modelpath, "%s/x%d.mnn", model.c_str(), scale);
     fprintf(stderr, "search model: %s\n", modelpath);
 
     path_t modelfullpath = sanitize_filepath(modelpath);
@@ -793,6 +751,13 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    // 移动到文件末尾
+    fseek(mp, 0, SEEK_END);
+    // 获取文件大小
+    long modelsize = ftell(mp)/1000000;
+    // 重置文件指针到开头
+    fseek(mp, 0, SEEK_SET);
+    fclose(mp);
 
 #if _WIN32
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
@@ -805,17 +770,21 @@ int main(int argc, char **argv)
 
     const int use_gpu_count = 1;
     if (jobs_proc.empty()) {
-        jobs_proc.resize(use_gpu_count, 2);
+        jobs_proc.resize(use_gpu_count, 1);
     }
     int total_jobs_proc = 0;
     total_jobs_proc += jobs_proc[0];
 
     fprintf(stderr, "busy...\n");
     {
-        MNNSR mnnsr = MNNSR(0, false, 1);
+        MNNSR mnnsr = MNNSR();
 
-        if (tilesize == 0)
+        if (tilesize == 0){
             tilesize = 128;
+            tilesize =4000/ modelsize;
+            if(tilesize>300)
+                tilesize = 300;
+        }
         if (tilesize < 64)
             tilesize = 64;
         mnnsr.tilesize = tilesize;
@@ -823,7 +792,7 @@ int main(int argc, char **argv)
         mnnsr.backend_type = backend_type;
 
         mnnsr.scale = scale;
-        mnnsr.load(modelfullpath);
+        mnnsr.load(modelfullpath, modelsize>10);
 
         // main routine
         {

@@ -86,11 +86,6 @@ RealSR-NCNN-Android
 3. sync 并 build
 4. 从mnn库中复制 *.so 文件到GUI项目的assest中.
 
-### 如何转换模型  
-参考 https://mnn-docs.readthedocs.io/en/latest/tools/convert.html
-1. `pip install mnn`
-2. `MNNConvert -f ONNX  --modelFile "{onnx_path}" --MNNModel "{mnn_path}"  --bizCode biz --fp16  --info  --detectSparseSpeedUp`
-
 ### 用法
 和realsr-ncnn基本相同.
 

@@ -1,6 +1,8 @@
-project(mnnsr)
+project(mnnsr-ncnn)
 
 cmake_minimum_required(VERSION 3.4.1)
+#set(CMAKE_CXX_STANDARD 20)
+#set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_TYPE Debug)
 #set(CMAKE_BUILD_TYPE Release)
 
@@ -54,9 +56,9 @@ else()  # Android Studio
     set_target_properties(MNN PROPERTIES IMPORTED_LOCATION
             ${mnn_DIR}/${ANDROID_ABI}/libMNN.so)
 
-    add_library(c++_shared SHARED IMPORTED)
-    set_target_properties(c++_shared PROPERTIES IMPORTED_LOCATION
-            ${mnn_DIR}/${ANDROID_ABI}/libc++_shared.so)
+#    add_library(c++_shared SHARED IMPORTED)
+#    set_target_properties(c++_shared PROPERTIES IMPORTED_LOCATION
+#            ${mnn_DIR}/${ANDROID_ABI}/libc++_shared.so)
 
     add_library(MNN_CL SHARED IMPORTED)
     set_target_properties(MNN_CL PROPERTIES IMPORTED_LOCATION
@@ -73,9 +75,15 @@ else()  # Android Studio
 endif()
 
 message(STATUS "TARGET_ARCH: ${TARGET_ARCH}")
+
+
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_DIR}/include)
+message(STATUS "find opencv result: ${OpenCV_LIBS}")
+
+
 include_directories(${mnn_DIR}/include)
 #include_directories(${mnn_DIR}/${ANDROID_ABI}/include/MNN)
-
 
 
 if(EXISTS ${MNN_LIB})
@@ -102,8 +110,6 @@ else()
 endif()
 message(STATUS "find ncnn result: ${NCNN_LIB}")
 
-find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_DIR}/include)
 
 set(libwebp_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/libwebp)
 
@@ -136,9 +142,9 @@ if(NOT USE_SYSTEM_WEBP)
 endif()
 
 
-add_executable(${PROJECT_NAME}  main.cpp  mnnsr.cpp)
+add_executable(${PROJECT_NAME} main.cpp mnnsr.cpp)
 
-target_link_libraries(${PROJECT_NAME} webp ${MNN_LIB} ${OpenCV_LIBS}  ${NCNN_LIB})
+target_link_libraries(${PROJECT_NAME} webp  ${OpenCV_LIBS} ${MNN_LIB} ${NCNN_LIB})
 
 add_custom_command(TARGET ${PROJECT_NAME}  POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
