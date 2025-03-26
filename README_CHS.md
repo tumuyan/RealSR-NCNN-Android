@@ -51,7 +51,7 @@
 转换模型的方法可以参考 https://mnn-docs.readthedocs.io/en/latest/tools/convert.html 模型转换工具能够将其他格式的模型（如：ONNX, TFLITE, TorchScript, Tensorflow等）转换为MNN模型
 1. （首先确认你已经安装了Python环境）`pip install mnn`
 2. （举例转换onnx模型到mnn格式）直接输入命令 `MNNConvert -f ONNX  --modelFile "{onnx_path}" --MNNModel "{mnn_path}"  --bizCode biz --fp16  --info  --detectSparseSpeedUp`
-
+3. 修改mnn模型文件名，使包含缩放倍率信息，如：`4xabcdefg.mnn`或者`abc-x4-def.mnn`或者者`abc_4x_def.mnn`，并复制mnn模型到设置的自定义模型目录中。
 
 ## 为 RealSR-NCNN-Android-GUI 增加更多ncnn模型
 RealSR-NCNN-Android-GUI 在 ver 1.7.6 以上的版本可以自动加载自定义模型。

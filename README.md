@@ -39,6 +39,7 @@ RealSR-NCNN-Android-GUI could load extra models from sdcard automatily in ver 1.
 refer to https://mnn-docs.readthedocs.io/en/latest/tools/convert.html , you could convert ONNX, TFLITE, TorchScript, Tensorflow models to mnn format.
 1. `pip install mnn`
 2. (for example, convert onnx to mnn) `MNNConvert -f ONNX  --modelFile "{onnx_path}" --MNNModel "{mnn_path}"  --bizCode biz --fp16  --info  --detectSparseSpeedUp`
+3. modify mnn model filename, contains scale info just like`4xabcdefg.mnn` `abc-x4-def.mnn` or `abc_4x_def.mnn`, copy to your custom model folder.
 
 
 ### Convert pth models to ncnn format by yourself

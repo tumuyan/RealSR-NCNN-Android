@@ -8,7 +8,8 @@
 
 MNNSR::MNNSR() {
     pretreat_ = std::shared_ptr<MNN::CV::ImageProcess>(
-            MNN::CV::ImageProcess::create(MNN::CV::BGR, MNN::CV::RGB, nullptr, 0, normVals_, 3));
+            MNN::CV::ImageProcess::create(MNN::CV::BGR, MNN::CV::RGB, meanVals_, 3, normVals_, 3));
+
 
 }
 
@@ -23,7 +24,7 @@ MNNSR::~MNNSR() {
 #if _WIN32
 #include <codecvt>
 
-int MNNSR::load(const std::wstring& modelpath)
+int MNNSR::load(const std::wstring& modelpath, bool cachemodel)
 #else
 
 int MNNSR::load(const std::string &modelpath, bool cachemodel)
@@ -37,15 +38,17 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel)
     config.backendConfig = &backendConfig;
 //    config.type = MNN_FORWARD_NN;
 //    config.type = MNN_FORWARD_VULKAN;
+//    config.type = MNN_FORWARD_OPENCL;
 //    config.type = MNN_FORWARD_AUTO;
     config.type = backend_type;
+//    config.backupType = MNN_FORWARD_OPENCL;
     config.backupType = MNN_FORWARD_VULKAN;
 //    config.backupType = MNN_FORWARD_AUTO;
     int num_threads = std::thread::hardware_concurrency();
     if (num_threads < 1)
         num_threads = 2;
     config.numThread = num_threads;
-/*
+
     switch (backend_type) {
         case MNN_FORWARD_CPU:
             fprintf(stderr, "backend: cpu, numThread=%d\n", config.numThread);
@@ -70,7 +73,7 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel)
             break;
         default:
             fprintf(stderr, "backend: %d\n", backend_type);
-    }*/
+    }
     const auto start = std::chrono::high_resolution_clock::now();
 
 #if _WIN32
@@ -108,7 +111,7 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel)
 
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::high_resolution_clock::now() - start);
-    fprintf(stderr, "Load model %.3f ms\n", static_cast<double>(duration.count()));
+    fprintf(stderr, "Load model %.3f s\n", static_cast<double>(duration.count()) / 1000);
 
 //    if (cachemodel)
 //        interpreter->updateCacheFile(session);
@@ -137,6 +140,9 @@ cv::Mat MNNSR::TensorToCvMat(void) {
     std::vector<cv::Mat> channels{b, g, r};
     cv::Mat merged;
     cv::merge(channels, merged); // 合并后维度为 [H, W, 3]
+
+    // 转换数据类型和颜色顺序
+    merged.convertTo(merged, CV_8UC3, 255.0); // float[0~1] -> uint8[0~255]
     return merged;
 }
 
@@ -158,31 +164,36 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
 
     int xPrepadding = prepadding, yPrepadding = prepadding;
 
-    if (inWidth % tileWidth < prepadding) {
-        // 倒数第2个tile的prepadding已经包含了推理结果
-        xtiles--;
-    } else {
-        if (inWidth % tileWidth >> 1 <= prepadding)
+    int left = inWidth % tileWidth;
+    if (left > 0) {
+        if (left < prepadding) {
+            // 倒数第2个tile的prepadding已经包含了推理结果
             xtiles--;
-        // xtiles * (tilesize - 2 * xPrepadding) + xPrepadding = inWidth
-        xPrepadding = (xtiles * tilesize - inWidth) / (2 * xtiles - 1);
-        tileWidth = tilesize - xPrepadding * 2;
+        } else {
+            if (left / 2 <= prepadding)
+                xtiles--;
+            // xtiles * (tilesize - 2 * xPrepadding) + xPrepadding = inWidth
+            xPrepadding = (xtiles * tilesize - inWidth) / (2 * xtiles - 1);
+            tileWidth = tilesize - xPrepadding * 2;
+        }
     }
-
-    if (inHeight % tileHeight < prepadding) {
-        // 倒数第2个tile的prepadding已经包含了推理结果
-        ytiles--;
-    } else {
-        if (inHeight % tileHeight >> 1 <= prepadding)
+    left = inHeight % tileHeight;
+    if (left > 0) {
+        if (left < prepadding) {
+            // 倒数第2个tile的prepadding已经包含了推理结果
             ytiles--;
-        // ytiles * (tilesize - 2 * yPrepadding) + yPrepadding = inHeight
-        yPrepadding = (ytiles * tilesize - inHeight) / (2 * ytiles - 1);
-        tileHeight = tilesize - yPrepadding * 2;
+        } else {
+            if (left / 2 <= prepadding)
+                ytiles--;
+            // ytiles * (tilesize - 2 * yPrepadding) + yPrepadding = inHeight
+            yPrepadding = (ytiles * tilesize - inHeight) / (2 * ytiles - 1);
+            tileHeight = tilesize - yPrepadding * 2;
+        }
     }
 
-//    fprintf(stderr,
-//            "process tiles: %d %d, tilesize: %d -> %d %d, prepadding: %d -> %d %d\n",
-//            xtiles, ytiles, tilesize, tileWidth, tileHeight, prepadding, xPrepadding, yPrepadding);
+    fprintf(stderr,
+            "process tiles: %d x %d, tilesize: %d -> %d %d, prepadding: %d -> %d %d\n",
+            xtiles, ytiles, tilesize, tileWidth, tileHeight, prepadding, xPrepadding, yPrepadding);
 
     high_resolution_clock::time_point begin = high_resolution_clock::now();
     high_resolution_clock::time_point time_print_progress;
@@ -258,11 +269,17 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
 
             interpreter->runSession(session);
             cv::Mat outputTile = TensorToCvMat();
+//            fprintf(stderr,
+//                    "croppe outputTile from x0=%d, y0=%d, x1=%d, y1=%d, %d x %d\n",
+//                    out_tile_x0, out_tile_y0, out_tile_x0 + out_tile_w, out_tile_y0 + out_tile_h,
+//                    outputTile.cols, outputTile.rows);
             cv::Rect cropRect(out_tile_x0, out_tile_y0, out_tile_w, out_tile_h);
             cv::Mat croppedTile = outputTile(cropRect);
 
-//            fprintf(stderr, "process inputTile y=%d, x=%d, copyTo outimage\n", yi, xi,
-//                    inputTile.cols, inputTile.rows, inputTile.channels());
+//            fprintf(stderr,
+//                    "cropped to outimage to x0=%d, y0=%d, x1=%d, y1=%d, %d x %d\n",
+//                    out_x0, out_y0, out_x0 + croppedTile.cols, out_y0 + croppedTile.rows,
+//                    croppedTile.cols, croppedTile.rows);
             croppedTile.copyTo(
                     outimage(cv::Rect(out_x0, out_y0, croppedTile.cols, croppedTile.rows)));
 

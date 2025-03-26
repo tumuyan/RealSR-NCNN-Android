@@ -293,11 +293,6 @@ void *load(void *args) {
 
         toproc.put(v);
 
-#if _WIN32
-        fprintf(stderr, "load %ls finish\n", imagepath.c_str());
-#else // _WIN32
-        fprintf(stderr, "load %s finish\n", imagepath.c_str());
-#endif // _WIN32
     }
 
 
@@ -446,7 +441,7 @@ int main(int argc, char **argv)
 {
 
     high_resolution_clock::time_point prg_start = high_resolution_clock::now();
-    MNNForwardType backend_type = MNN_FORWARD_OPENCL;
+    int backend_type = MNN_FORWARD_OPENCL;
     path_t inputpath;
     path_t outputpath;
     int scale = 4;
@@ -511,7 +506,8 @@ int main(int argc, char **argv)
             break;
         case L'b':
             if(backend_type != MNN_FORWARD_CPU)
-                backend_type = (MNNForwardType)_wtoi(optarg);
+                backend_type =_wtoi(optarg);
+            break;
         case L'h':
         default:
             print_usage();
@@ -561,7 +557,8 @@ int main(int argc, char **argv)
                 break;
             case 'b':
                 if (backend_type != MNN_FORWARD_CPU)
-                    backend_type = (MNNForwardType) atoi(optarg);
+                    backend_type = atoi(optarg);
+                break;
             case 'h':
             default:
                 print_usage();
@@ -684,7 +681,7 @@ int main(int argc, char **argv)
 
     int prepadding = 0;
 
-    if (model.find(PATHSTR("models-")) != path_t::npos ||(  model.size() >= 4 && model.compare(model.size() - 4, 4, ".mnn") == 0)) {
+    if (model.find(PATHSTR("models-")) != path_t::npos||model.ends_with(".mnn")) {
         prepadding = 5;
     } else {
         fprintf(stderr, "unknown model dir type\n");
@@ -709,7 +706,7 @@ int main(int argc, char **argv)
     FILE* mp = _wfopen(modelfullpath.c_str(), L"rb");
 #else
     char modelpath[256];
-    if ((  model.size() >= 4 && model.compare(model.size() - 4, 4, ".mnn") == 0))
+    if ( model.ends_with(".mnn"))
         sprintf(modelpath, "%s", model.c_str());
     else
         sprintf(modelpath, "%s/x%d.mnn", model.c_str(), scale);
@@ -779,20 +776,21 @@ int main(int argc, char **argv)
     {
         MNNSR mnnsr = MNNSR();
 
-        if (tilesize == 0){
+        if (tilesize == 0) {
             tilesize = 128;
-            tilesize =4000/ modelsize;
-            if(tilesize>300)
-                tilesize = 300;
+            tilesize = 7000 / modelsize;
+            if (tilesize > 400)
+                tilesize = 400;
         }
         if (tilesize < 64)
             tilesize = 64;
         mnnsr.tilesize = tilesize;
         mnnsr.prepadding = prepadding;
-        mnnsr.backend_type = backend_type;
+        if (backend_type >= 0 && backend_type <= 14)
+            mnnsr.backend_type = static_cast<MNNForwardType>(backend_type);
 
         mnnsr.scale = scale;
-        mnnsr.load(modelfullpath, modelsize>10);
+        mnnsr.load(modelfullpath, modelsize > 10);
 
         // main routine
         {

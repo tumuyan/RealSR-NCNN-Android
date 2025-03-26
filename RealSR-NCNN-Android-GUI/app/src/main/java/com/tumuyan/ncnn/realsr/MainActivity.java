@@ -507,7 +507,23 @@ public class MainActivity extends AppCompatActivity {
                 Arrays.sort(folders, Comparator.comparing(a -> ((File) a).getName()));
                 for (File folder : folders) {
                     String name = folder.getName();
-                    if (folder.isDirectory() && name.startsWith("models")) {
+                    if (name.endsWith(".mnn") || name.startsWith("models-MNN")) {
+                        if (folder.isDirectory()) {
+                            File[] files = folder.listFiles();
+                            for (File file : files) {
+                                if (file.getName().endsWith(".mnn")) {
+                                    String[] v = getNameFromModelPath(file.getAbsolutePath(), "MNNSR");
+                                    cmdList.add("./mnnsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s " + v[1]);
+                                    cmdLabel.add(v[0]);
+                                }
+                            }
+                        } else {
+                            String[] v = getNameFromModelPath(folder.getAbsolutePath(), "MNNSR");
+                            cmdList.add("./mnnsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s " + v[1]);
+                            cmdLabel.add(v[0]);
+                        }
+                    }
+                    else if (folder.isDirectory() && name.startsWith("models")) {
                         // 默认匹配realsr/real-esrgan模型目录
                         String model = name.replace("models-", "");
                         String scaleMatcher = ".*x(\\d+).*";
@@ -530,6 +546,8 @@ public class MainActivity extends AppCompatActivity {
                         } else if (name.startsWith("models-DF2K")) {
                             // 匹配realsr模型目录
                             model = name.replace("models-", "RealSR-");
+                        } else if (name.startsWith("models-mnn")){
+
                         }
 
                         List<String> suffix = genCmdFromModel(folder, scaleMatcher, noiseMatcher);
@@ -753,7 +771,7 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     cmd = new StringBuffer(command[selectCommand]);
 
-                    if (command[selectCommand].matches("./(realsr|srmd|waifu2x|realcugan|mnn)-ncnn.+")) {
+                    if (command[selectCommand].matches("./(realsr|srmd|waifu2x|realcugan|mnnsr)-ncnn.+")) {
                         if (tileSize > 0)
                             cmd.append(" -t ").append(tileSize);
                         if (threadCount.length() > 0)
@@ -1000,6 +1018,46 @@ public class MainActivity extends AppCompatActivity {
 
     private String progressText = "";
 
+    private static String[] getNameFromModelPath(String path, String type) {
+        String scaleMatcher = "([xX]\\d+|\\d+[xX])";
+        String s = "", name = "";
+        String[] splitedPath = path.split("[/\\\\]+");
+
+
+        if (splitedPath.length > 1) {
+            if (splitedPath[splitedPath.length - 1].matches(scaleMatcher + "\\..+")) {
+                s = splitedPath[splitedPath.length - 1].replaceFirst(scaleMatcher, "$1");
+                name = splitedPath[splitedPath.length - 2];
+            } else {
+                String m = "[-_.\s]+";
+                name = splitedPath[splitedPath.length - 1].replaceFirst("\\.(.{1,4})$", "");
+                if(name.matches("(\\d+)[xX].+"))
+                    s = name.replaceFirst("(\\d+[xX]).+", "$1");
+                else{
+                    String[] fileTags = name.split(m);
+                    for (String tag : fileTags) {
+                        if (tag.matches(scaleMatcher)) {
+                            s = tag;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        int scale = s.isEmpty()?1: Integer.parseInt((s.replaceFirst("[xX]", "")));
+        if (scale < 1)
+            scale = 1;
+        if (!name.contains(s)) {
+            name = name + "-x" + scale;
+        }
+        name = name.replaceFirst("(models-|model-)", "");
+        if (!type.isEmpty()) {
+            name = type + "-" + name;
+        }
+
+        return new String[]{name, "" + scale};
+    }
+
 
     // 主要的运行命令的方式
     public synchronized boolean run20(@NonNull String cmd, boolean bench_mark_mode, boolean sr) {
@@ -1009,7 +1067,7 @@ public class MainActivity extends AppCompatActivity {
         boolean export_dir = false;
 
         if (cmd.startsWith("./realsr-ncnn")
-                || cmd.startsWith("./mnn-ncnn")
+                || cmd.startsWith("./mnnsr-ncnn")
                 || cmd.startsWith("./srmd-ncnn")
                 || cmd.startsWith("./realcugan-ncnn")
                 || cmd.startsWith("./resize-ncnn")
@@ -1049,6 +1107,9 @@ public class MainActivity extends AppCompatActivity {
                     modelName = cmd.replaceFirst(".*-filter\\s+(\\w+).+", "Magick-$1");
                 else
                     modelName = "Magick";
+            } else if (cmd.startsWith("./mnnsr")) {
+                String[] v = getNameFromModelPath(cmd.replaceFirst(".+\\s-m(\\s+)([^\\s]+)\\s.*", "$2"), "MNNSR");
+                modelName = v[0];
             }
         } else
             modelName = "SR";
