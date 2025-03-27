@@ -343,6 +343,11 @@ void *save(void *args) {
         if (v.id == -233)
             break;
 
+        if (v.outimage.empty()) {
+            fprintf(stderr, "[err] invalid result %s\n", v.inpath.c_str());
+            continue;
+        }
+
         high_resolution_clock::time_point begin = high_resolution_clock::now();
 
         int success = 0;
@@ -682,7 +687,7 @@ int main(int argc, char **argv)
     int prepadding = 0;
 
     if (model.find(PATHSTR("models-")) != path_t::npos||model.ends_with(".mnn")) {
-        prepadding = 5;
+        prepadding = 4;
     } else {
         fprintf(stderr, "unknown model dir type\n");
         return -1;
@@ -775,12 +780,16 @@ int main(int argc, char **argv)
     fprintf(stderr, "busy...\n");
     {
         MNNSR mnnsr = MNNSR();
-
         if (tilesize == 0) {
             tilesize = 128;
-            tilesize = 7000 / modelsize;
-            if (tilesize > 400)
-                tilesize = 400;
+            if (modelsize <10)
+                tilesize = 256;
+            else if (modelsize<16)
+                tilesize = 128;
+            else if (modelsize<24)
+                tilesize = 96;
+            else
+                tilesize = 64;
         }
         if (tilesize < 64)
             tilesize = 64;

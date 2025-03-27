@@ -6,6 +6,7 @@
 
 #include "MNN/ErrorCode.hpp"
 
+using namespace MNN;
 MNNSR::MNNSR() {
     pretreat_ = std::shared_ptr<MNN::CV::ImageProcess>(
             MNN::CV::ImageProcess::create(MNN::CV::BGR, MNN::CV::RGB, meanVals_, 3, normVals_, 3));
@@ -240,7 +241,7 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
 
 //            fprintf(stderr, "process inputTile y=%d, x=%d, inputTile: %d/%d/%d\n", yi, xi,
 //                    inputTile.cols, inputTile.rows, inputTile.channels());
-
+            cv::Mat paddedTile;
             if (inputTile.cols < tilesize || inputTile.rows < tilesize) {
                 int t = (yi == 0) ? yPrepadding : 0;
                 int b = tilesize + in_tile_y0 - in_tile_y1 - t;
@@ -249,7 +250,7 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
 
 //                fprintf(stderr, "process y=%d, x=%d copyMakeBorder %d %d %d %d\n", yi, xi, t, b, l,
 //                        r);
-                cv::Mat paddedTile;
+//                cv::Mat paddedTile;
                 cv::copyMakeBorder(inputTile, paddedTile, t, b, l, r, cv::BORDER_CONSTANT);
 
                 pretreat_->convert(paddedTile.data, paddedTile.cols, paddedTile.rows,
@@ -257,7 +258,7 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
                                    input_tensor);
 
             } else {
-                cv::Mat paddedTile;
+//                cv::Mat paddedTile;
                 cv::copyMakeBorder(inputTile, paddedTile, 0, 0, 0, 0, cv::BORDER_CONSTANT);
 
                 pretreat_->convert(paddedTile.data, paddedTile.cols, paddedTile.rows,
@@ -269,6 +270,15 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
 
             interpreter->runSession(session);
             cv::Mat outputTile = TensorToCvMat();
+
+            if(outputTile.cols!=tilesize*scale || outputTile.rows!=tilesize*scale){
+                fprintf(stderr,
+                        "[err] The model is x%.2f not x%d. input tile: %d x %d, output tile: %d x %d.\n",
+                        sqrt(outputTile.cols * outputTile.rows / paddedTile.cols / paddedTile.rows), scale,
+                        paddedTile.cols, paddedTile.rows, outputTile.cols, outputTile.rows);
+                return -1;
+            }
+
 //            fprintf(stderr,
 //                    "croppe outputTile from x0=%d, y0=%d, x1=%d, y1=%d, %d x %d\n",
 //                    out_tile_x0, out_tile_y0, out_tile_x0 + out_tile_w, out_tile_y0 + out_tile_h,

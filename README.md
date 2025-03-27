@@ -2,13 +2,14 @@
 
 [中文说明](https://github.com/tumuyan/RealSR-NCNN-Android/blob/master/README_CHS.md)  
 
-RealSR-NCNN-Android is a simple Android application that based on [Waifu2x-NCNN](https://github.com/nihui/waifu2x-ncnn-vulkan), [SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan), [RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan), [RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan), & [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN), [Anime4KCPP](https://github.com/TianZerL/Anime4KCPP).  
+RealSR-NCNN-Android is a simple Android application that based on [Waifu2x-NCNN](https://github.com/nihui/waifu2x-ncnn-vulkan), [SRMD-NCNN](https://github.com/nihui/srmd-ncnn-vulkan), [RealCUGAN-NCNN](https://github.com/nihui/realcugan-ncnn-vulkan), [RealSR-NCNN](https://github.com/nihui/realsr-ncnn-vulkan), [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN), [Anime4KCPP](https://github.com/TianZerL/Anime4KCPP).  
 The application does not collect any private information from your device.  
 Download: Github [Release](https://github.com/tumuyan/RealSR-NCNN-Android/releases) 
 
 This repository contains 3 project:  
-1. RealSR-NCNN-Android-CLI can build programs that can be used by the console (for example, Termux) for Android.It contains 6 modules (Anime4k, RealSR, RealCUGAN, SRMD, Waifu2x and Resize)   
-  - The RealSR program could use realsr models and real-esrgan models.  
+1. RealSR-NCNN-Android-CLI can build programs that can be used by the console (for example, Termux) for Android.It contains 7 modules (Anime4k, MNN-SR RealSR, RealCUGAN, SRMD, Waifu2x and Resize)   
+  - The RealSR program could use realsr models and real-esrgan models with ncnn format.  
+  - The MNN-SR program could use mnn format models.
   - The Resize program contains classical interpolation mode `nearest` `bilinear` `bicubic` and `avir` `lancir`.
 2. RealSR-NCNN-Android-GUI can build a APK (has a GUI and easy to use). Actually it is a shell for the programs build from RealSR-NCNN-Android-CLI.
 3. Resize-CLI just a demo like the Resize-NCNN-Android-CLI, but it not need ncnn and could build by VS.
@@ -18,8 +19,8 @@ Two ways of selecting files:
 1. Share one or more images from other apps (e.g. Gallery) to this app
 2. In this app, click `Select Image` to select an image
 
-Tow ways of running:
-1. chose a model, click the `Run` button and wait some time. The photo view will show the result when the progrem finish its work. If you like the result, you could click the `Save` button.  
+Two ways of running:
+1. chose a model, click the `Run` button and wait some time. The photo view will show the result when the program finish its work. If you like the result, you could click the `Save` button.  
 2. input shell command and enter. (You can input `help` and get more info)
 
 input & output
@@ -43,7 +44,7 @@ refer to https://mnn-docs.readthedocs.io/en/latest/tools/convert.html , you coul
 
 
 ### Convert pth models to ncnn format by yourself
-Also you could convert ESRGAN pth moddls by yourself.
+Also you could convert ESRGAN pth models by yourself.
 1. Download ESRGAN pytorch models from [OpenModelDB](https://openmodeldb.info/) and unzip it to somewhere.
 2. Download [cupscale](https://github.com/n00mkrad/cupscale) and unzip it in your PC.
 3. Convert pytorch models to ncnn. Open CupscaleData\bin\pth2ncnn, use pth2ncnn.exe to convert pth files to ncnn file.
@@ -65,7 +66,7 @@ Another way to convert models:
 ![](chainner-pth2ncnn.png)
 
 ## How to build RealSR-NCNN-Android-GUI
-Build `RealSR-NCNN-Android-CLI` by yourself or download `assets.zip` from github release page, the zip file contains models & elf files. Unzip and put them to this folder, then build it with Android Studio. 
+Build `RealSR-NCNN-Android-CLI` by yourself or download `assets.zip` from github release page, the zip file contains models & ELF files. Unzip and put them to this folder, then build it with Android Studio. 
 The direct download link for current version: https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.10.0/assets.zip
 
 

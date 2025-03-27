@@ -17,3 +17,4 @@ RealSR-NCNN-Android-GUI/.idea/easycode.ignore
 RealSR-NCNN-Android-GUI/.idea/misc.xml
 RealSR-NCNN-Android-GUI/.idea/easycode/codebase-v2.xml
 /RealSR-NCNN-Android-GUI/.idea/easycode
+/RealSR-NCNN-Android-CLI/*/release

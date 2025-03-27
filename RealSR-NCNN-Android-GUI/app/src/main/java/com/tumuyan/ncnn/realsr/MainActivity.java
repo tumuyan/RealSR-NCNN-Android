@@ -510,10 +510,11 @@ public class MainActivity extends AppCompatActivity {
                     if (name.endsWith(".mnn") || name.startsWith("models-MNN")) {
                         if (folder.isDirectory()) {
                             File[] files = folder.listFiles();
+                            Arrays.sort(files, Comparator.comparing(a -> ((File) a).getName()));
                             for (File file : files) {
                                 if (file.getName().endsWith(".mnn")) {
                                     String[] v = getNameFromModelPath(file.getAbsolutePath(), "MNNSR");
-                                    cmdList.add("./mnnsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s " + v[1]);
+                                    cmdList.add("./mnnsr-ncnn -i input.png -o output.png  -m " + file.getAbsolutePath() + " -s " + v[1]);
                                     cmdLabel.add(v[0]);
                                 }
                             }
@@ -555,22 +556,6 @@ public class MainActivity extends AppCompatActivity {
                             cmdList.add(command + s);
                             cmdLabel.add(model + "-x" + s.replace(" -n ", "-noise"));
                         }
-                    } else if (name.endsWith(".mnn")) {
-                        String model = name.replace("models-", "").replace(".mnn", "");
-                        String scaleMatcher = "([xX]\\d+|\\d+[xX])";
-                        String m ="[-_.\s]+";
-                        String[] fileTags = model.split(m);
-                        String s = "4";
-                        for (String tag : fileTags) {
-                            if (tag.matches(scaleMatcher))
-                                s = tag;
-                        }
-                        int scale = Integer.parseInt((s.replaceFirst("[xX]", "")));
-                        if (scale < 1)
-                            scale = 1;
-                        String command = "./mnnsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s " + scale;
-                        cmdList.add(command);
-                        cmdLabel.add("MNN-"+model.replaceFirst("(^"+s+m+"|"+m+s+"$)","") + "-x" + scale);
                     }
                 }
             }
