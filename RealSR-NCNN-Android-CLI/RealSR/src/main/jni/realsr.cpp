@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <vector>
+//#include <omp.h>
 
 #include "realsr_preproc.comp.hex.h"
 #include "realsr_postproc.comp.hex.h"
@@ -625,6 +626,9 @@ int RealSR::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
     const int xtiles = (w + TILE_SIZE_X - 1) / TILE_SIZE_X;
     const int ytiles = (h + TILE_SIZE_Y - 1) / TILE_SIZE_Y;
 
+    high_resolution_clock::time_point begin = high_resolution_clock::now();
+    high_resolution_clock::time_point time_print_progress;
+
     for (int yi = 0; yi < ytiles; yi++)
     {
         const int tile_h_nopad = std::min((yi + 1) * TILE_SIZE_Y, h) - yi * TILE_SIZE_Y;
@@ -632,8 +636,7 @@ int RealSR::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
         int in_tile_y0 = std::max(yi * TILE_SIZE_Y - prepadding, 0);
         int in_tile_y1 = std::min((yi + 1) * TILE_SIZE_Y + prepadding, h);
 
-        high_resolution_clock::time_point begin = high_resolution_clock::now();
-        high_resolution_clock::time_point time_print_progress;
+
 
         for (int xi = 0; xi < xtiles; xi++)
         {
@@ -669,7 +672,7 @@ int RealSR::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
             {
                 // split alpha and preproc
                 ncnn::Mat in_tile[8];
-                ncnn::Mat in_alpha_tile;
+                ncnn::Mat in_alpha_tile, in_alpah_tile_nocrop;
                 {
                     in_tile[0].create(in.w, in.h, 3);
                     for (int q = 0; q < 3; q++)
@@ -688,7 +691,13 @@ int RealSR::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
 
                     if (channels == 4)
                     {
-                        in_alpha_tile = in.channel_range(3, 1).clone();
+                        in_alpah_tile_nocrop = in.channel_range(3, 1).clone();
+                        int crop_top=(yi*TILE_SIZE_Y-in_tile_y0);
+                        int crop_bottom=in_tile_y1-std::min(yi*TILE_SIZE_Y+TILE_SIZE_Y ,h);
+                        int crop_left=(xi*TILE_SIZE_X-in_tile_x0);
+                        int crop_right=in_tile_x1-std::min(xi*TILE_SIZE_X+TILE_SIZE_X ,w);
+                        ncnn::copy_cut_border(in_alpah_tile_nocrop, in_alpha_tile, crop_top, crop_bottom, crop_left, crop_right);
+
                     }
                 }
 
@@ -831,7 +840,7 @@ int RealSR::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
             {
                 // split alpha and preproc
                 ncnn::Mat in_tile;
-                ncnn::Mat in_alpha_tile;
+                ncnn::Mat in_alpha_tile, in_alpah_tile_nocrop;
                 {
                     in_tile.create(in.w, in.h, 3);
                     for (int q = 0; q < 3; q++)
@@ -847,7 +856,19 @@ int RealSR::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
 
                     if (channels == 4)
                     {
-                        in_alpha_tile = in.channel_range(3, 1).clone();
+                        in_alpah_tile_nocrop = in.channel_range(3, 1).clone();
+                        int crop_top=(yi*TILE_SIZE_Y-in_tile_y0);
+                        int crop_bottom=in_tile_y1-std::min(yi*TILE_SIZE_Y+TILE_SIZE_Y ,h);
+                        int crop_left=(xi*TILE_SIZE_X-in_tile_x0);
+                        int crop_right=in_tile_x1-std::min(xi*TILE_SIZE_X+TILE_SIZE_X ,w);
+                        ncnn::copy_cut_border(in_alpah_tile_nocrop, in_alpha_tile, crop_top, crop_bottom, crop_left, crop_right);
+
+//                        fprintf(stderr,"in_alpah_tile_nocrop: %d/%d/%d, in_alpha_tile: %d/%d/%d, crop: %d/%d/%d/%d, TILE_SIZE_X %d, TILE_SIZE_Y %d\n"
+//                                ,in_alpah_tile_nocrop.w,in_alpah_tile_nocrop.h,in_alpah_tile_nocrop.c
+//                                ,in_alpha_tile.w,in_alpha_tile.h,in_alpha_tile.c
+//                                ,crop_top,crop_bottom,crop_left,crop_right
+//                                ,TILE_SIZE_X,TILE_SIZE_Y
+//                                );
                     }
                 }
 
@@ -914,7 +935,21 @@ int RealSR::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
 
                     if (channels == 4)
                     {
+//                        fprintf(stderr, "process_cpu 4c memcpy\n");
+//                        fprintf(stderr,"outimage: %d/%d/%d, outtile: %d/%d/%d, offset: %d, outimage size: %d, outtile size: %d, left: %d, outtilealpha: %d/%d/%d, %d * %d\n"
+//                                ,outimage.w,outimage.h,outimage.c,out.w,out.h,out.c
+//                                ,  yi * scale * TILE_SIZE_Y * w * scale * channels + xi * scale * TILE_SIZE_X * channels
+//                                ,outimage.w*outimage.h*outimage.c
+//                                ,out.w*out.h*out.c
+//                                ,outimage.w*outimage.h*outimage.c - out.w*out.h*out.c -(yi * scale * TILE_SIZE_Y * w * scale * channels + xi * scale * TILE_SIZE_X * channels)
+//                        ,out_alpha_tile.w,out_alpha_tile.h,out_alpha_tile.c,out_alpha_tile.total()  ,sizeof(float)
+//                        );
+
+
                         memcpy(out.channel_range(3, 1), out_alpha_tile, out_alpha_tile.total() * sizeof(float));
+
+//                        fprintf(stderr, "process_cpu 4c memcpy done\n");
+
                     }
                 }
             }
@@ -945,6 +980,8 @@ int RealSR::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
             if (time_span_print_progress > 0.5 || (yi + 1 == ytiles && xi + 3 > xtiles)) {
                 double progress = progress_tile / (ytiles * xtiles);
                 double time_span = duration_cast<duration<double>>(end - begin).count();
+//                fprintf(stderr, "%5.2f%%\t[%5.2fs /%5.2f] y %d x %d\n", progress * 100,time_span,
+//                        time_span / progress - time_span ,yi,xi, omp_get_thread_num());
                 fprintf(stderr, "%5.2f%%\t[%5.2fs /%5.2f ETA]\n", progress * 100, time_span,
                         time_span / progress - time_span);
                 time_print_progress = end;
