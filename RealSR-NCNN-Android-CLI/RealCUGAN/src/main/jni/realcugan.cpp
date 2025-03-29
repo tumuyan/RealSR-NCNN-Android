@@ -832,7 +832,7 @@ int RealCUGAN::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
             {
                 // split alpha and preproc
                 ncnn::Mat in_tile[8];
-                ncnn::Mat in_alpha_tile;
+                ncnn::Mat in_alpha_tile, in_alpah_tile_nocrop;
                 {
                     in_tile[0].create(in.w, in.h, 3);
                     for (int q = 0; q < 3; q++)
@@ -851,7 +851,13 @@ int RealCUGAN::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
 
                     if (channels == 4)
                     {
-                        in_alpha_tile = in.channel_range(3, 1).clone();
+                        in_alpah_tile_nocrop = in.channel_range(3, 1).clone();
+                        int crop_top=(yi*TILE_SIZE_Y-in_tile_y0);
+                        int crop_bottom=in_tile_y1-std::min(yi*TILE_SIZE_Y+TILE_SIZE_Y ,h);
+                        int crop_left=(xi*TILE_SIZE_X-in_tile_x0);
+                        int crop_right=in_tile_x1-std::min(xi*TILE_SIZE_X+TILE_SIZE_X ,w);
+                        ncnn::copy_cut_border(in_alpah_tile_nocrop, in_alpha_tile, crop_top, crop_bottom, crop_left, crop_right);
+
                     }
                 }
 
@@ -1033,7 +1039,7 @@ int RealCUGAN::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
             {
                 // split alpha and preproc
                 ncnn::Mat in_tile;
-                ncnn::Mat in_alpha_tile;
+                ncnn::Mat in_alpha_tile, in_alpah_tile_nocrop;
                 {
                     in_tile.create(in.w, in.h, 3);
                     for (int q = 0; q < 3; q++)
@@ -1049,7 +1055,13 @@ int RealCUGAN::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
 
                     if (channels == 4)
                     {
-                        in_alpha_tile = in.channel_range(3, 1).clone();
+                        in_alpah_tile_nocrop = in.channel_range(3, 1).clone();
+                        int crop_top=(yi*TILE_SIZE_Y-in_tile_y0);
+                        int crop_bottom=in_tile_y1-std::min(yi*TILE_SIZE_Y+TILE_SIZE_Y ,h);
+                        int crop_left=(xi*TILE_SIZE_X-in_tile_x0);
+                        int crop_right=in_tile_x1-std::min(xi*TILE_SIZE_X+TILE_SIZE_X ,w);
+                        ncnn::copy_cut_border(in_alpah_tile_nocrop, in_alpha_tile, crop_top, crop_bottom, crop_left, crop_right);
+
                     }
                 }
 
@@ -2774,7 +2786,7 @@ int RealCUGAN::process_cpu_se_stage0(const ncnn::Mat& inimage, const std::vector
             {
                 // split alpha and preproc
                 ncnn::Mat in_tile[8];
-                ncnn::Mat in_alpha_tile;
+                ncnn::Mat in_alpha_tile, in_alpah_tile_nocrop;
                 {
                     in_tile[0].create(in.w, in.h, 3);
                     for (int q = 0; q < 3; q++)
@@ -2793,7 +2805,13 @@ int RealCUGAN::process_cpu_se_stage0(const ncnn::Mat& inimage, const std::vector
 
                     if (channels == 4)
                     {
-                        in_alpha_tile = in.channel_range(3, 1).clone();
+                        in_alpah_tile_nocrop = in.channel_range(3, 1).clone();
+                        int crop_top=(yi*TILE_SIZE_Y-in_tile_y0);
+                        int crop_bottom=in_tile_y1-std::min(yi*TILE_SIZE_Y+TILE_SIZE_Y ,h);
+                        int crop_left=(xi*TILE_SIZE_X-in_tile_x0);
+                        int crop_right=in_tile_x1-std::min(xi*TILE_SIZE_X+TILE_SIZE_X ,w);
+                        ncnn::copy_cut_border(in_alpah_tile_nocrop, in_alpha_tile, crop_top, crop_bottom, crop_left, crop_right);
+
                     }
                 }
 
@@ -2887,7 +2905,7 @@ int RealCUGAN::process_cpu_se_stage0(const ncnn::Mat& inimage, const std::vector
             {
                 // split alpha and preproc
                 ncnn::Mat in_tile;
-                ncnn::Mat in_alpha_tile;
+                ncnn::Mat in_alpha_tile, in_alpah_tile_nocrop;
                 {
                     in_tile.create(in.w, in.h, 3);
                     for (int q = 0; q < 3; q++)
@@ -2903,7 +2921,13 @@ int RealCUGAN::process_cpu_se_stage0(const ncnn::Mat& inimage, const std::vector
 
                     if (channels == 4)
                     {
-                        in_alpha_tile = in.channel_range(3, 1).clone();
+                        in_alpah_tile_nocrop = in.channel_range(3, 1).clone();
+                        int crop_top=(yi*TILE_SIZE_Y-in_tile_y0);
+                        int crop_bottom=in_tile_y1-std::min(yi*TILE_SIZE_Y+TILE_SIZE_Y ,h);
+                        int crop_left=(xi*TILE_SIZE_X-in_tile_x0);
+                        int crop_right=in_tile_x1-std::min(xi*TILE_SIZE_X+TILE_SIZE_X ,w);
+                        ncnn::copy_cut_border(in_alpah_tile_nocrop, in_alpha_tile, crop_top, crop_bottom, crop_left, crop_right);
+
                     }
                 }
 
@@ -3024,7 +3048,7 @@ int RealCUGAN::process_cpu_se_stage2(const ncnn::Mat& inimage, const std::vector
             {
                 // split alpha and preproc
                 ncnn::Mat in_tile[8];
-                ncnn::Mat in_alpha_tile;
+                ncnn::Mat in_alpha_tile, in_alpah_tile_nocrop;
                 {
                     in_tile[0].create(in.w, in.h, 3);
                     for (int q = 0; q < 3; q++)
@@ -3043,7 +3067,13 @@ int RealCUGAN::process_cpu_se_stage2(const ncnn::Mat& inimage, const std::vector
 
                     if (channels == 4)
                     {
-                        in_alpha_tile = in.channel_range(3, 1).clone();
+                        in_alpah_tile_nocrop = in.channel_range(3, 1).clone();
+                        int crop_top=(yi*TILE_SIZE_Y-in_tile_y0);
+                        int crop_bottom=in_tile_y1-std::min(yi*TILE_SIZE_Y+TILE_SIZE_Y ,h);
+                        int crop_left=(xi*TILE_SIZE_X-in_tile_x0);
+                        int crop_right=in_tile_x1-std::min(xi*TILE_SIZE_X+TILE_SIZE_X ,w);
+                        ncnn::copy_cut_border(in_alpah_tile_nocrop, in_alpha_tile, crop_top, crop_bottom, crop_left, crop_right);
+
                     }
                 }
 
@@ -3233,7 +3263,7 @@ int RealCUGAN::process_cpu_se_stage2(const ncnn::Mat& inimage, const std::vector
             {
                 // split alpha and preproc
                 ncnn::Mat in_tile;
-                ncnn::Mat in_alpha_tile;
+                ncnn::Mat in_alpha_tile, in_alpah_tile_nocrop;
                 {
                     in_tile.create(in.w, in.h, 3);
                     for (int q = 0; q < 3; q++)
@@ -3249,7 +3279,13 @@ int RealCUGAN::process_cpu_se_stage2(const ncnn::Mat& inimage, const std::vector
 
                     if (channels == 4)
                     {
-                        in_alpha_tile = in.channel_range(3, 1).clone();
+                        in_alpah_tile_nocrop = in.channel_range(3, 1).clone();
+                        int crop_top=(yi*TILE_SIZE_Y-in_tile_y0);
+                        int crop_bottom=in_tile_y1-std::min(yi*TILE_SIZE_Y+TILE_SIZE_Y ,h);
+                        int crop_left=(xi*TILE_SIZE_X-in_tile_x0);
+                        int crop_right=in_tile_x1-std::min(xi*TILE_SIZE_X+TILE_SIZE_X ,w);
+                        ncnn::copy_cut_border(in_alpah_tile_nocrop, in_alpha_tile, crop_top, crop_bottom, crop_left, crop_right);
+
                     }
                 }
 
@@ -3559,7 +3595,7 @@ int RealCUGAN::process_cpu_se_very_rough_stage0(const ncnn::Mat& inimage, const 
             {
                 // split alpha and preproc
                 ncnn::Mat in_tile[8];
-                ncnn::Mat in_alpha_tile;
+                ncnn::Mat in_alpha_tile, in_alpah_tile_nocrop;
                 {
                     in_tile[0].create(in.w, in.h, 3);
                     for (int q = 0; q < 3; q++)
@@ -3578,7 +3614,13 @@ int RealCUGAN::process_cpu_se_very_rough_stage0(const ncnn::Mat& inimage, const 
 
                     if (channels == 4)
                     {
-                        in_alpha_tile = in.channel_range(3, 1).clone();
+                        in_alpah_tile_nocrop = in.channel_range(3, 1).clone();
+                        int crop_top=(yi*TILE_SIZE_Y-in_tile_y0);
+                        int crop_bottom=in_tile_y1-std::min(yi*TILE_SIZE_Y+TILE_SIZE_Y ,h);
+                        int crop_left=(xi*TILE_SIZE_X-in_tile_x0);
+                        int crop_right=in_tile_x1-std::min(xi*TILE_SIZE_X+TILE_SIZE_X ,w);
+                        ncnn::copy_cut_border(in_alpah_tile_nocrop, in_alpha_tile, crop_top, crop_bottom, crop_left, crop_right);
+
                     }
                 }
 
@@ -3672,7 +3714,7 @@ int RealCUGAN::process_cpu_se_very_rough_stage0(const ncnn::Mat& inimage, const 
             {
                 // split alpha and preproc
                 ncnn::Mat in_tile;
-                ncnn::Mat in_alpha_tile;
+                ncnn::Mat in_alpha_tile, in_alpah_tile_nocrop;
                 {
                     in_tile.create(in.w, in.h, 3);
                     for (int q = 0; q < 3; q++)
@@ -3688,7 +3730,13 @@ int RealCUGAN::process_cpu_se_very_rough_stage0(const ncnn::Mat& inimage, const 
 
                     if (channels == 4)
                     {
-                        in_alpha_tile = in.channel_range(3, 1).clone();
+                        in_alpah_tile_nocrop = in.channel_range(3, 1).clone();
+                        int crop_top=(yi*TILE_SIZE_Y-in_tile_y0);
+                        int crop_bottom=in_tile_y1-std::min(yi*TILE_SIZE_Y+TILE_SIZE_Y ,h);
+                        int crop_left=(xi*TILE_SIZE_X-in_tile_x0);
+                        int crop_right=in_tile_x1-std::min(xi*TILE_SIZE_X+TILE_SIZE_X ,w);
+                        ncnn::copy_cut_border(in_alpah_tile_nocrop, in_alpha_tile, crop_top, crop_bottom, crop_left, crop_right);
+
                     }
                 }
 
