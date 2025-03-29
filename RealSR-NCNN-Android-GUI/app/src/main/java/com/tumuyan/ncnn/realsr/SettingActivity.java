@@ -28,6 +28,7 @@ public class SettingActivity extends AppCompatActivity {
     ToggleButton toggleKeepScreen;
 
     ToggleButton toggleCPU;
+    ToggleButton toggleMultFiles;
     ToggleButton togglePrePng;
     ToggleButton togglePreFrame;
     ToggleButton toggleAutoSave;
@@ -53,7 +54,7 @@ public class SettingActivity extends AppCompatActivity {
         String magickFilters = mySharePerferences.getString("magickFilters", getString(R.string.default_magick_filters));
         String threadCount = mySharePerferences.getString("threadCount", "");
         boolean keepScreen = mySharePerferences.getBoolean("keepScreen", false);
-        boolean useNotification = mySharePerferences.getBoolean("useNotification", false);
+        boolean useMultFiles = mySharePerferences.getBoolean("useMultFiles", false);
         boolean prePng = mySharePerferences.getBoolean("PrePng", true);
         boolean preFrame = mySharePerferences.getBoolean("PreFrame", true);
         String extraPath = mySharePerferences.getString("extraPath", "");
@@ -87,6 +88,8 @@ public class SettingActivity extends AppCompatActivity {
         editThread.setText(threadCount);
         toggleKeepScreen = findViewById(R.id.toggle_keep_screen);
         toggleKeepScreen.setChecked(keepScreen);
+        toggleMultFiles = findViewById(R.id.toggle_mult_files);
+        toggleMultFiles.setChecked(useMultFiles);
         togglePrePng = findViewById(R.id.toggle_pre_png);
         togglePrePng.setChecked(prePng);
         togglePreFrame = findViewById(R.id.toggle_pre_frames);
@@ -232,6 +235,7 @@ public class SettingActivity extends AppCompatActivity {
         editor.putString("threadCount", threadCount);
 
         editor.putBoolean("keepScreen", toggleKeepScreen.isChecked());
+        editor.putBoolean("useMultFiles", toggleMultFiles.isChecked());
         editor.putBoolean("PrePng", togglePrePng.isChecked());
         editor.putBoolean("PreFrame", togglePreFrame.isChecked());
         editor.putBoolean("useCPU", toggleCPU.isChecked());

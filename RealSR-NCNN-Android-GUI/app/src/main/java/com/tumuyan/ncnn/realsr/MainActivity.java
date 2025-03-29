@@ -15,6 +15,7 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -59,7 +60,7 @@ import java.util.Locale;
 
 
 public class MainActivity extends AppCompatActivity {
-    private static final int SELECT_IMAGE = 1;
+    private static final int SELECT_IMAGE = 1, SELECT_MULTI_IMAGE = 2;
     private static final int MY_PERMISSIONS_REQUEST = 100;
 
     private static String CMD_RESET_CACHE = "echo Cache has been reset.;ls";
@@ -135,6 +136,7 @@ public class MainActivity extends AppCompatActivity {
     private int tileSize;
     private boolean useCPU;
     private boolean keepScreen;
+    private boolean useMultFiles;
     private boolean prePng;
     private boolean preFrame;
     private boolean autoSave;
@@ -340,6 +342,8 @@ public class MainActivity extends AppCompatActivity {
         tileSize = mySharePerferences.getInt("tileSize", 0);
         threadCount = mySharePerferences.getString("threadCount", "");
         keepScreen = mySharePerferences.getBoolean("keepScreen", false);
+
+        useMultFiles = mySharePerferences.getBoolean("useMultFiles", false);
         prePng = mySharePerferences.getBoolean("PrePng", true);
         preFrame = mySharePerferences.getBoolean("PreFrame", true);
         useCPU = mySharePerferences.getBoolean("useCPU", false);
@@ -399,43 +403,8 @@ public class MainActivity extends AppCompatActivity {
 
         } else if (Intent.ACTION_SEND_MULTIPLE.equals(action)) {
             ArrayList<Uri> imageUris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
-            deleteFile(inputFile);
-            inputFile.mkdirs();
-            outputFile.delete();
+            handleSelectedImages(imageUris);
 
-            SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");
-            String time = f.format(new Date());
-            int k = 0;
-            for (int i = 0; i < imageUris.size(); i++) {
-                Uri uri = imageUris.get(i);
-                inputFileName = getFileName(uri, this).replaceFirst("\\.[^\\.]+$", "");
-//                if (inputFileName.isEmpty())
-//                    inputFileName = "" + i;
-                switch (name2) {
-                    case 0:
-                        inputFileName = String.format("%s_%s", inputFileName, time);
-                        break;
-                    case 1:
-                        inputFileName = String.format("%s_%d", inputFileName, i);
-                        break;
-                    case 2:
-                        inputFileName = String.format("%s_%d", time, i);
-                        break;
-                    case 3:
-                        inputFileName = time + "_" + inputFileName;
-                        break;
-                }
-                String inputFilePath = String.format("%s/input.png/%s.png", dir, inputFileName);
-                int j = 0;
-                while (new File(inputFilePath).exists()) {
-                    j++;
-                    inputFilePath = dir + "/input.png/" + inputFileName + "_" + j + ".png";
-                }
-                k++;
-                whiteFileFromUri(uri, inputFilePath);
-            }
-            int inputFileSize = inputFile.listFiles().length;
-            logTextView.setText(String.format(getString(R.string.input_file_size), inputFileSize));
         }
         return false;
     }
@@ -714,9 +683,18 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         findViewById(R.id.btn_open).setOnClickListener(view -> {
-            Intent i = new Intent(Intent.ACTION_PICK);
-            i.setType("image/*");
-            startActivityForResult(i, SELECT_IMAGE);
+            if(useMultFiles){
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType("image/*");
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                startActivityForResult(intent, SELECT_MULTI_IMAGE);
+
+            }else{
+
+                Intent i = new Intent(Intent.ACTION_PICK);
+                i.setType("image/*");
+                startActivityForResult(i, SELECT_IMAGE);
+            }
         });
 
         findViewById(R.id.btn_save).setOnClickListener(view -> {
@@ -898,6 +876,71 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
+    // 处理选中的多个文件
+    private void handleSelectedImages(List<Uri> uris) {
+        if(uris.isEmpty())
+            return;
+        deleteFile(inputFile);
+        if (uris.size()==0){
+            Uri url =uris.get(0);
+             {
+
+                inputFileName = getFileName(url, this).replaceFirst("\\.[^\\.]+$", "");
+                Log.i("input file name", inputFileName);
+                InputStream in;
+
+                try {
+                    in = getContentResolver().openInputStream(url);
+                    if (null != in)
+                        saveInputImage(in, "");
+                    else
+                        Toast.makeText(this, "input == null", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return;
+                }
+            }
+            return;
+        }
+
+        inputFile.mkdirs();
+        outputFile.delete();
+
+        SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");
+        String time = f.format(new Date());
+        int k = 0;
+        for (int i = 0; i < uris.size(); i++) {
+            Uri uri = uris.get(i);
+            inputFileName = getFileName(uri, this).replaceFirst("\\.[^\\.]+$", "");
+//                if (inputFileName.isEmpty())
+//                    inputFileName = "" + i;
+            switch (name2) {
+                case 0:
+                    inputFileName = String.format("%s_%s", inputFileName, time);
+                    break;
+                case 1:
+                    inputFileName = String.format("%s_%d", inputFileName, i);
+                    break;
+                case 2:
+                    inputFileName = String.format("%s_%d", time, i);
+                    break;
+                case 3:
+                    inputFileName = time + "_" + inputFileName;
+                    break;
+            }
+            String inputFilePath = String.format("%s/input.png/%s.png", dir, inputFileName);
+            int j = 0;
+            while (new File(inputFilePath).exists()) {
+                j++;
+                inputFilePath = dir + "/input.png/" + inputFileName + "_" + j + ".png";
+            }
+            k++;
+            whiteFileFromUri(uri, inputFilePath);
+        }
+        int inputFileSize = inputFile.listFiles().length;
+        logTextView.setText(String.format(getString(R.string.input_file_size), inputFileSize));
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
@@ -920,6 +963,13 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                     return;
                 }
+            } else if (requestCode == SELECT_MULTI_IMAGE) {
+                List<Uri> imageUris = new ArrayList<>();
+                ClipData clipData = data.getClipData();
+                for (int i = 0; i < clipData.getItemCount(); i++) {
+                    imageUris.add(clipData.getItemAt(i).getUri());
+                }
+                handleSelectedImages(imageUris);
             }
 
         }

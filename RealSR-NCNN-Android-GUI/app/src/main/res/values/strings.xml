@@ -13,12 +13,13 @@
         \n./realsr-ncnn -i input.png -o output.png
         \n./srmd-ncnn -i input.png -o output.png
         \n./realcugan-ncnn  -i input.png -o output.png
+        \n./mnnsr-ncnn  -i input.png -o output.png
 
 
         \n\n2.Classical interpolation
         \n./resize-ncnn -i input.png -o output.png [-m mode] [-n] [-s scale]\n
         -m mode（nearest/bilinear/bicubic/avir/avir-lancir）\n
-        -n not use ncnn for nearest和bilinear\n
+        -n not use ncnn for nearest and bilinear\n
         -s scale(default=4), could be float without -n\n
 
         \n\n3.ImageMagick
@@ -119,7 +120,10 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="default_magick_filters" translatable="false">Hermite Hermite Hamming anczos LanczosRadius Lanczos2 LanczosSharp Lanczos2Sharp Lagrange Mitchell Blackman</string>
     <string name="menu_reset_cache">Reset Cache</string>
     <string name="preprocess_frames">Preprocess gif with mult frames(only support one gif)</string>
-    <string name="not_support_animation">不支持动画</string>
+    <string name="not_support_animation">Animations are not supported</string>
+    <string name="choose_mult_files">Select multiple images at once (only preview 1 and the result will save to album automately).\n
+Even if this feature is disabled, you can still select multiple images from other apps (like Gallery) and share them to this app.
+</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>

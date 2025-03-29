@@ -53,6 +53,7 @@ private:
     std::shared_ptr<MNN::CV::ImageProcess> pretreat_ = nullptr;
     const float meanVals_[3] = {0, 0, 0};
     const float normVals_[3] = { 1.0 / 255, 1.0 / 255, 1.0 / 255 };
+    bool cachemodel;
 };
 
 #endif // MNNSR_H

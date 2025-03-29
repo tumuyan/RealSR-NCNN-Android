@@ -88,10 +88,11 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel)
         fprintf(stderr, "interpreter null\n");
     }
 
-//    if (cachemodel) {
-//        std::string cachefile = modelpath + ".cache";
-//        interpreter->setCacheFile(cachefile.c_str());
-//    }
+    this->cachemodel=cachemodel;
+    if (cachemodel) {
+        std::string cachefile = modelpath + ".cache";
+        interpreter->setCacheFile(cachefile.c_str());
+    }
 
     session = interpreter->createSession(config);
     if (session == nullptr) {
@@ -114,8 +115,6 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel)
             std::chrono::high_resolution_clock::now() - start);
     fprintf(stderr, "Load model %.3f s\n", static_cast<double>(duration.count()) / 1000);
 
-//    if (cachemodel)
-//        interpreter->updateCacheFile(session);
     return 0;
 }
 
@@ -309,7 +308,8 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
         }
     }
 
-
+    if (cachemodel)
+        interpreter->updateCacheFile(session);
     return 0;
 }
 

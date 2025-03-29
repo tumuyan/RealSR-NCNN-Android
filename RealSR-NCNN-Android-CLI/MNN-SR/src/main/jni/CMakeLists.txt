@@ -102,6 +102,7 @@ else ()
 endif ()
 message(STATUS "find ncnn result: ${NCNN_LIB}")
 
+set(OpenCV_STATIC ON)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_DIR}/include)
 

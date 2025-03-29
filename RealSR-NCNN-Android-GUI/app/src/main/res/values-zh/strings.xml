@@ -16,7 +16,7 @@
 
         \n\n\n本应用除使用下拉选项中的预设参数外，还支持在输入框内输入命令。
         \n一、调用超分辨率程序
-        \n./realsr-ncnn或./srmd-ncnn或./realcugan-ncnn -i 输入的图片路径 -o 输出的图片路径 [其他可选参数]…
+        \n./realsr-ncnn或./srmd-ncnn或./realcugan-ncnn或./mnnsr-ncnn -i 输入的图片路径 -o 输出的图片路径 [其他可选参数]…
         \n主要参数有：\n
         -i 输入的图片路径（jpg/png/webp文件路径或者目录路径）\n
         -o 输出的图片路径（jpg/png/webp文件路径或者目录路径）\n
@@ -29,6 +29,9 @@
         -n 降噪等级，可选(default=-1，2xse模型支持-1/0/1/2/3, 3x和4xse模型支持-1/0/3)\n
         -s 放大倍数，可选(2/3/4, default=2)\n
         -c sync gap mode，可选(0/1/2/3, default=3)\n
+        \n其中mnnsr-ncnn额外支持：\n
+        -b 推理的后端类型，可选(CPU=0,AUTO=4,OPENCL=3,OPENGL=6,VULKAN=7,NN=5, default=3)\n
+
 
         \n\n二、调用经典插值算法
         \n./resize-ncnn -i 输入的图片路径 -o 输出的图片路径 [其他可选参数]...
@@ -131,6 +134,8 @@
     <string name="menu_reset_cache">重置缓存</string>
     <string name="preprocess_frames">预处理动图（只支持处理单个gif）</string>
     <string name="not_support_animation">不支持动画</string>
+    <string name="choose_mult_files">单次选择多个图片（但只预览其中一个，且结果会自动保存到相册）。\n
+        即使关闭此功能，仍然可以在其他应用如相册中选择多个图片并分享到本应用。</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>
