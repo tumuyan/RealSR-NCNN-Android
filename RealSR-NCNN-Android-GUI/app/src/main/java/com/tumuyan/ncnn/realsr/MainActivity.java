@@ -881,7 +881,7 @@ public class MainActivity extends AppCompatActivity {
         if(uris.isEmpty())
             return;
         deleteFile(inputFile);
-        if (uris.size()==0){
+        if (uris.size()==1){
             Uri url =uris.get(0);
              {
 
