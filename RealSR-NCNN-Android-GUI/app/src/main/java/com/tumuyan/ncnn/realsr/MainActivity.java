@@ -1220,10 +1220,12 @@ public class MainActivity extends AppCompatActivity {
                     progressText = line.trim().split("\\s")[0];
 
                     if (!p) {
+                        if (line.contains("vkQueueSubmit") || line.endsWith(" fault") || line.startsWith("Killed")) {
+                            result_fail = true;
+                        }
+
                         if (line.equals("save result...") || line.equals("busy...") || line.equals("check result...")) {
 
-                        } else if (result.toString().contains("vkQueueSubmit")) {
-                            result_fail = true;
                         } else if (bench_mark_mode && results.contains(line)) {
                             line = "";
                         } else {

@@ -29,6 +29,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
 #include "stb_image_write.h"
+#include "de_nearst.h"
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/hal/interface.h>
@@ -545,6 +546,7 @@ int main(int argc, char **argv)
 
                 if (scale_x < 1.5 || scale_y < 1.5) {
                     fprintf(stderr, "image is not interpolated by nearest\n");
+                    return -1;
                 } else {
                     not_use_ncnn = false;
                     if (abs(scale_y - scale_x) < 1)
@@ -554,7 +556,7 @@ int main(int argc, char **argv)
                     else
                         scale = round(scale_x);
 
-                    scale_d = 1 / scale_d;
+                    scale_d = 1.0 / scale;
                     fprintf(stderr, "image might be interpolated by nearest x%d\n", scale);
                 }
             }
