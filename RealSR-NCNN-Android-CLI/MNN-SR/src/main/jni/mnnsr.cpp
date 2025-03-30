@@ -2,6 +2,7 @@
 // Created by Yazii on 2025/3/16.
 //
 #include "mnnsr.h"
+#include "utils.hpp"
 #include <thread>
 
 #include "MNN/ErrorCode.hpp"
@@ -21,6 +22,8 @@ MNNSR::~MNNSR() {
     interpreter->releaseModel();
     MNN::Interpreter::destroy(interpreter);
 }
+
+
 
 #if _WIN32
 #include <codecvt>
@@ -50,31 +53,8 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel)
         num_threads = 2;
     config.numThread = num_threads;
 
-    switch (backend_type) {
-        case MNN_FORWARD_CPU:
-            fprintf(stderr, "backend: cpu, numThread=%d\n", config.numThread);
-            break;
-        case MNN_FORWARD_OPENCL:
-            fprintf(stderr, "backend: opencl\n");
-            break;
-        case MNN_FORWARD_OPENGL:
-            fprintf(stderr, "backend: opengl\n");
-            break;
-        case MNN_FORWARD_VULKAN:
-            fprintf(stderr, "backend: vulkan\n");
-            break;
-        case MNN_FORWARD_METAL:
-            fprintf(stderr, "backend: metal\n");
-            break;
-        case MNN_FORWARD_CUDA:
-            fprintf(stderr, "backend: cuda\n");
-            break;
-        case MNN_FORWARD_NN:
-            fprintf(stderr, "backend: nn\n");
-            break;
-        default:
-            fprintf(stderr, "backend: %d\n", backend_type);
-    }
+    fprintf(stderr, "set backend: %s\n", get_backend_name(backend_type).c_str());
+
     const auto start = std::chrono::high_resolution_clock::now();
 
 #if _WIN32
@@ -111,9 +91,22 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel)
     input_buffer = input_tensor->host<float>();
     output_buffer = output_tensor->host<float>();
 
+    float memoryUsage = 0.0f;
+    interpreter->getSessionInfo(session, MNN::Interpreter::MEMORY, &memoryUsage);
+    float flops = 0.0f;
+    interpreter->getSessionInfo(session, MNN::Interpreter::FLOPS, &flops);
+    MNNForwardType backendType[2];
+    interpreter->getSessionInfo(session, MNN::Interpreter::BACKENDS, backendType);
+
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::high_resolution_clock::now() - start);
-    fprintf(stderr, "Load model %.3f s\n", static_cast<double>(duration.count()) / 1000);
+    fprintf(stderr, "load model use %.3f s, session memory use %sB, flops is %s, "
+            , static_cast<double>(duration.count()) / 1000, float2str(memoryUsage,6).c_str(), float2str(flops,6).c_str());
+
+    if( backendType[0]== MNN_FORWARD_CPU)
+            fprintf(stderr, "backend: CPU, numThread=%d\n", config.numThread);
+    else
+            fprintf(stderr, "backend: %s\n", get_backend_name(backendType[0]).c_str());
 
     return 0;
 }

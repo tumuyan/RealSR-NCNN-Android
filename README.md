@@ -67,7 +67,7 @@ Another way to convert models:
 
 ## How to build RealSR-NCNN-Android-GUI
 Build `RealSR-NCNN-Android-CLI` by yourself or download `assets.zip` from github release page, the zip file contains models & ELF files. Unzip and put them to this folder, then build it with Android Studio. 
-The direct download link for current version: https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.10.0/assets.zip
+The direct download link for current version: https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.11.1/assets.zip
 
 
 ```
