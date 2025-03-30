@@ -1488,7 +1488,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (file.exists() && (!file.isDirectory())) {
             imageView.setVisibility(View.VISIBLE);
             imageView.setImage(ImageSource.uri(file.getAbsolutePath()));
-            logTextView.setText(info);
+            logTextView.setText(getImageResolation(file, info));
         } else if (file.isDirectory()) {
             imageView.setVisibility(View.GONE);
             File[] files = file.listFiles();
@@ -1499,6 +1499,20 @@ public class MainActivity extends AppCompatActivity {
             imageView.setVisibility(View.GONE);
             logTextView.setText(getString(R.string.image_not_exists));
         }
+    }
+
+    private static String getImageResolation(File file, String info) {
+        if (info.trim().contains("\\n"))
+            return info;
+
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;  // 仅解码边界信息
+        BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+        int width = options.outWidth;
+        int height = options.outHeight;
+        if (width > 0 && height > 0)
+            return info + " " + width + "x" + height;
+        return info;
     }
 
 
