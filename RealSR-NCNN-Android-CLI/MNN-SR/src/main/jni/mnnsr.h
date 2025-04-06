@@ -36,6 +36,7 @@ public:
 
 public:
     int scale;
+    int model_channel=3;
     int tilesize;
     int prepadding;
 

@@ -46,14 +46,15 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel)
 //    config.type = MNN_FORWARD_AUTO;
     config.type = backend_type;
 //    config.backupType = MNN_FORWARD_OPENCL;
-    config.backupType = MNN_FORWARD_VULKAN;
+//    config.backupType = MNN_FORWARD_VULKAN;
 //    config.backupType = MNN_FORWARD_AUTO;
+    config.backupType = MNN_FORWARD_CPU;
     int num_threads = std::thread::hardware_concurrency();
     if (num_threads < 1)
         num_threads = 2;
     config.numThread = num_threads;
 
-    fprintf(stderr, "set backend: %s\n", get_backend_name(backend_type).c_str());
+    fprintf(stderr, "set backend: %s\n", get_backend_name(config.type).c_str());
 
     const auto start = std::chrono::high_resolution_clock::now();
 
@@ -81,7 +82,11 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel)
 
 
     interpreter_input = interpreter->getSessionInput(session, nullptr);
-    interpreter->resizeTensor(interpreter_input, 1, 3, tilesize, tilesize);
+//    fprintf(stderr, "model input tensor(b/c/h/w): %d/%d/%d/%d -> 1/%d/%d/%d\n"
+//            , input_tensor->batch(), input_tensor->channel(), input_tensor->height(), input_tensor->width()
+//            ,model_channel, tilesize, tilesize
+//            );
+    interpreter->resizeTensor(interpreter_input, 1, model_channel, tilesize, tilesize);
     interpreter->resizeSession(session);
     interpreter_output = interpreter->getSessionOutput(session, nullptr);
 
@@ -106,7 +111,7 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel)
     if( backendType[0]== MNN_FORWARD_CPU)
             fprintf(stderr, "backend: CPU, numThread=%d\n", config.numThread);
     else
-            fprintf(stderr, "backend: %s\n", get_backend_name(backendType[0]).c_str());
+            fprintf(stderr, "backend: %s, %s\n", get_backend_name(backendType[0]).c_str(), get_backend_name(backendType[1]).c_str());
 
     return 0;
 }

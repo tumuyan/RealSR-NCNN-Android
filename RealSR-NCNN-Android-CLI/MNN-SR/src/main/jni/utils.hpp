@@ -20,6 +20,8 @@ static std::string get_backend_name(MNNForwardType backend_type) {
     switch (backend_type) {
         case MNN_FORWARD_CPU:
             return "CPU";
+        case MNN_FORWARD_CPU_EXTENSION:
+            return "CPU Extension";
         case MNN_FORWARD_OPENCL:
             return "OpenCL";
         case MNN_FORWARD_OPENGL:

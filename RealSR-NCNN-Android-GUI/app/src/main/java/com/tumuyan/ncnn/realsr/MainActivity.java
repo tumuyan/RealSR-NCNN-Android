@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1, SELECT_MULTI_IMAGE = 2;
     private static final int MY_PERMISSIONS_REQUEST = 100;
 
-    private static String CMD_RESET_CACHE = "echo Cache has been reset.;ls";
+    private static String CMD_RESET_CACHE = "cp /system/vendor/lib64/libOpenCL.so ./;echo Cache has been reset.;ls";
     private int selectCommand = 0;
     private String threadCount = "";
     private SubsamplingScaleImageView imageView;
