@@ -130,7 +130,7 @@ static void print_usage() {
     fprintf(stderr, "  -f format            output image format (jpg/png/webp, default=ext/png)\n");
     fprintf(stderr,
             "  -b backend           forward backend type(CPU=0,AUTO=4,CUDA=2,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)\n");
-//    fprintf(stderr, "  -c check             check output image match input image\n");
+    fprintf(stderr, "  -c color-type             model & output color space type (RGB=1, BGR=2, YCbCr=5, YUV=6, GRAY=10, GRAY model & YCbCr output=11, GRAY model & YUV output=12, default=1)\n");
 }
 
 class Task {
@@ -451,6 +451,7 @@ int main(int argc, char **argv)
     path_t outputpath;
     int scale = 4;
     int tilesize = 0;
+    int color_type = UnSet;
 #if _DEMO_PATH
     path_t model = optarg_mo;
 #else
@@ -507,7 +508,7 @@ int main(int argc, char **argv)
             tta_mode = 1;
             break;
         case L'c':
-            check_threshold = _wtoi(optarg);
+            color_type = _wtoi(optarg);
             break;
         case L'b':
             if(backend_type != MNN_FORWARD_CPU)
@@ -558,7 +559,7 @@ int main(int argc, char **argv)
                 tta_mode = 1;
                 break;
             case 'c':
-                check_threshold = atoi(optarg);
+                color_type = atoi(optarg);
                 break;
             case 'b':
                 if (backend_type != MNN_FORWARD_CPU)
@@ -695,6 +696,21 @@ int main(int argc, char **argv)
 
     std::cout << "build time: " << __DATE__ << " " << __TIME__ << std::endl;
 
+    if (color_type == UnSet) {
+        if (model.find(PATHSTR("Grayscale")) != path_t::npos)
+            color_type = GRAY;
+        else if (model.find(PATHSTR("Gray2YCbCr")) != path_t::npos)
+            color_type = Gray2YCbCr;
+        else if (model.find(PATHSTR("Gray2YUV")) != path_t::npos)
+            color_type = Gray2YUV;
+        else if (model.find(PATHSTR("YCbCr")) != path_t::npos)
+            color_type = YCbCr;
+        else if (model.find(PATHSTR("YUV")) != path_t::npos)
+            color_type = YUV;
+        else
+            color_type = RGB;
+    }
+
     int scales[] = {4, 2, 1, 8};
     int sp = 0;
 
@@ -779,7 +795,8 @@ int main(int argc, char **argv)
 
     fprintf(stderr, "busy...\n");
     {
-        MNNSR mnnsr = MNNSR();
+
+        MNNSR mnnsr = MNNSR(color_type);
         if (tilesize == 0) {
             tilesize = 128;
             if (modelsize <10)
@@ -806,7 +823,6 @@ int main(int argc, char **argv)
             // load image
             LoadThreadParams ltp;
             ltp.scale = scale;
-            ltp.check_threshold = check_threshold;
             ltp.jobs_load = jobs_load;
             ltp.input_files = input_files;
             ltp.output_files = output_files;

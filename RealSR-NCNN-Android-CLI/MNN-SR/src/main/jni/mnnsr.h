@@ -14,12 +14,13 @@
 #include "MNN/Tensor.hpp"
 #include "MNN/Interpreter.hpp"
 #include "MNN/ImageProcess.hpp"
+#include "utils.hpp"
 
 using namespace std::chrono;
 
 class MNNSR {
 public:
-    MNNSR();
+    MNNSR(int color_type);
 
     ~MNNSR();
 
@@ -36,7 +37,8 @@ public:
 
 public:
     int scale;
-    int model_channel=3;
+    ColorType color;
+    int model_channel =3;
     int tilesize;
     int prepadding;
 

@@ -47,11 +47,11 @@
 
 
 ## 为 RealSR-NCNN-Android-GUI 增加更多mnn模型
-✨ ver 1.11 或者更高版本支持  [mnn](https://github.com/alibaba/MNN)  模型。在我的测试中，mnn的速度要比ncnn慢，但是可以兼容更多模型。 
+✨ ver 1.11 或者更高版本支持  [mnn](https://github.com/alibaba/MNN)  模型。 ver 1.12 可以通过`-c`参数或者模型文件名来指定模型的色彩空间（支持单通道模型、支持使用单通道模型输出真·彩色图片，原理见 [LLSR](https://github.com/tumuyan/LLSR?tab=readme-ov-file#%E5%AE%9E%E9%AA%8C)）。
 转换模型的方法可以参考 https://mnn-docs.readthedocs.io/en/latest/tools/convert.html 模型转换工具能够将其他格式的模型（如：ONNX, TFLITE, TorchScript, Tensorflow等）转换为MNN模型
 1. （首先确认你已经安装了Python环境）`pip install mnn`
 2. （举例转换onnx模型到mnn格式）直接输入命令 `MNNConvert -f ONNX  --modelFile "{onnx_path}" --MNNModel "{mnn_path}"  --bizCode biz --fp16  --info  --detectSparseSpeedUp`
-3. 修改mnn模型文件名，使包含缩放倍率信息，如：`4xabcdefg.mnn`或者`abc-x4-def.mnn`或者者`abc_4x_def.mnn`，并复制mnn模型到设置的自定义模型目录中。
+3. 修改mnn模型文件名，使包含缩放倍率信息，如：`4xabcdefg.mnn`或者`abc-x4-def.mnn`或者者`abc_4x_def.mnn`，并复制mnn模型到设置的自定义模型目录中。如果文件名包含关键字`Grayscale` `Gray2YCbCr` `Gray2YUV` `YCbCr` `YUV`则应用相应的色彩空间。
 
 ## 为 RealSR-NCNN-Android-GUI 增加更多ncnn模型
 RealSR-NCNN-Android-GUI 在 ver 1.7.6 以上的版本可以自动加载自定义模型。

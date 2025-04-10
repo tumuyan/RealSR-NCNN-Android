@@ -8,10 +8,31 @@
 #include "MNN/ErrorCode.hpp"
 
 using namespace MNN;
-MNNSR::MNNSR() {
-    pretreat_ = std::shared_ptr<MNN::CV::ImageProcess>(
-            MNN::CV::ImageProcess::create(MNN::CV::BGR, MNN::CV::RGB, meanVals_, 3, normVals_, 3));
 
+MNNSR::MNNSR(int color_type) {
+    color = static_cast<ColorType>(color_type);
+    if (color == ColorType::RGB)
+        pretreat_ = std::shared_ptr<MNN::CV::ImageProcess>(
+                MNN::CV::ImageProcess::create(MNN::CV::BGR, MNN::CV::RGB, meanVals_, 3, normVals_,
+                                              3));
+    else if (color == ColorType::GRAY || color == ColorType::Gray2YCbCr ||
+             color == ColorType::Gray2YUV) {
+        model_channel = 1;
+        pretreat_ = std::shared_ptr<MNN::CV::ImageProcess>(
+                MNN::CV::ImageProcess::create(MNN::CV::BGR, MNN::CV::GRAY, meanVals_, 3, normVals_,
+                                              3));
+    } else if (color == ColorType::YCbCr) {
+        pretreat_ = std::shared_ptr<MNN::CV::ImageProcess>(
+                MNN::CV::ImageProcess::create(MNN::CV::BGR, MNN::CV::YCrCb, meanVals_, 3, normVals_,
+                                              3));
+    } else if (color == ColorType::YUV) {
+        pretreat_ = std::shared_ptr<MNN::CV::ImageProcess>(
+                MNN::CV::ImageProcess::create(MNN::CV::BGR, MNN::CV::YUV, meanVals_, 3, normVals_,
+                                              3));
+    } else {
+        fprintf(stderr, "color space error\n");
+        exit(1);
+    }
 
 }
 
@@ -22,7 +43,6 @@ MNNSR::~MNNSR() {
     interpreter->releaseModel();
     MNN::Interpreter::destroy(interpreter);
 }
-
 
 
 #if _WIN32
@@ -54,7 +74,7 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel)
         num_threads = 2;
     config.numThread = num_threads;
 
-    fprintf(stderr, "set backend: %s\n", get_backend_name(config.type).c_str());
+    fprintf(stderr, "set backend: %s, color type: %s\n", get_backend_name(config.type).c_str(), colorTypeToStr(color));
 
     const auto start = std::chrono::high_resolution_clock::now();
 
@@ -69,7 +89,7 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel)
         fprintf(stderr, "interpreter null\n");
     }
 
-    this->cachemodel=cachemodel;
+    this->cachemodel = cachemodel;
     if (cachemodel) {
         std::string cachefile = modelpath + ".cache";
         interpreter->setCacheFile(cachefile.c_str());
@@ -105,43 +125,66 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel)
 
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::high_resolution_clock::now() - start);
-    fprintf(stderr, "load model use %.3f s, session memory use %sB, flops is %s, "
-            , static_cast<double>(duration.count()) / 1000, float2str(memoryUsage,6).c_str(), float2str(flops,6).c_str());
+    fprintf(stderr, "load model %.3f s, session memory %sB, flops %s, ",
+            static_cast<double>(duration.count()) / 1000, float2str(memoryUsage, 6).c_str(),
+            float2str(flops, 6).c_str());
 
-    if( backendType[0]== MNN_FORWARD_CPU)
-            fprintf(stderr, "backend: CPU, numThread=%d\n", config.numThread);
+    if (backendType[0] == MNN_FORWARD_CPU)
+        fprintf(stderr, "backend: CPU, numThread=%d\n", config.numThread);
     else
-            fprintf(stderr, "backend: %s, %s\n", get_backend_name(backendType[0]).c_str(), get_backend_name(backendType[1]).c_str());
+        fprintf(stderr, "backend: %s, %s\n", get_backend_name(backendType[0]).c_str(),
+                get_backend_name(backendType[1]).c_str());
 
     return 0;
 }
 
 
 cv::Mat MNNSR::TensorToCvMat(void) {
-    // 确保数据在主机内存中
     interpreter_output->copyToHostTensor(output_tensor);
-
-    // 获取 Tensor 维度信息（假设为 NCHW）
-    int C = output_tensor->channel();  // 通道数
+    int C = output_tensor->channel();
     int H = output_tensor->height();
     int W = output_tensor->width();
-
     float *data = output_tensor->host<float>();
 
-//    fprintf(stderr, "TensorToCvMat: %d/%d/%d\n", C, H, W);
+    cv::Mat result;
+    if (C == 1) {
+        // 灰度模式直接处理
+        cv::Mat gray = cv::Mat(H, W, CV_32FC1, data);
+        gray.convertTo(gray, CV_8UC1, 255.0);
+        cv::cvtColor(gray, result, cv::COLOR_GRAY2BGR);
+        return result;
+    } else {
+        // 处理彩色图像
+        std::vector<cv::Mat> channels;
+        for (int i = 0; i < C; i++) {
+            channels.emplace_back(H, W, CV_32FC1, data + i * H * W);
+        }
 
-    cv::Mat r(H, W, CV_32FC1, data + 0 * H * W); // 红色通道
-    cv::Mat g(H, W, CV_32FC1, data + 1 * H * W); // 绿色通道
-    cv::Mat b(H, W, CV_32FC1, data + 2 * H * W); // 蓝色通道
+        // 合并通道（注意OpenCV默认是BGR顺序）
+        if (color ==  RGB) {
+            // 如果是RGB输入，需要交换R和B通道
+            std::swap(channels[0], channels[2]); // RGB -> BGR
+            cv::merge(channels, result);
+        } else {
+            // 先合并为RGB格式
+            cv::Mat rgb;
+            cv::merge(channels, rgb);
+            rgb.convertTo(rgb, CV_8UC3, 255.0);
 
-    // 合并为 HWC 格式的 Mat
-    std::vector<cv::Mat> channels{b, g, r};
-    cv::Mat merged;
-    cv::merge(channels, merged); // 合并后维度为 [H, W, 3]
+            // 转换为目标颜色空间
+            if (color == YCbCr) {
+                cv::cvtColor(rgb, result, cv::COLOR_BGR2YCrCb);
+            } else if (color == YUV) {
+                cv::cvtColor(rgb, result, cv::COLOR_BGR2YUV);
+            }
+            return result;
+        }
 
-    // 转换数据类型和颜色顺序
-    merged.convertTo(merged, CV_8UC3, 255.0); // float[0~1] -> uint8[0~255]
-    return merged;
+        // 转换为8位
+        result.convertTo(result, CV_8UC3, 255.0);
+    }
+
+    return result;
 }
 
 int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
@@ -268,10 +311,11 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
             interpreter->runSession(session);
             cv::Mat outputTile = TensorToCvMat();
 
-            if(outputTile.cols!=tilesize*scale || outputTile.rows!=tilesize*scale){
+            if (outputTile.cols != tilesize * scale || outputTile.rows != tilesize * scale) {
                 fprintf(stderr,
                         "[err] The model is x%.2f not x%d. input tile: %d x %d, output tile: %d x %d.\n",
-                        sqrt(outputTile.cols * outputTile.rows / paddedTile.cols / paddedTile.rows), scale,
+                        sqrt(outputTile.cols * outputTile.rows / paddedTile.cols / paddedTile.rows),
+                        scale,
                         paddedTile.cols, paddedTile.rows, outputTile.cols, outputTile.rows);
                 return -1;
             }
@@ -306,8 +350,28 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage) {
         }
     }
 
+    if (color == Gray2YUV) {
+        // 把inimage转为YCbCr格式，放大scale倍，把通道2通道3复制给outimage的通道2通道3
+        cv::Mat yuv;
+        cv::cvtColor(inimage, yuv, cv::COLOR_BGR2YUV);
+        cv::Mat yuv2;
+        yuv2.create(inimage.rows * scale, inimage.cols * scale, CV_8UC3);
+        cv::resize(yuv, yuv2, cv::Size(inimage.cols * scale, inimage.rows * scale), 0, 0,
+                   cv::INTER_CUBIC);
+        cv::cvtColor(yuv2, outimage, cv::COLOR_YUV2BGR);
+    } else if (color == Gray2YCbCr) {
+        // 把inimage转为YCbCr格式，放大scale倍，把通道2通道3复制给outimage的通道2通道3
+        cv::Mat ycc;
+        cv::cvtColor(inimage, ycc, cv::COLOR_BGR2YCrCb);
+        cv::Mat ycc2;
+        ycc2.create(inimage.rows * scale, inimage.cols * scale, CV_8UC3);
+        cv::resize(ycc, ycc2, cv::Size(inimage.cols * scale, inimage.rows * scale), 0, 0,
+                   cv::INTER_CUBIC);
+        cv::cvtColor(ycc2, outimage, cv::COLOR_YCrCb2BGR);
+    }
+
+
     if (cachemodel)
         interpreter->updateCacheFile(session);
     return 0;
 }
-

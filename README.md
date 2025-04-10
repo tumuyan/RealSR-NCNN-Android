@@ -36,11 +36,11 @@ RealSR-NCNN-Android-GUI could load extra models from sdcard automatily in ver 1.
 ![](Screenshot_models.jpg)
 
 ### Convert models to mnn format
-✨ ver 1.11 support [mnn](https://github.com/alibaba/MNN) models. MNN could support more models than ncnn, but it is slower in my experiment.  
+✨ ver 1.11 support [mnn](https://github.com/alibaba/MNN) models. MNN could support more models than ncnn. ver 1.12 could use `-c` param or model file name to config the color space.
 refer to https://mnn-docs.readthedocs.io/en/latest/tools/convert.html , you could convert ONNX, TFLITE, TorchScript, Tensorflow models to mnn format.
 1. `pip install mnn`
 2. (for example, convert onnx to mnn) `MNNConvert -f ONNX  --modelFile "{onnx_path}" --MNNModel "{mnn_path}"  --bizCode biz --fp16  --info  --detectSparseSpeedUp`
-3. modify mnn model filename, contains scale info just like`4xabcdefg.mnn` `abc-x4-def.mnn` or `abc_4x_def.mnn`, copy to your custom model folder.
+3. modify mnn model filename, contains scale info just like`4xabcdefg.mnn` `abc-x4-def.mnn` or `abc_4x_def.mnn`, copy to your custom model folder. If the filename contains `Grayscale` `Gray2YCbCr` `Gray2YUV` `YCbCr` `YUV`, the App will apply these color space.
 
 
 ### Convert pth models to ncnn format by yourself

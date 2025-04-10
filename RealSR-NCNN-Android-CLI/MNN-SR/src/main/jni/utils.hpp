@@ -68,4 +68,36 @@ static std::string float2str(float v, int unit) {
     return float2str(f);
 }
 
+
+typedef enum {
+    UnSet = 0,
+    RGB     = 1,
+    BGR      = 2,
+    RGBA      = 3,
+    BGRA     = 4,
+    YCbCr    = 5,
+    YUV      = 6,
+    GRAY = 10,
+    Gray2YCbCr = 11,
+    Gray2YUV = 12,
+} ColorType;
+
+
+inline const char* colorTypeToStr(ColorType type) {
+    switch (type) {
+        case RGB: return "RGB";
+        case BGR: return "BGR";
+        case RGBA: return "RGBA";
+        case BGRA: return "BGRA";
+        case YCbCr: return "YCbCr";
+        case YUV: return "YUV";
+        case GRAY: return "GRAY";
+        case Gray2YCbCr: return "Gray2YCbCr";
+        case Gray2YUV: return "Gray2YUV";
+        default: return "UNKNOWN";
+    }
+}
+
+
+
 #endif //REALSR_NCNN_ANDROID_CLI_UTILS_HPP
