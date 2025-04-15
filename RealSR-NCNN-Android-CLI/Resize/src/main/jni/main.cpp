@@ -456,7 +456,155 @@ int main(int argc, char **argv)
 
         // 计算降采样的倍率
         if (pixeldata) {
-            if (model.find(PATHSTR("de-nearest")) != path_t::npos) {
+            if (model.find(PATHSTR("de-nearest2")) != path_t::npos) {
+                fprintf(stderr, "Running de-nearest2 (identical row/col check):\n");
+
+                int identical_rows = 0;
+                int identical_cols = 0;
+                // Tolerance for comparison (e.g., handle minor JPEG artifacts)
+                // Set to 0 for strict nearest neighbor, maybe 1 or 2 otherwise.
+                const int tolerance = 32;
+                int line_size = w * c;
+
+                // --- Row Comparison ---
+                // Compare row i with row i-1
+                for (int i = 1; i < h; ++i) {
+                    bool rows_are_identical = true;
+                    // Pointer to the start of row i and row i-1
+                    const unsigned char* p1 = pixeldata + i * line_size;
+                    const unsigned char* p0 = pixeldata + (i - 1) * line_size;
+                    // Compare the entire row byte by byte (or pixel by pixel)
+                    for (int j = 0; j < line_size; ++j) {
+                        if (abs(p1[j] - p0[j]) > tolerance) {
+                            rows_are_identical = false;
+                            break; // Rows differ, no need to check further
+                        }
+                    }
+                    if (rows_are_identical) {
+                        identical_rows++;
+                    }
+                }
+
+                // --- Column Comparison ---
+                // Compare column j with column j-1
+                for (int j = 1; j < w; ++j) {
+                    bool cols_are_identical = true;
+                    // Iterate through each row for the current pair of columns
+                    for (int i = 0; i < h; ++i) {
+                        // Pointer to pixel (i, j) and pixel (i, j-1)
+                        const unsigned char* p1 = pixeldata + i * line_size + j * c;
+                        const unsigned char* p0 = pixeldata + i * line_size + (j - 1) * c;
+                        // Compare all channels for this pixel
+                        for(int k = 0; k < c; ++k) {
+                            if (abs(p1[k] - p0[k]) > tolerance) {
+                                cols_are_identical = false;
+                                break; // Pixels differ in this channel
+                            }
+                        }
+                        if (!cols_are_identical) {
+                            break; // Columns differ in this row, no need to check further rows
+                        }
+                    }
+                    if (cols_are_identical) {
+                        identical_cols++;
+                    }
+                }
+
+                fprintf(stderr, "Identical adjacent rows found: %d (out of %d pairs)\n", identical_rows, h - 1);
+                fprintf(stderr, "Identical adjacent cols found: %d (out of %d pairs)\n", identical_cols, w - 1);
+
+                // --- Calculate Scale ---
+                double scale_y = 1.0;
+                double scale_x = 1.0;
+
+                // Number of unique rows = total rows - identical rows = h - identical_rows
+                // Scale = total rows / unique rows
+                int unique_rows = h - identical_rows;
+                if (unique_rows > 0) {
+                    // We expect identical_rows ~= (scale_y - 1) * unique_rows
+                    // So h = scale_y * unique_rows => scale_y = h / unique_rows
+                    scale_y = static_cast<double>(h) / unique_rows;
+                } else if (h > 0) {
+                    fprintf(stderr, "Warning: Zero unique rows estimated (image might be uniform vertically?). Assuming scale_y=1.\n");
+                    // If the image is perfectly uniform vertically, scale is ambiguous.
+                    // Or maybe identical_rows calculation is slightly off near 100%
+                    // If identical_rows == h-1 (all rows same), scale_y is effectively h if h>1, or 1 if h=1.
+                    // Let's refine: if identical_rows == h-1 and h > 1, maybe scale_y = h?
+                    // But sticking to scale_y = h / unique_rows seems more general. A near-zero unique_rows will give large scale.
+                    // If unique_rows is truly 0, maybe scale_y=1 is safest default.
+                    scale_y = 1.0;
+                }
+
+                // Similarly for columns
+                int unique_cols = w - identical_cols;
+                if (unique_cols > 0) {
+                    scale_x = static_cast<double>(w) / unique_cols;
+                } else if (w > 0) {
+                    fprintf(stderr, "Warning: Zero unique cols estimated (image might be uniform horizontally?). Assuming scale_x=1.\n");
+                    scale_x = 1.0;
+                }
+
+                fprintf(stderr, "Calculated scale_x: %.3f, scale_y: %.3f\n", scale_x, scale_y);
+
+                // --- Validation and Output ---
+                double scale_threshold = 1.9; // Require scale to be close to at least 2
+                double integer_proximity = 0.15; // How close scale needs to be to an integer
+                double scale_diff_threshold = 0.25; // How close scale_x and scale_y need to be
+
+                bool detected = false;
+                int final_scale = 1;
+
+                // Check if both scales are valid and close to each other
+                if (scale_x >= scale_threshold && scale_y >= scale_threshold &&
+                    abs(scale_x - round(scale_x)) < integer_proximity &&
+                    abs(scale_y - round(scale_y)) < integer_proximity &&
+                    abs(scale_x - scale_y) <= scale_diff_threshold)
+                {
+                    final_scale = static_cast<int>(round((scale_x + scale_y) / 2.0));
+                    fprintf(stderr, "Consistent x/y scaling detected.\n");
+                    detected = true;
+                }
+                    // Check if only scale_x is valid (potential horizontal-only scaling)
+                else if (scale_x >= scale_threshold && scale_y < 1.5 && // Check y scale is low
+                         abs(scale_x - round(scale_x)) < integer_proximity)
+                {
+                    final_scale = static_cast<int>(round(scale_x));
+                    fprintf(stderr, "Horizontal-only scaling detected.\n");
+                    detected = true;
+                }
+                    // Check if only scale_y is valid (potential vertical-only scaling)
+                else if (scale_y >= scale_threshold && scale_x < 1.5 && // Check x scale is low
+                         abs(scale_y - round(scale_y)) < integer_proximity)
+                {
+                    final_scale = static_cast<int>(round(scale_y));
+                    fprintf(stderr, "Vertical-only scaling detected.\n");
+                    detected = true;
+                }
+                    // Maybe a fallback if they are different but both look like integers?
+                else if (scale_x >= scale_threshold && scale_y >= scale_threshold &&
+                         abs(scale_x - round(scale_x)) < integer_proximity &&
+                         abs(scale_y - round(scale_y)) < integer_proximity)
+                {
+                    // Scales differ but both look valid - take the minimum? Or average?
+                    // Taking minimum might be safer for downscaling.
+                    final_scale = static_cast<int>(round(fmin(scale_x, scale_y)));
+                    fprintf(stderr, "Warning: Different integer scales detected (x%.1f, y%.1f). Using minimum scale %d.\n", scale_x, scale_y, final_scale);
+                    detected = true;
+                }
+
+
+                if (detected && final_scale >= 2) {
+                    scale = final_scale; // Set the global scale variable
+                    scale_d = 1.0 / scale;
+                    not_use_ncnn = false; // Indicate we found a scale and NCNN is not needed for this task
+                    fprintf(stderr, "de-nearest2: Image likely interpolated by nearest x%d\n", scale);
+                } else {
+                    fprintf(stderr, "de-nearest2: Image does not appear to be clearly interpolated by nearest neighbor (scale_x=%.2f, scale_y=%.2f)\n", scale_x, scale_y);
+                    return -1; // Indicate failure or non-detection by this method
+                }
+            }
+
+            else if (model.find(PATHSTR("de-nearest")) != path_t::npos) {
                 double lost_y[h - 1], lost_x[w - 1];
                 double avg_y = 0, avg_x = 0;
                 double scale_y = 1, scale_x = 1;
@@ -560,6 +708,7 @@ int main(int argc, char **argv)
                     fprintf(stderr, "image might be interpolated by nearest x%d\n", scale);
                 }
             }
+
         }
 
 
