@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1, SELECT_MULTI_IMAGE = 2;
     private static final int MY_PERMISSIONS_REQUEST = 100;
 
-    private static String CMD_RESET_CACHE = "cp /system/vendor/lib64/libOpenCL.so ./;echo Cache has been reset.;ls";
+    private static String CMD_RESET_CACHE = "cp /system/vendor/lib64/libOpenCL.so ./;chmod 777 *;echo Cache has been reset.;ls";
     private int selectCommand = 0;
     private String threadCount = "";
     private SubsamplingScaleImageView imageView;
@@ -105,7 +105,9 @@ public class MainActivity extends AppCompatActivity {
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 4",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime -s 2",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime -s 4",
+            "./mnnsr-ncnn -i input.png -o output.png  -m models-MNN/ESRGAN-MoeSR-jp_Illustration-x4.mnn -s 4",
             "./realsr-ncnn -i input.png -o output.png  -m models-ESRGAN-Nomos8kSC -s 4",
+            "./mnnsr-ncnn -i input.png -o output.png  -m models-MNN/ESRGAN-Nomos8kSC-x4.mnn -s 4",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-SourceBook -s 2",
             "./realcugan-ncnn -i input.png -o output.png  -m models-nose -s 2  -n 0",
             "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 2  -n -1",
@@ -181,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (v == R.id.menu_nearest4) {
             q = "./resize-ncnn -i input.png -o output.png  -m nearest -s 4";
         } else if (v == R.id.menu_de_nearest) {
-            q = "./resize-ncnn -i input.png -o output.png  -m de-nearest";
+            q = "./resize-ncnn -i input.png -o output.png  -m de-nearest2";
         } else if (v == R.id.menu_magick2) {
             q = "./magick input.png -resize 50% output.png";
         } else if (v == R.id.menu_magick3) {

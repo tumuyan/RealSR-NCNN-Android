@@ -159,8 +159,10 @@ Even if this feature is disabled, you can still select multiple images from othe
         <item>real-esrganv3-anime-x3</item>
         <item>real-esrganv3-anime-x4</item>
         <item>real-esrganv2-anime-x2</item>
-        <item>real-esrganv2-anime-x4 (fast but oversharpening)</item>
+        <item>real-esrganv2-anime-x4</item>
+        <item>ESRGAN-MoeSR-jp_Illustration-x4</item>
         <item>real-esrgan-Nomos8kSC-x4</item>
+        <item>real-esrgan-Nomos8kSC-MNN-x4</item>
         <item>real-esrgan-SourceBook-x2</item>
         <item>real-cugan-x2-no-denoise</item>
         <item>real-cugan-x2-conservative</item>
