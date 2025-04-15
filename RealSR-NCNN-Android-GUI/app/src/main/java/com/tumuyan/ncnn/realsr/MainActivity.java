@@ -492,8 +492,7 @@ public class MainActivity extends AppCompatActivity {
                             cmdList.add("./mnnsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s " + v[1]);
                             cmdLabel.add(v[0]);
                         }
-                    }
-                    else if (folder.isDirectory() && name.startsWith("models")) {
+                    } else if (folder.isDirectory() && name.startsWith("models")) {
                         // 默认匹配realsr/real-esrgan模型目录
                         String model = name.replace("models-", "");
                         String scaleMatcher = ".*x(\\d+).*";
@@ -516,7 +515,7 @@ public class MainActivity extends AppCompatActivity {
                         } else if (name.startsWith("models-DF2K")) {
                             // 匹配realsr模型目录
                             model = name.replace("models-", "RealSR-");
-                        } else if (name.startsWith("models-mnn")){
+                        } else if (name.startsWith("models-mnn")) {
 
                         }
 
@@ -683,13 +682,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         findViewById(R.id.btn_open).setOnClickListener(view -> {
-            if(useMultFiles){
+            if (useMultFiles) {
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                 intent.setType("image/*");
                 intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
                 startActivityForResult(intent, SELECT_MULTI_IMAGE);
 
-            }else{
+            } else {
 
                 Intent i = new Intent(Intent.ACTION_PICK);
                 i.setType("image/*");
@@ -878,12 +877,12 @@ public class MainActivity extends AppCompatActivity {
 
     // 处理选中的多个文件
     private void handleSelectedImages(List<Uri> uris) {
-        if(uris.isEmpty())
+        if (uris.isEmpty())
             return;
         deleteFile(inputFile);
-        if (uris.size()==1){
-            Uri url =uris.get(0);
-             {
+        if (uris.size() == 1) {
+            Uri url = uris.get(0);
+            {
 
                 inputFileName = getFileName(url, this).replaceFirst("\\.[^\\.]+$", "");
                 Log.i("input file name", inputFileName);
@@ -1066,9 +1065,9 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 String m = "[-_.\s]+";
                 name = splitedPath[splitedPath.length - 1].replaceFirst("\\.(.{1,4})$", "");
-                if(name.matches("(\\d+)[xX].+"))
+                if (name.matches("(\\d+)[xX].+"))
                     s = name.replaceFirst("(\\d+[xX]).+", "$1");
-                else{
+                else {
                     String[] fileTags = name.split(m);
                     for (String tag : fileTags) {
                         if (tag.matches(scaleMatcher)) {
@@ -1079,7 +1078,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-        int scale = s.isEmpty()?1: Integer.parseInt((s.replaceFirst("[xX]", "")));
+        int scale = s.isEmpty() ? 1 : Integer.parseInt((s.replaceFirst("[xX]", "")));
         if (scale < 1)
             scale = 1;
         if (!name.contains(s)) {
@@ -1133,6 +1132,12 @@ public class MainActivity extends AppCompatActivity {
                     modelName += "-HDN";
             } else if (modelName.matches("(se|nose|pro)")) {
                 modelName = "Real-CUGAN-" + modelName;
+            } else if (cmd.startsWith("./realcugan-ncnn")) {
+                modelName = "Real-CUGAN";
+                if (cmd.contains(" -c "))
+                    modelName += cmd.replaceFirst(".+\\s-c(\\s+)([^\\s]+)\\s.*", "-C$2");
+                if (cmd.contains(" -n "))
+                    modelName += cmd.replaceFirst(".+\\s-n(\\s+)([^\\s]+)\\s.*", "-Noise$2");
             } else if (cmd.matches(".+\\s-m(\\s+)(bicubic|bilinear|nearest|avir|de-nearest).*")) {
                 modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest|lancir|avir|de-nearest).*", "Classical-$2");
             } else if (cmd.matches(".*waifu2x.+models-(cugan|cunet|upconv).*")) {
