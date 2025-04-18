@@ -103,6 +103,7 @@
     <string name="menu_in">显示处理前的图片</string>
     <string name="menu_nearest4">Nearest放大4倍</string>
     <string name="menu_de_nearest">DeNearest缩小</string>
+    <string name="menu_de_nearest2">DeNearest2缩小</string>
     <string name="menu_magick4">Magick缩小到1/4</string>
     <string name="menu_magick3">Magick缩小到1/3</string>
     <string name="menu_magick2">Magick缩小到1/2</string>

@@ -548,8 +548,8 @@ int main(int argc, char **argv)
 
                 // --- Validation and Output ---
                 double scale_threshold = 1.9; // Require scale to be close to at least 2
-                double integer_proximity = 0.15; // How close scale needs to be to an integer
-                double scale_diff_threshold = 0.25; // How close scale_x and scale_y need to be
+                double integer_proximity = 0.3; // How close scale needs to be to an integer
+                double scale_diff_threshold = 0.4; // How close scale_x and scale_y need to be
 
                 bool detected = false;
                 int final_scale = 1;
@@ -599,7 +599,7 @@ int main(int argc, char **argv)
                     not_use_ncnn = false; // Indicate we found a scale and NCNN is not needed for this task
                     fprintf(stderr, "de-nearest2: Image likely interpolated by nearest x%d\n", scale);
                 } else {
-                    fprintf(stderr, "de-nearest2: Image does not appear to be clearly interpolated by nearest neighbor (scale_x=%.2f, scale_y=%.2f)\n", scale_x, scale_y);
+                    fprintf(stderr, "de-nearest2: Image does not appear to be clearly interpolated by nearest neighbor (scale_x=%.2f, scale_y=%.2f, final_scale=%.2f)\n", scale_x, scale_y, final_scale);
                     return -1; // Indicate failure or non-detection by this method
                 }
             }

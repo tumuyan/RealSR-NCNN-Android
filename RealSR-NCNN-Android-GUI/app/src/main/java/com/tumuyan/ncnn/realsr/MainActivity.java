@@ -183,6 +183,8 @@ public class MainActivity extends AppCompatActivity {
         } else if (v == R.id.menu_nearest4) {
             q = "./resize-ncnn -i input.png -o output.png  -m nearest -s 4";
         } else if (v == R.id.menu_de_nearest) {
+            q = "./resize-ncnn -i input.png -o output.png  -m de-nearest";
+        } else if (v == R.id.menu_de_nearest2) {
             q = "./resize-ncnn -i input.png -o output.png  -m de-nearest2";
         } else if (v == R.id.menu_magick2) {
             q = "./magick input.png -resize 50% output.png";
@@ -234,6 +236,7 @@ public class MainActivity extends AppCompatActivity {
                 if (q == CMD_RESET_CACHE) {
                     AssetsCopyer.releaseAssets(this, "realsr", cache_dir, false);
                 }
+
                 run20(q, final_bench_mark_mode, false);
                 final File finalfile = new File(dir + finalImageName);
                 if (finalfile.exists() && (!finalfile.isDirectory())) {
@@ -1111,10 +1114,15 @@ public class MainActivity extends AppCompatActivity {
                 || cmd.startsWith("./magick input")
                 || cmd.startsWith("./Anime4k")
         ) {
-            if (cmd.contains(" input.png ") && cmd.contains(" output.png ")) {
+            if (cmd.contains(" input.png ") && cmd.contains(" output.png")) {
                 if (inputFile.isDirectory() && !inputIsGifAnimation) {
                     export_dir = true;
                     cmd = cmd.replace(" output.png ", " '" + savePath + "' ");
+                }
+
+                if(cmd.startsWith("./magick input.png") || cmd.startsWith("./resize-ncnn -i input.png")) {
+                    Log.i("run20", "deleteFile " + outputFile);
+                    deleteFile(outputFile);
                 }
             }
 
@@ -1196,7 +1204,7 @@ public class MainActivity extends AppCompatActivity {
             if (save) {
                 String export_cmd = saveOutputCmd();
                 if (inputIsGifAnimation)
-                    cmd = cmd + ";./magick convert -delay " + inputGifDelay + " output.png/* -loop 0 '" + outputSavePath + "'";
+                    cmd = cmd + ";./magick -delay " + inputGifDelay + " output.png/* -loop 0 '" + outputSavePath + "'";
                 else
                     cmd = cmd + ";" + export_cmd;
             } else {

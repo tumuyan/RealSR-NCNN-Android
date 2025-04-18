@@ -33,6 +33,10 @@
         android:title="@string/menu_de_nearest"
         app:showAsAction="never" />
     <item
+        android:id="@+id/menu_de_nearest2"
+        android:title="@string/menu_de_nearest2"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/menu_nearest4"
         android:title="@string/menu_nearest4"
         app:showAsAction="never" />

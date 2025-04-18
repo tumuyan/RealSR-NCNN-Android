@@ -85,6 +85,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="menu_out2in" translatable="false"><![CDATA[Output -> Input]]></string>
     <string name="menu_nearest4">Nearest 400%</string>
     <string name="menu_de_nearest">De Nearest</string>
+    <string name="menu_de_nearest2">De Nearest 2</string>
     <string name="menu_magick4">Magick 25%</string>
     <string name="menu_magick3">Magick 33.3%</string>
     <string name="menu_magick2">Magick 50%</string>

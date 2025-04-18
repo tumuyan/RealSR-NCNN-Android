@@ -126,7 +126,7 @@ static void print_usage() {
             "  -g gpu-id            gpu device to use (-1=cpu, default=auto) can be 0,1,2 for multi-gpu\n");
     fprintf(stderr,
             "  -j load:proc:save    thread count for load/proc/save (default=1:2:2) can be 1:2,2,2:2 for multi-gpu\n");
-    fprintf(stderr, "  -x                   enable tta mode\n");
+//    fprintf(stderr, "  -x                   enable tta mode\n");
     fprintf(stderr, "  -f format            output image format (jpg/png/webp, default=ext/png)\n");
     fprintf(stderr,
             "  -b backend           forward backend type(CPU=0,AUTO=4,CUDA=2,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)\n");
@@ -197,7 +197,6 @@ class LoadThreadParams {
 public:
     int scale;
     int jobs_load;
-    int check_threshold;
 
     // session data
     std::vector<path_t> input_files;
@@ -214,12 +213,13 @@ void *load(void *args) {
     for (int i = 0; i < count; i++) {
         const path_t &imagepath = ltp->input_files[i];
 
+        if(count==1) {
 #if _WIN32
-        fprintf(stderr, "load %ws \n", imagepath.c_str());
+            fprintf(stderr, "load %ws \n", imagepath.c_str());
 #else
-        fprintf(stderr, "load %s \n", imagepath.c_str());
+            fprintf(stderr, "load %s \n", imagepath.c_str());
 #endif
-
+        }
         // 读取图像
         Mat image = imread(imagepath, IMREAD_UNCHANGED);
 
@@ -327,9 +327,7 @@ void *proc(void *args) {
 class SaveThreadParams {
 public:
     int verbose;
-//    bool check;
-    int check_threshold;
-
+    bool f_print;
 };
 
 void *save(void *args) {
@@ -370,28 +368,15 @@ void *save(void *args) {
 #endif
         } else {
             if (!v.inalpha.empty()) {
-
-                fprintf(stderr, "get alpha\n");
-                // 放大 alpha 通道
                 cv::Mat scaledAlphaChannel;
                 cv::resize(v.inalpha, scaledAlphaChannel, cv::Size(), v.scale, v.scale,
                            cv::INTER_LINEAR);
-                // 将放大的 alpha 通道赋值给输出图像的 alpha 通道
                 std::vector<cv::Mat> outChannels;
                 cv::split(v.outimage, outChannels);
-
-                fprintf(stderr, "copy alpha\n");
                 scaledAlphaChannel.copyTo(outChannels[3]); // 更新 alpha 通道
-
                 cv::Mat outputImageWithAlpha(v.outimage.rows, v.outimage.cols, CV_8UC4);
-
-                fprintf(stderr, "merge alpha\n");
                 cv::merge(outChannels, outputImageWithAlpha); // 合并回输出图像
-
-                fprintf(stderr, "merge finishe\n");
                 v.outimage = outputImageWithAlpha;
-
-                fprintf(stderr, "merge alpha done\n");
             }
 
 #if _WIN32
@@ -405,7 +390,8 @@ void *save(void *args) {
         if (success) {
             high_resolution_clock::time_point end = high_resolution_clock::now();
             duration<double> time_span = duration_cast<duration<double>>(end - begin);
-            fprintf(stderr, "save result use time: %.3lf\n", time_span.count());
+            if (stp->f_print)
+                fprintf(stderr, "save result use time: %.3lf\n", time_span.count());
 
             if (verbose) {
 #if _WIN32
@@ -432,9 +418,9 @@ const std::wstring& optarg_in (L"");
 const std::wstring& optarg_out(L"");
 const std::wstring& optarg_mo (L"");
 #else
-const char *optarg_in = "/sdcard/10086/input3.jpg";
-const char *optarg_out = "/sdcard/10086/output3.jpg";
-const char *optarg_mo = "/sdcard/10086/models-Real-ESRGAN-anime";
+const char *optarg_in = "input.png";
+const char *optarg_out = "output.png";
+const char *optarg_mo = "models-Real-ESRGAN-anime";
 #endif
 
 #if _WIN32
@@ -462,9 +448,7 @@ int main(int argc, char **argv)
     std::vector<int> jobs_proc;
     int jobs_save = 1;
     int verbose = 0;
-    int tta_mode = 0;
     path_t format = PATHSTR("png");
-    int check_threshold = 0;
 
 #if _WIN32
     setlocale(LC_ALL, "");
@@ -505,7 +489,6 @@ int main(int argc, char **argv)
             verbose = 1;
             break;
         case L'x':
-            tta_mode = 1;
             break;
         case L'c':
             color_type = _wtoi(optarg);
@@ -556,7 +539,6 @@ int main(int argc, char **argv)
                 verbose = 1;
                 break;
             case 'x':
-                tta_mode = 1;
                 break;
             case 'c':
                 color_type = atoi(optarg);
@@ -599,18 +581,6 @@ int main(int argc, char **argv)
     if (jobs_load < 1 || jobs_save < 1) {
         fprintf(stderr, "invalid thread count argument\n");
         return -1;
-    }
-
-    if (jobs_proc.size() != (gpuid.empty() ? 1 : gpuid.size()) && !jobs_proc.empty()) {
-        fprintf(stderr, "invalid jobs_proc thread count argument\n");
-        return -1;
-    }
-
-    for (int i = 0; i < (int) jobs_proc.size(); i++) {
-        if (jobs_proc[i] < 1) {
-            fprintf(stderr, "invalid jobs_proc thread count argument\n");
-            return -1;
-        }
     }
 
     if (!path_is_directory(outputpath)) {
@@ -656,7 +626,6 @@ int main(int argc, char **argv)
                 path_t filename_noext = get_file_name_without_extension(filename);
                 path_t output_filename = filename_noext + PATHSTR('.') + format;
 
-                // filename list is sorted, check_threshold if output image path conflicts
                 if (filename_noext == last_filename_noext) {
                     path_t output_filename2 = filename + PATHSTR('.') + format;
 #if _WIN32
@@ -784,14 +753,7 @@ int main(int argc, char **argv)
 
     int cpu_count = 4;
     jobs_load = std::min(jobs_load, cpu_count);
-    jobs_save = std::min(jobs_save, cpu_count);
-
-    const int use_gpu_count = 1;
-    if (jobs_proc.empty()) {
-        jobs_proc.resize(use_gpu_count, 1);
-    }
-    int total_jobs_proc = 0;
-    total_jobs_proc += jobs_proc[0];
+    jobs_save = 1;
 
     fprintf(stderr, "busy...\n");
     {
@@ -829,36 +791,19 @@ int main(int argc, char **argv)
 
             ncnn::Thread load_thread(load, (void *) &ltp);
 
-            std::vector<ProcThreadParams> ptp(use_gpu_count);
-            for (int i = 0; i < use_gpu_count; i++) {
-                ptp[0].mnnsr = &mnnsr;
-            }
+            ProcThreadParams ptp;
+            ptp .mnnsr = &mnnsr;
 
-            std::vector<ncnn::Thread *> proc_threads(total_jobs_proc);
-            {
-                int total_jobs_proc_id = 0;
-
-
-                for (uint i = 0; i < use_gpu_count; i++) {
-                    for (uint j = 0; j < jobs_proc[i]; j++) {
-                        proc_threads[total_jobs_proc_id++] = new ncnn::Thread(proc,
-                                                                              (void *) &ptp[i]);
-                    }
-
-                }
-            }
+            ncnn::Thread * proc_thread;
+            proc_thread = new ncnn::Thread(proc, (void *) &ptp);
 
             // save image
             SaveThreadParams stp;
             stp.verbose = verbose;
-            stp.check_threshold = check_threshold;
+            stp.f_print = (input_files.size() == 1);
 
-            std::vector<ncnn::Thread *> save_threads(jobs_save);
-            for (int i = 0; i < jobs_save; i++) {
-                if (verbose)
-                    fprintf(stderr, "init save_threads %d\n", i);
-                save_threads[i] = new ncnn::Thread(save, (void *) &stp);
-            }
+            ncnn::Thread *save_thread;
+            save_thread = new ncnn::Thread(save, (void *) &stp);
 
             // end
             load_thread.join();
@@ -866,23 +811,15 @@ int main(int argc, char **argv)
             Task end;
             end.id = -233;
 
-            for (int i = 0; i < total_jobs_proc; i++) {
-                toproc.put(end);
-            }
+            toproc.put(end);
 
-            for (int i = 0; i < total_jobs_proc; i++) {
-                proc_threads[i]->join();
-                delete proc_threads[i];
-            }
+            proc_thread->join();
+            delete proc_thread;
 
-            for (int i = 0; i < jobs_save; i++) {
-                tosave.put(end);
-            }
+            tosave.put(end);
 
-            for (int i = 0; i < jobs_save; i++) {
-                save_threads[i]->join();
-                delete save_threads[i];
-            }
+            save_thread->join();
+            delete save_thread ;
         }
     }
 
