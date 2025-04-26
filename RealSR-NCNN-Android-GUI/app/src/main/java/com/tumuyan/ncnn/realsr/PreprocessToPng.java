@@ -17,22 +17,30 @@ public class PreprocessToPng {
     private static byte[] JPG = {(byte) 0XFF, (byte) 0XD8};
     private static byte[] WEBP = {0x52, 0x49, 0x46, 0x46};
     private static byte[] BMP = {0x42, 0x4D};
-    private static byte[] HEIF = {0X00 ,0X00, 0X00, 0X18,0X66,0X74 ,0X79 ,0X70 ,0X68 ,0X65 ,0X69 ,0X63 ,0X00};
-    private static byte[] GIF = {0x47,0x49,0x46,0x38};
-    public static String[] suffix = {"png","heif"};
+    private static byte[] HEIF = {0X00, 0X00, 0X00, 0X18, 0X66, 0X74, 0X79, 0X70, 0X68, 0X65, 0X69, 0X63, 0X00};
+    private static byte[] GIF = {0x47, 0x49, 0x46, 0x38};
+    private static byte[] AVIF = {0x61, 0x76, 0x69, 0x66};
 
-    public static boolean isHeif(int i){
-       return  i ==1;
+
+    public static String[] suffix = {"png", "heif"};
+
+    public static boolean isAVIF(int i) {
+        return i == 3;
     }
 
-    public static boolean isGIF(int i){
-        return  i==2;
+    public static boolean isHeif(int i) {
+        return i == 1;
+    }
+
+    public static boolean isGIF(int i) {
+        return i == 2;
     }
 
     /**
      * 探测文件头部是否与预设文件类型匹配
+     *
      * @param filehead 文件头部
-     * @return  返回值对应保存文件的后缀
+     * @return 返回值对应保存文件的后缀
      */
     public static int match(byte[] filehead) {
         // 文件太小无一定有问题，无需转换，由程序抛出错误即可
@@ -84,6 +92,14 @@ public class PreprocessToPng {
                 break;
             if (i == bytes.length - 1)
                 return 2;
+        }
+
+        bytes = AVIF.clone();
+        for (int i = 0; ; i++) {
+            if (bytes[i] != filehead[i + 8])
+                break;
+            if (i == bytes.length - 1)
+                return 3;
         }
 
 

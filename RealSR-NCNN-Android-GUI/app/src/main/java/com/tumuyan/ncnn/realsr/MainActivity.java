@@ -1404,7 +1404,7 @@ public class MainActivity extends AppCompatActivity {
             outStream.close();
 
             if (match >= 0) {
-                if (PreprocessToPng.isHeif(match)) {
+                if (PreprocessToPng.isHeif(match) || PreprocessToPng.isAVIF(match)) {
                     Bitmap bitmap = BitmapFactory.decodeFile(dir + "/tmp");
 
                     try {
