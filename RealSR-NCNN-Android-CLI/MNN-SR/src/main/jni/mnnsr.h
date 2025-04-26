@@ -32,13 +32,16 @@ public:
 
 #endif
 
-    int process(const cv::Mat &inimage, cv::Mat &outimage);
+    int process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mask = cv::Mat());
+
+    int decensor(const cv::Mat &inimage, cv::Mat &outimage);
+
     cv::Mat TensorToCvMat(void);
 
 public:
     int scale;
     ColorType color;
-    int model_channel =3;
+    int model_channel = 3;
     int tilesize;
     int prepadding;
 
@@ -55,7 +58,7 @@ private:
     MNN::Tensor *output_tensor;
     std::shared_ptr<MNN::CV::ImageProcess> pretreat_ = nullptr;
     const float meanVals_[3] = {0, 0, 0};
-    const float normVals_[3] = { 1.0 / 255, 1.0 / 255, 1.0 / 255 };
+    const float normVals_[3] = {1.0 / 255, 1.0 / 255, 1.0 / 255};
     bool cachemodel;
 };
 

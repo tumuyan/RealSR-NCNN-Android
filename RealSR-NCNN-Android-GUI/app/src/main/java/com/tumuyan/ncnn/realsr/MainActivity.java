@@ -106,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime -s 2",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime -s 4",
             "./mnnsr-ncnn -i input.png -o output.png  -m models-MNN/ESRGAN-MoeSR-jp_Illustration-x4.mnn -s 4",
+            "./mnnsr-ncnn -i input.png -o output.png  -m models-MNN/ESRGAN-MoeSR-jp_Illustration-x4.mnn -d 0 -s 4",
             "./realsr-ncnn -i input.png -o output.png  -m models-ESRGAN-Nomos8kSC -s 4",
             "./mnnsr-ncnn -i input.png -o output.png  -m models-MNN/ESRGAN-Nomos8kSC-x4.mnn -s 4",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-SourceBook -s 2",
@@ -1120,7 +1121,7 @@ public class MainActivity extends AppCompatActivity {
                     cmd = cmd.replace(" output.png ", " '" + savePath + "' ");
                 }
 
-                if(cmd.startsWith("./magick input.png") || cmd.startsWith("./resize-ncnn -i input.png")) {
+                if (cmd.startsWith("./magick input.png") || cmd.startsWith("./resize-ncnn -i input.png")) {
                     Log.i("run20", "deleteFile " + outputFile);
                     deleteFile(outputFile);
                 }
@@ -1158,8 +1159,12 @@ public class MainActivity extends AppCompatActivity {
                 else
                     modelName = "Magick";
             } else if (cmd.startsWith("./mnnsr")) {
-                String[] v = getNameFromModelPath(cmd.replaceFirst(".+\\s-m(\\s+)([^\\s]+)\\s.*", "$2"), "MNNSR");
-                modelName = v[0];
+                if (cmd.matches(".+\\s-d\\s+\\d+\\s.*")) {
+                    modelName = "MNNSR-Decensor" + cmd.replaceFirst(".+\\s-d\\s+(\\d+)\\s.*", "$1");
+                } else {
+                    String[] v = getNameFromModelPath(cmd.replaceFirst(".+\\s-m(\\s+)([^\\s]+)\\s.*", "$2"), "MNNSR");
+                    modelName = v[0];
+                }
             }
         } else
             modelName = "SR";

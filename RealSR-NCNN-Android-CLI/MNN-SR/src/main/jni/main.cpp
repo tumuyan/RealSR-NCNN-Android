@@ -130,7 +130,10 @@ static void print_usage() {
     fprintf(stderr, "  -f format            output image format (jpg/png/webp, default=ext/png)\n");
     fprintf(stderr,
             "  -b backend           forward backend type(CPU=0,AUTO=4,CUDA=2,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)\n");
-    fprintf(stderr, "  -c color-type             model & output color space type (RGB=1, BGR=2, YCbCr=5, YUV=6, GRAY=10, GRAY model & YCbCr output=11, GRAY model & YUV output=12, default=1)\n");
+    fprintf(stderr,
+            "  -c color-type             model & output color space type (RGB=1, BGR=2, YCbCr=5, YUV=6, GRAY=10, GRAY model & YCbCr output=11, GRAY model & YUV output=12, default=1)\n");
+    fprintf(stderr,
+            "  -d decensor-mode             remove censor mode (Not=-1, Mosaic=0, default=-1)\n");
 }
 
 class Task {
@@ -213,7 +216,7 @@ void *load(void *args) {
     for (int i = 0; i < count; i++) {
         const path_t &imagepath = ltp->input_files[i];
 
-        if(count==1) {
+        if (count == 1) {
 #if _WIN32
             fprintf(stderr, "load %ws \n", imagepath.c_str());
 #else
@@ -302,11 +305,13 @@ void *load(void *args) {
 class ProcThreadParams {
 public:
     MNNSR *mnnsr;
+    int decensor_mode = -1;
 };
 
 void *proc(void *args) {
     const ProcThreadParams *ptp = (const ProcThreadParams *) args;
     MNNSR *mnnsr = ptp->mnnsr;
+    fprintf(stderr, "proc thread start, decensor_mode=%d\n", ptp->decensor_mode);
 
     for (;;) {
         Task v;
@@ -316,7 +321,10 @@ void *proc(void *args) {
         if (v.id == -233)
             break;
 
-        mnnsr->process(v.inimage, v.outimage);
+        if (ptp->decensor_mode == -1)
+            mnnsr->process(v.inimage, v.outimage);
+        else
+            mnnsr->decensor(v.inimage, v.outimage);
 
         tosave.put(v);
     }
@@ -438,6 +446,7 @@ int main(int argc, char **argv)
     int scale = 4;
     int tilesize = 0;
     int color_type = UnSet;
+    int decensor_mode = -1;
 #if _DEMO_PATH
     path_t model = optarg_mo;
 #else
@@ -453,7 +462,7 @@ int main(int argc, char **argv)
 #if _WIN32
     setlocale(LC_ALL, "");
     wchar_t opt;
-    while ((opt = getopt(argc, argv, L"b:i:o:s:c:t:m:g:j:f:vxh")) != (wchar_t)-1)
+    while ((opt = getopt(argc, argv, L"b:i:o:s:c:d:t:m:g:j:f:vxh")) != (wchar_t)-1)
     {
         switch (opt)
         {
@@ -490,6 +499,9 @@ int main(int argc, char **argv)
             break;
         case L'x':
             break;
+        case 'd':
+            decensor_mode = _wtoi(optarg);
+            break;
         case L'c':
             color_type = _wtoi(optarg);
             break;
@@ -505,7 +517,7 @@ int main(int argc, char **argv)
     }
 #else // _WIN32
     int opt;
-    while ((opt = getopt(argc, argv, "b:i:o:s:c:t:m:g:j:f:vxh")) != -1) {
+    while ((opt = getopt(argc, argv, "b:i:o:s:c:d:t:m:g:j:f:vxh")) != -1) {
         switch (opt) {
             case 'i':
                 inputpath = optarg;
@@ -539,6 +551,9 @@ int main(int argc, char **argv)
                 verbose = 1;
                 break;
             case 'x':
+                break;
+            case 'd':
+                decensor_mode = atoi(optarg);
                 break;
             case 'c':
                 color_type = atoi(optarg);
@@ -656,7 +671,7 @@ int main(int argc, char **argv)
 
     int prepadding = 0;
 
-    if (model.find(PATHSTR("models-")) != path_t::npos||model.ends_with(".mnn")) {
+    if (model.find(PATHSTR("models-")) != path_t::npos || model.ends_with(".mnn")) {
         prepadding = 4;
     } else {
         fprintf(stderr, "unknown model dir type\n");
@@ -696,7 +711,7 @@ int main(int argc, char **argv)
     FILE* mp = _wfopen(modelfullpath.c_str(), L"rb");
 #else
     char modelpath[256];
-    if ( model.ends_with(".mnn"))
+    if (model.ends_with(".mnn"))
         sprintf(modelpath, "%s", model.c_str());
     else
         sprintf(modelpath, "%s/x%d.mnn", model.c_str(), scale);
@@ -741,7 +756,7 @@ int main(int argc, char **argv)
     // 移动到文件末尾
     fseek(mp, 0, SEEK_END);
     // 获取文件大小
-    long modelsize = ftell(mp)/1000000;
+    long modelsize = ftell(mp) / 1000000;
     // 重置文件指针到开头
     fseek(mp, 0, SEEK_SET);
     fclose(mp);
@@ -761,11 +776,11 @@ int main(int argc, char **argv)
         MNNSR mnnsr = MNNSR(color_type);
         if (tilesize == 0) {
             tilesize = 128;
-            if (modelsize <10)
+            if (modelsize < 10)
                 tilesize = 256;
-            else if (modelsize<16)
+            else if (modelsize < 16)
                 tilesize = 128;
-            else if (modelsize<24)
+            else if (modelsize < 24)
                 tilesize = 96;
             else
                 tilesize = 64;
@@ -784,7 +799,10 @@ int main(int argc, char **argv)
         {
             // load image
             LoadThreadParams ltp;
-            ltp.scale = scale;
+            if (decensor_mode == -1)
+                ltp.scale = scale;
+            else
+                ltp.scale = 1;
             ltp.jobs_load = jobs_load;
             ltp.input_files = input_files;
             ltp.output_files = output_files;
@@ -792,9 +810,10 @@ int main(int argc, char **argv)
             ncnn::Thread load_thread(load, (void *) &ltp);
 
             ProcThreadParams ptp;
-            ptp .mnnsr = &mnnsr;
+            ptp.mnnsr = &mnnsr;
+            ptp.decensor_mode = decensor_mode;
 
-            ncnn::Thread * proc_thread;
+            ncnn::Thread *proc_thread;
             proc_thread = new ncnn::Thread(proc, (void *) &ptp);
 
             // save image
@@ -819,7 +838,7 @@ int main(int argc, char **argv)
             tosave.put(end);
 
             save_thread->join();
-            delete save_thread ;
+            delete save_thread;
         }
     }
 
