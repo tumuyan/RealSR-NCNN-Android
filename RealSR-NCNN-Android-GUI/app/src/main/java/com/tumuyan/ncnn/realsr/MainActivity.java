@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1, SELECT_MULTI_IMAGE = 2;
     private static final int MY_PERMISSIONS_REQUEST = 100;
 
-    private static String CMD_RESET_CACHE = "cp /system/vendor/lib64/libOpenCL.so ./;chmod 777 *;echo Cache has been reset.;ls";
+    private static String CMD_RESET_CACHE = "cp /system/vendor/lib64/libOpenCL.so ./;rm *.cache;rm */*.cache;chmod 777 *; echo Cache has been reset.;ls";
     private int selectCommand = 0;
     private String threadCount = "";
     private SubsamplingScaleImageView imageView;
@@ -1462,7 +1462,7 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     imageView.setVisibility(View.VISIBLE);
                     imageView.setImage(ImageSource.uri(path));
-                    logTextView.setText(text);
+                    logTextView.setText(getImageResolation(file, text));
                     Log.i("saveInputImage", "finish, file");
                 }
 
@@ -1522,7 +1522,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private static String getImageResolation(File file, String info) {
-        if (info.trim().contains("\\n"))
+        if (info.trim().contains("\n"))
             return info;
 
         BitmapFactory.Options options = new BitmapFactory.Options();

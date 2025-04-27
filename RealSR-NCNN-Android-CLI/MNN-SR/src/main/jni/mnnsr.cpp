@@ -672,10 +672,10 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage) {
     {
 
         int loops = std::round(std::log(MosaicResolutionOfImage) / std::log(scale));
-        float pre_scale = (std::pow(scale, loops) * 1.1 >= MosaicResolutionOfImage) ? (1.0f /
-                                                                                       MosaicResolutionOfImage)
+        float pre_scale = (std::pow(scale, loops) * 1.1 >= MosaicResolutionOfImage) ? 1.0f /
+                                                                                      MosaicResolutionOfImage
                                                                                     :
-                          sqrt(1 / ((loops * scale) / MosaicResolutionOfImage)) /
+                          sqrt(MosaicResolutionOfImage / (std::pow(scale, loops))) /
                           MosaicResolutionOfImage;
         // Standard path: Process a downscaled version of the entire image
         int Sx = static_cast<int>( inimage.cols * pre_scale);
@@ -744,50 +744,3 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage) {
     fprintf(stderr, "decensor: Processing complete.\n");
     return 0; // Success
 }
-
-
-// --- Example Usage (for testing purposes, won't be included in the final MNNSR class file) ---
-/*
-int main() {
-    MNNSR mnnsr; // Assume MNNSR is initialized correctly
-
-    cv::Mat input_image = cv::imread("path/to/your/mosaiced_image.png", cv::IMREAD_UNCHANGED); // Use UNCHANGED to read alpha if present
-
-    if (input_image.empty()) {
-        fprintf(stderr, "Error loading image.\n");
-        return -1;
-    }
-
-    cv::Mat output_image;
-
-    // Use the optimization path (processes only detected regions)
-    int result_optimized = mnnsr.decensor(input_image, output_image, true);
-
-    if (result_optimized == 0) {
-        fprintf(stderr, "Decensoring successful (optimized path).\n");
-        cv::imwrite("output_optimized.png", output_image);
-    } else {
-        fprintf(stderr, "Decensoring failed or no mosaic found (optimized path).\n");
-         // Optionally save the copied input if no mosaic was found
-        if (!output_image.empty()) {
-             cv::imwrite("output_optimized_nomosaic.png", output_image);
-        }
-    }
-
-    // Optional: Use the full image processing path
-    cv::Mat output_image_full;
-    int result_full = mnnsr.decensor(input_image, output_image_full, false);
-
-     if (result_full == 0) {
-        fprintf(stderr, "Decensoring successful (full path).\n");
-        cv::imwrite("output_full.png", output_image_full);
-    } else {
-        fprintf(stderr, "Decensoring failed or no mosaic found (full path).\n");
-         if (!output_image_full.empty()) {
-             cv::imwrite("output_full_nomosaic.png", output_image_full);
-        }
-    }
-
-    return 0;
-}
-*/
