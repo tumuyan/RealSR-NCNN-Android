@@ -427,19 +427,29 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
 }
 
 
+#include "mnnsr.h"
+#include "utils.hpp"
+#include <thread>
 
-// ----------------------------------------------------------------
-// New function to implement mosaic detection and decensoring
-// ----------------------------------------------------------------
+#include "MNN/ErrorCode.hpp"
+
+
+#include <opencv2/opencv.hpp>
+#include <vector>
+#include <string>
+#include <cmath>
+#include <algorithm>
+#include <vector>
+#include <cstdio> // For fprintf
+#include <numeric> // For std::accumulate
+#include <set> // For std::set to unique indices easily
+
 
 /**
  * @brief Detects and removes mosaic censorship from an image.
  *
  * @param inimage Input image (BGR or BGRA).
  * @param outimage Output image with mosaic removed (same format as input).
- * @param process_only_mosaic_region If true, process only the bounding box
- *   of detected mosaic regions to save computation. If false, process
- *   a downscaled version of the entire image. Defaults to true.
  * @return 0 on success, -1 on failure or if no mosaic was detected.
  */
 int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage) {
@@ -448,26 +458,35 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage) {
         return -1;
     }
 
-    // --- Constants (matching Python script logic/tweaks) ---
-    const int GBlur = 5;
-    const int CannyTr1 = 8;
-    const int CannyTr2 = 30;
-    const int LowRange = 2;
-    const int HighRange = 25;
-    const float DetectionTr = 0.29f;
-    const int PatternBorder = 2;
-    const int PatternLineThickness = 1;
+    // --- Constants (matching detectMosaicResolution logic) ---
+    // Kept original names where possible, added comments based on detectMosaicResolution
+    const int GBlur = 5;         // Gaussian blur kernel size (must be odd)
+    const int CannyTr1 = 8;      // Canny lower threshold
+    const int CannyTr2 = 30;     // Canny upper threshold
+    const int LowRange = 2;      // Minimum mosaic block size to check
+    const int HighRange = 25;    // Maximum mosaic block size to check
+    const float DetectionTr = 0.29f; // Threshold for template matching correlation (kept float)
+
+    // Validate Gaussian blur kernel size (from detectMosaicResolution)
+    if (GBlur % 2 == 0 || GBlur <= 0) {
+        fprintf(stderr,
+                "decensor error: GBlur_kernel_size must be a positive odd number. Got %d.\n",
+                GBlur);
+        // Can't proceed with invalid blur kernel, but detection might still work somewhat without it.
+        // Let's just warn for now, as the Canny step might still provide useful input.
+        // If we wanted strict failure on bad constants, we would return -1 here.
+    }
 
     // --- 1. Preprocessing for Detection ---
-    cv::Mat img_rgb;
-    cv::Mat img_gray;
+    cv::Mat img_detection_input; // Will be CV_8U after processing
     int original_channels = inimage.channels();
 
+    // Convert input to BGR (or keep BGR if already) for color space conversions
+    cv::Mat img_bgr;
     if (original_channels == 4) {
-        // Convert BGRA to BGR for processing, keep alpha aside
-        cv::cvtColor(inimage, img_rgb, cv::COLOR_BGRA2BGR);
+        cv::cvtColor(inimage, img_bgr, cv::COLOR_BGRA2BGR);
     } else if (original_channels == 3) {
-        img_rgb = inimage.clone(); // Assuming BGR input
+        img_bgr = inimage.clone(); // Assuming BGR input
     } else {
         fprintf(stderr,
                 "decensor error: Unsupported number of channels (%d). Input must be 3 (BGR) or 4 (BGRA).\n",
@@ -475,271 +494,431 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage) {
         return -1;
     }
 
-    cv::cvtColor(img_rgb, img_gray, cv::COLOR_BGR2GRAY);
-    cv::Mat edges;
-    cv::Canny(img_gray, edges, CannyTr1, CannyTr2);
-    cv::Mat inverted_edges;
-    cv::bitwise_not(edges, inverted_edges);
-    cv::Mat blurred_edges;
-    cv::GaussianBlur(inverted_edges, blurred_edges, cv::Size(GBlur, GBlur), 0);
+    // Convert to grayscale
+    cv::Mat img_gray;
+    cv::cvtColor(img_bgr, img_gray, cv::COLOR_BGR2GRAY);
+
+    // Canny edge detection
+    cv::Canny(img_gray, img_detection_input, CannyTr1, CannyTr2);
+
+    // Invert edges: non-edges become bright (255), edges become dark (0)
+    img_detection_input = 255 - img_detection_input; // In-place inversion
+
+    // Gaussian Blur (on the inverted edges)
+    cv::GaussianBlur(img_detection_input, img_detection_input, cv::Size(GBlur, GBlur), 0);
 
     // --- 2. Pattern Generation and Matching ---
-    std::vector<cv::Mat> pattern_mats;
-    // Patterns for mask sizes from LowRange to HighRange+2
-    for (int masksize = LowRange; masksize <= HighRange + 2; ++masksize) {
-        int cell_size = masksize - 1;
-        // Pattern size: 2*Border + 3*CellSize + 2*LineThickness (for 3x3 cells)
-        int pattern_size = 2 * PatternBorder + 3 * cell_size + 2 * PatternLineThickness;
-        if (pattern_size <= 0) { // Prevent issues with very small masksize
-            pattern_mats.push_back(cv::Mat()); // Add empty placeholder
+
+    // Pattern vector size: HighRange + 2. Indices 0 to HighRange+1.
+    // We only generate patterns for masksize from LowRange+2 up to HighRange+2.
+    // Index for masksize M is M - 2. Relevant indices are [LowRange, HighRange].
+    std::vector<cv::Mat> patterns(HighRange + 2);
+
+    // Loop through potential mask sizes, matching detectMosaicResolution's loop range
+    // Note: Loop is reversed compared to original decensor, matching detectMosaicResolution
+    fprintf(stderr, "decensor: Generating patterns for mask sizes from %d down to %d...\n",
+            HighRange + 2, LowRange + 2);
+    for (int masksize = HighRange + 2; masksize >= LowRange + 2; --masksize) {
+        int pattern_idx = masksize - 2; // Index in patterns vector [LowRange, HighRange]
+
+        // Pattern size calculation from detectMosaicResolution: 2*masksize + 3
+        int pattern_size = 2 * masksize + 3;
+
+        // Check if pattern size is larger than the image. If so, it cannot be matched.
+        if (pattern_size > img_detection_input.cols || pattern_size > img_detection_input.rows) {
+            fprintf(stderr,
+                    "decensor warning: Pattern size %d for masksize %d exceeds image dimensions (%dx%d). Skipping pattern creation and matching.\n",
+                    pattern_size, masksize, img_detection_input.cols, img_detection_input.rows);
+            // patterns[pattern_idx] will remain empty, which is handled below.
             continue;
         }
 
+        // Create CV_8U pattern (Grayscale), matching the type of img_detection_input
         cv::Mat pattern = cv::Mat(pattern_size, pattern_size, CV_8U,
                                   cv::Scalar(255)); // White background
-        int line_pos1 = PatternBorder;
-        int line_pos2 = PatternBorder + cell_size + PatternLineThickness;
-        int line_pos3 = PatternBorder + 2 * (cell_size + PatternLineThickness);
 
-        // Draw horizontal lines
-        if (line_pos1 < pattern_size)
-            cv::line(pattern, cv::Point(0, line_pos1), cv::Point(pattern_size - 1, line_pos1),
-                     cv::Scalar(0), PatternLineThickness);
-        if (line_pos2 < pattern_size)
-            cv::line(pattern, cv::Point(0, line_pos2), cv::Point(pattern_size - 1, line_pos2),
-                     cv::Scalar(0), PatternLineThickness);
-        if (line_pos3 < pattern_size)
-            cv::line(pattern, cv::Point(0, line_pos3), cv::Point(pattern_size - 1, line_pos3),
-                     cv::Scalar(0), PatternLineThickness);
-
-        // Draw vertical lines
-        if (line_pos1 < pattern_size)
-            cv::line(pattern, cv::Point(line_pos1, 0), cv::Point(line_pos1, pattern_size - 1),
-                     cv::Scalar(0), PatternLineThickness);
-        if (line_pos2 < pattern_size)
-            cv::line(pattern, cv::Point(line_pos2, 0), cv::Point(line_pos2, pattern_size - 1),
-                     cv::Scalar(0), PatternLineThickness);
-        if (line_pos3 < pattern_size)
-            cv::line(pattern, cv::Point(line_pos3, 0), cv::Point(line_pos3, pattern_size - 1),
-                     cv::Scalar(0), PatternLineThickness);
-
-        pattern_mats.push_back(pattern);
-    }
-
-    cv::Mat card_mask = cv::Mat::zeros(inimage.size(),
-                                       CV_8U); // Mask to mark detected mosaic regions (255 = mosaic, 0 = non-mosaic)
-    std::vector<int> resolutions(HighRange + 3,
-                                 0); // Counts for sizes LowRange..HighRange+2. resolutions[s] stores count for size s.
-
-    // Python loop is from HighRange+2 down to LowRange+1
-    for (int masksize = HighRange + 2; masksize >= LowRange + 1; --masksize) {
-        int pattern_idx = masksize - LowRange; // Index in pattern_mats vector (0-based)
-        if (pattern_idx < 0 || pattern_idx >= pattern_mats.size() ||
-            pattern_mats[pattern_idx].empty()) {
-            continue; // Skip if pattern not generated or index out of bounds
+        // Draw black lines (0) with thickness 1, starting at index 2, stepping by masksize - 1
+        // This directly implements the drawing logic from detectMosaicResolution
+        for (int i = 2; i < pattern_size; i += masksize - 1) {
+            cv::line(pattern, cv::Point(i, 0), cv::Point(i, pattern_size - 1), cv::Scalar(0),
+                     1); // Vertical line
         }
+        for (int j = 2; j < pattern_size; j += masksize - 1) {
+            cv::line(pattern, cv::Point(0, j), cv::Point(pattern_size - 1, j), cv::Scalar(0),
+                     1); // Horizontal line
+        }
+        patterns[pattern_idx] = pattern; // Store the created pattern (CV_8U)
+    }
+    fprintf(stderr, "decensor: Pattern generation complete.\n");
 
-        cv::Mat template_mat = pattern_mats[pattern_idx];
-        int w = template_mat.cols;
-        int h = template_mat.rows;
 
-        if (w > blurred_edges.cols || h > blurred_edges.rows) {
+    // Mask to mark detected mosaic regions (CV_8U, 255 = mosaic, 0 = non-mosaic)
+    // This mask will be used later to blend the processed region back.
+    cv::Mat card_mask = cv::Mat::zeros(inimage.size(), CV_8U);
+
+    // resolutions vector stores the count of matches for each potential masksize.
+    // Size HighRange+3 (indices 0 to HighRange+2) initialized to 0.
+    // Count for masksize M is stored at index M - 1. Relevant indices [LowRange+1, HighRange+1].
+    // This matches the indexing structure used in detectMosaicResolution's analysis section.
+    std::vector<int> resolutions(HighRange + 3, 0);
+
+    fprintf(stderr, "decensor: Starting template matching...\n");
+
+    // Loop through potential mask sizes again (matching pattern loop range)
+    for (int masksize = HighRange + 2; masksize >= LowRange + 2; --masksize) {
+        int pattern_idx = masksize - 2;      // Index in patterns vector [LowRange, HighRange]
+        int resolution_idx =
+                masksize - 1;   // Index in resolutions vector [LowRange+1, HighRange+1]
+
+        // Ensure indices are within bounds (defensive check)
+        if (pattern_idx < 0 || pattern_idx >= patterns.size() ||
+            resolution_idx < 0 || resolution_idx >= resolutions.size()) {
+            // Should not happen with correct constants and logic, but check anyway
             fprintf(stderr,
-                    "decensor warning: Pattern size (%d, %d) larger than image (%d, %d) for masksize %d. Skipping.\n",
-                    w, h, blurred_edges.cols, blurred_edges.rows, masksize);
+                    "decensor Error: Index calculation out of bounds during matching. pattern_idx=%d, resolution_idx=%d. Skipping masksize %d.\n",
+                    pattern_idx, resolution_idx, masksize);
             continue;
         }
 
-        cv::Mat img_detection_result;
-        cv::matchTemplate(blurred_edges, template_mat, img_detection_result, cv::TM_CCOEFF_NORMED);
+        // Skip if pattern was not created (e.g., too large for image)
+        if (patterns[pattern_idx].empty()) {
+            continue;
+        }
 
-        // Find locations above threshold
-        cv::Mat thresholded_detection;
-        cv::threshold(img_detection_result, thresholded_detection, DetectionTr, 1.0,
+        cv::Mat templateImg = patterns[pattern_idx]; // Already CV_8U
+
+        int w = templateImg.cols;
+        int h = templateImg.rows;
+
+        // Ensure template is smaller than or equal to the image dimensions (redundant with pattern creation check, but safe)
+        if (w > img_detection_input.cols || h > img_detection_input.rows) {
+            // Should not happen if patterns[pattern_idx].empty() check works, but safe
+            continue;
+        }
+
+        cv::Mat img_detection_result; // Result of matchTemplate (CV_32F)
+        // Match the processed image (inverted, blurred edges) against the pattern (dark lines on white)
+        cv::matchTemplate(img_detection_input, templateImg, img_detection_result,
+                          cv::TM_CCOEFF_NORMED);
+
+        // Threshold the result to find locations above the detection threshold
+        cv::Mat detection_locations_mask; // CV_8U, 255 for matches, 0 otherwise
+        cv::threshold(img_detection_result, detection_locations_mask, DetectionTr, 255,
                       cv::THRESH_BINARY);
 
-        std::vector<cv::Point> locations;
-        cv::findNonZero(thresholded_detection, locations);
+        // Find all points that are above the threshold
+        std::vector<cv::Point> points;
+        cv::findNonZero(detection_locations_mask, points);
 
-        resolutions[masksize] = locations.size(); // Store count for this masksize
+        int rects = points.size(); // Count of good matches for this masksize
+        resolutions[resolution_idx] = rects; // Store count at index masksize - 1
 
-        // Draw detected rectangles onto the mask
-        for (const auto &pt: locations) {
-            cv::rectangle(card_mask, pt, cv::Point(pt.x + w, pt.y + h), cv::Scalar(255),
-                          -1); // Draw filled white rectangle
+        // Draw detected rectangles onto the card_mask (for visualization/masking later)
+        // Draw white filled rectangles (255) on the CV_8U mask
+        for (const auto &pt: points) {
+            // Check bounds before drawing rectangle
+            if (pt.x >= 0 && pt.y >= 0 && pt.x + w <= card_mask.cols &&
+                pt.y + h <= card_mask.rows) {
+                cv::rectangle(card_mask, pt, cv::Point(pt.x + w, pt.y + h), cv::Scalar(255),
+                              -1); // Draw filled white rectangle
+            } else {
+                fprintf(stderr,
+                        "decensor warning: Drawing rectangle out of bounds at (%d, %d) with size (%d, %d) for masksize %d. Skipping draw.\n",
+                        pt.x, pt.y, w, h, masksize);
+            }
         }
     }
+    fprintf(stderr, "decensor: Template matching complete.\n");
 
-    // Check if any mosaic region was detected
-    if (cv::countNonZero(card_mask) == 0) {
-        fprintf(stderr, "decensor: No mosaic regions detected. Copying input to output.\n");
-        inimage.copyTo(outimage);
-        return -1; // Indicate no mosaic found
-    }
 
     // --- 3. Calculating Dominant Mosaic Resolution ---
-    // Replicate Python's argrelextrema and grouping logic
-    std::vector<int> extremaMIN_indices;
-    // Find local minima in the relevant range of resolutions
-    // Loop indices from LowRange+1 to HighRange+1 (corresponds to sizes LowRange+1 to HighRange+1)
-    // Need at least 3 points to check local minimum: i-1, i, i+1
+
+    // Check if any mosaic region was detected based on the populated resolutions vector
+    // We check indices [LowRange + 1, HighRange + 1] which are where counts are stored.
+    bool mosaic_detected_any_size = false;
     for (int i = LowRange + 1; i <= HighRange + 1; ++i) {
-        // Check bounds: i-1, i, i+1 must be valid indices
+        if (i < resolutions.size() && resolutions[i] > 0) {
+            mosaic_detected_any_size = true;
+            break;
+        }
+    }
+
+    if (!mosaic_detected_any_size) {
+        // Also check the card_mask just in case findNonZero missed something, though unlikely
+        if (cv::countNonZero(card_mask) == 0) {
+            fprintf(stderr, "decensor: No mosaic regions detected. Copying input to output.\n");
+            inimage.copyTo(outimage);
+            return -1; // Indicate no mosaic found
+        }
+        // If mask has non-zero but resolutions don't, something unexpected happened.
+        // Proceed anyway, maybe a very large pattern matched the whole image?
+        fprintf(stderr,
+                "decensor warning: card_mask has non-zero pixels, but no matches recorded in resolutions [LowRange+1, HighRange+1]. Proceeding with default resolution.\n");
+    }
+
+    fprintf(stderr, "decensor: Calculating resolution...\n");
+    // Debugging: Print populated resolutions vector segment
+    fprintf(stderr, "decensor: Resolutions counts (indices %d to %d): [", LowRange + 1,
+            HighRange + 1);
+    for (int i = LowRange + 1; i <= HighRange + 1; ++i) {
+        if (i < resolutions.size()) { // Safety check
+            fprintf(stderr, "%d%s", resolutions[i], i == HighRange + 1 ? "" : ", ");
+        }
+    }
+    fprintf(stderr, "]\n");
+
+
+    // Find local minima indices to define groups.
+    // Matching detectMosaicResolution: find indices i where resolutions[i] < resolutions[i-1] AND resolutions[i] <= resolutions[i+1]
+    // Loop range for finding minima is indices [1, resolutions.size() - 2], which is [1, HighRange + 1].
+    // Add LowRange (index 2) and HighRange+2 (index HighRange+2) as boundary extrema.
+    std::set<int> extrema_indices_set; // Use set to handle duplicates and keep sorted
+
+    // Add boundary extrema as in detectMosaicResolution's final extrema list
+    extrema_indices_set.insert(LowRange); // Index 2
+    extrema_indices_set.insert(HighRange + 2); // Index HighRange + 2
+
+    // Find true local minima within indices [1, HighRange + 1]
+    for (int i = 1; i <= HighRange + 1; ++i) {
+        // Ensure indices i-1, i, i+1 are valid
         if (i > 0 && i < resolutions.size() - 1) {
-            if (resolutions[i] < resolutions[i - 1] && resolutions[i] < resolutions[i + 1]) {
-                extremaMIN_indices.push_back(i); // Store the index (which corresponds to the size)
+            // Strict less than left, less than or equal to right (matching detectMosaicResolution)
+            if (resolutions[i] < resolutions[i - 1] && resolutions[i] <= resolutions[i + 1]) {
+                extrema_indices_set.insert(i);
             }
         }
     }
 
-    // Add boundary indices (sizes)
-    std::vector<int> group_indices;
-    group_indices.push_back(LowRange); // Start of the first group (size LowRange)
-    group_indices.insert(group_indices.end(), extremaMIN_indices.begin(), extremaMIN_indices.end());
-    group_indices.push_back(HighRange + 2); // End of the last group (size HighRange+2)
+    // Convert set to vector for easier indexing of groups
+    std::vector<int> extrema_indices(extrema_indices_set.begin(), extrema_indices_set.end());
 
-    std::vector<std::pair<int, std::vector<int>>> Extremas; // Pair: {start_size_of_group, vector_of_counts_in_group}
-    for (size_t i = 0; i < group_indices.size() - 1; ++i) {
-        int start_size = group_indices[i];
-        int end_size = group_indices[i +
-                                     1]; // Python uses end_size + 1, meaning inclusive. Let's match.
-        std::vector<int> current_group_counts;
-        // Collect counts for sizes from start_size to end_size inclusive
-        for (int s = start_size; s <= end_size; ++s) {
-            if (s >= 0 && s < resolutions.size()) { // Check bounds for resolutions vector
-                current_group_counts.push_back(resolutions[s]);
+    // Debugging: Print final extrema indices
+    fprintf(stderr, "decensor: Final Extrema indices defining groups: [");
+    for (size_t i = 0; i < extrema_indices.size(); ++i) {
+        fprintf(stderr, "%d%s", extrema_indices[i], i == extrema_indices.size() - 1 ? "" : ", ");
+    }
+    fprintf(stderr, "]\n");
+
+
+    // Find the "biggest extrema group"
+    int MosaicResolutionOfImage = HighRange + 1; // Default value
+    int best_group_sum_score = -1; // Stores sum + int(sum*0.05)
+    int best_group_max_val_score = -1; // Stores max_val + int(max_val*0.15)
+    int best_original_index_of_max = -1; // The index in `resolutions` where the max count of the best group was found
+
+    if (extrema_indices.size() < 2) {
+        fprintf(stderr,
+                "decensor: Not enough extrema points (%zu) to form groups. Cannot calculate resolution reliably. Using default HighRange + 1 (%d).\n",
+                extrema_indices.size(), HighRange + 1);
+        // Keep default resolution HighRange + 1
+    } else {
+        // Iterate through pairs of extrema indices to define groups [start_res_idx, end_res_idx] inclusive
+        for (size_t i = 0; i < extrema_indices.size() - 1; ++i) {
+            int group_start_res_index = extrema_indices[i];
+            int group_end_res_index = extrema_indices[i + 1]; // Inclusive range [start, end]
+
+            // Check bounds for group indices
+            if (group_start_res_index < 0 || group_start_res_index >= (int) resolutions.size() ||
+                group_end_res_index < 0 || group_end_res_index >= (int) resolutions.size() ||
+                group_start_res_index > group_end_res_index) {
+                fprintf(stderr,
+                        "decensor ERROR: Invalid extrema group indices [%d, %d] for resolutions size %zu. Skipping group.\n",
+                        group_start_res_index, group_end_res_index, resolutions.size());
+                continue;
+            }
+
+            int current_group_sum = 0;
+            int current_max_val_in_group = -1;
+            int current_original_index_of_max_in_group = -1; // Index in `resolutions` for max of this group
+
+            // Calculate sum and find max value + its original index within this group range
+            for (int res_idx = group_start_res_index; res_idx <= group_end_res_index; ++res_idx) {
+                current_group_sum += resolutions[res_idx];
+                if (current_max_val_in_group == -1 ||
+                    resolutions[res_idx] > current_max_val_in_group) {
+                    current_max_val_in_group = resolutions[res_idx];
+                    current_original_index_of_max_in_group = res_idx;
+                } else if (resolutions[res_idx] == current_max_val_in_group) {
+                    // Tie-breaker for max value within the group: prefer smaller index
+                    if (current_original_index_of_max_in_group == -1 ||
+                        res_idx < current_original_index_of_max_in_group) {
+                        current_original_index_of_max_in_group = res_idx;
+                    }
+                }
+            }
+
+            // If the current group has no positive matches, skip it
+            if (current_max_val_in_group <= 0) {
+                // fprintf(stderr, "decensor: Skipping group [%d, %d] with no matches.\n", group_start_res_index, group_end_res_index);
+                continue;
+            }
+
+            // Calculate scores based on Python's logic
+            int current_sum_score = current_group_sum + static_cast<int>(current_group_sum * 0.05);
+            int current_max_val_score =
+                    current_max_val_in_group + static_cast<int>(current_max_val_in_group * 0.15);
+
+            // Compare current group against the best found so far
+            bool update_best = false;
+            if (best_original_index_of_max == -1) { // First valid group
+                update_best = true;
             } else {
-                current_group_counts.push_back(0); // Treat out of bounds as 0 count
+                if (current_sum_score > best_group_sum_score) {
+                    update_best = true;
+                } else if (current_sum_score == best_group_sum_score) {
+                    if (current_max_val_score > best_group_max_val_score) {
+                        update_best = true;
+                    } else if (current_max_val_score == best_group_max_val_score) {
+                        // Tie-breaker: prefer group whose peak (max value) is at a smaller index
+                        if (current_original_index_of_max_in_group < best_original_index_of_max) {
+                            update_best = true;
+                        }
+                    }
+                }
             }
-        }
-        if (!current_group_counts.empty()) {
-            Extremas.push_back({start_size, current_group_counts});
-        }
-    }
 
-    long long BigExtremaSum = -1;
-    int BigExtremaGroupStartSize = -1;
-    int max_count_in_BigExtremaGroup = -1;
-    int index_of_max_count_in_BigExtremaGroup = -1; // Index relative to group_indices[i]
-
-    for (const auto &group: Extremas) {
-        long long current_sum = 0;
-        int current_max_count = -1;
-        int current_max_idx = -1;
-
-        for (size_t i = 0; i < group.second.size(); ++i) {
-            current_sum += group.second[i];
-            if (group.second[i] > current_max_count) {
-                current_max_count = group.second[i];
-                current_max_idx = i;
+            if (update_best) {
+                best_group_sum_score = current_sum_score;
+                best_group_max_val_score = current_max_val_score;
+                best_original_index_of_max = current_original_index_of_max_in_group;
+                // Debugging:
+                // fprintf(stderr, "decensor: New best group found. Peak at res_idx %d (masksize %d). Sum Score %d, Max Score %d.\n",
+                //         best_original_index_of_max, best_original_index_of_max + 1, best_group_sum_score, best_max_val_score);
             }
-        }
+        } // End loop through extrema groups
 
-        // Python logic: 5% preference for smaller resolution group (by sum)
-        // Max count comparison with 15% preference for group with higher max count
-        bool choose_current = false;
-        if (BigExtremaSum == -1 ||
-            (current_sum + static_cast<long long>(current_sum * 0.05)) >= BigExtremaSum) {
-            if (max_count_in_BigExtremaGroup == -1 ||
-                (current_max_count + static_cast<int>(current_max_count * 0.15)) >=
-                max_count_in_BigExtremaGroup) {
-                choose_current = true;
+        // Determine the final mosaic resolution from the best group's peak index
+        if (best_original_index_of_max != -1) {
+            // The index in `resolutions` corresponds to masksize = index + 1.
+            // The index range for counts is [LowRange+1, HighRange+1].
+            // So the masksize range is [LowRange+2, HighRange+2].
+            MosaicResolutionOfImage = best_original_index_of_max + 1;
+
+            // Python's final check: if MosaicResolutionOfImage == 0, set to HighRange+1.
+            // Given our logic, it should be >= LowRange+2 if best_original_index_of_max != -1.
+            // But keep check for safety/matching Python state.
+            if (MosaicResolutionOfImage == 0) {
+                fprintf(stderr,
+                        "decensor: Calculated MosaicResolutionOfImage was unexpectedly 0. Setting to default HighRange + 1 (%d).\n",
+                        HighRange + 1);
+                MosaicResolutionOfImage = HighRange + 1;
             }
+
+        } else {
+            // No valid group found (e.g., no matches above threshold). Use default.
+            fprintf(stderr,
+                    "decensor: No clear best group found during resolution calculation. Using default HighRange + 1 (%d).\n",
+                    HighRange + 1);
+            // MosaicResolutionOfImage is already initialized to HighRange + 1
         }
-
-        if (choose_current) {
-            BigExtremaSum = current_sum;
-            BigExtremaGroupStartSize = group.first;
-            max_count_in_BigExtremaGroup = current_max_count;
-            index_of_max_count_in_BigExtremaGroup = current_max_idx;
-        }
-    }
-
-    int MosaicResolutionOfImage = HighRange + 1; // Default if no good extrema found
-    if (BigExtremaGroupStartSize != -1 && index_of_max_count_in_BigExtremaGroup != -1) {
-        // The resolution is the start size of the chosen group + the index of the max count within that group
-        MosaicResolutionOfImage = BigExtremaGroupStartSize + index_of_max_count_in_BigExtremaGroup;
-    }
-
-    // Python default if MosaicResolutionOfImage is 0 (shouldn't happen with our default)
-    // if (MosaicResolutionOfImage == 0) MosaicResolutionOfImage = HighRange + 1; // Redundant with our default initialization
+    } // End if extrema_indices.size() >= 2
 
     fprintf(stderr, "decensor: Detected Mosaic Resolution is: %d\n", MosaicResolutionOfImage);
 
+
     // --- 4. ESRGAN Processing ---
+    // This part uses the detected MosaicResolutionOfImage.
+    // Keeping the original decensor's approach of downscaling the whole image,
+    // processing, upscaling, and blending based on the detected mask.
+    // The 'process_only_mosaic_region' logic from the original prompt was removed
+    // in your initial MNNSR::decensor, so we stick to the full image downscale approach.
+
     cv::Mat processed_region_esr; // Will hold the ESRGAN output resized to the target area size
 
-    {
+    // Calculate downscale factor and number of SR loops
+    int loops = std::round(std::log(MosaicResolutionOfImage) / std::log(scale));
+    loops = std::max(1, loops); // Ensure at least one SR pass if mosaic is detected
+    float total_model_upscale = std::pow(scale, loops);
+    float pre_scale = total_model_upscale * 1.1 >= MosaicResolutionOfImage
+                      ? 1.0f / MosaicResolutionOfImage
+                      : sqrt(MosaicResolutionOfImage / total_model_upscale) /
+                        MosaicResolutionOfImage;
 
-        int loops = std::round(std::log(MosaicResolutionOfImage) / std::log(scale));
-        float pre_scale = (std::pow(scale, loops) * 1.1 >= MosaicResolutionOfImage) ? 1.0f /
-                                                                                      MosaicResolutionOfImage
-                                                                                    :
-                          sqrt(MosaicResolutionOfImage / (std::pow(scale, loops))) /
-                          MosaicResolutionOfImage;
-        // Standard path: Process a downscaled version of the entire image
-        int Sx = static_cast<int>( inimage.cols * pre_scale);
-        int Sy = static_cast<int>( inimage.rows * pre_scale);
+    int Sx = static_cast<int>(inimage.cols * pre_scale);
+    int Sy = static_cast<int>(inimage.rows * pre_scale);
 
-        // Ensure Sx, Sy are at least 1
-        Sx = std::max(1, Sx);
-        Sy = std::max(1, Sy);
+    // Ensure Sx, Sy are at least 1
+    Sx = std::max(1, Sx);
+    Sy = std::max(1, Sy);
 
-        fprintf(stderr,
-                "decensor: Resizing full input to (%d, %d) for processing. pre_scale=%.3f, loops=%d\n",
-                Sx, Sy, pre_scale, loops);
+    fprintf(stderr,
+            "decensor: Resizing full input to (%d, %d) for processing. pre_scale=%.3f, loops=%d\n",
+            Sx, Sy, pre_scale, loops);
 
-        cv::Mat shrinkedI;
-        cv::resize(inimage, shrinkedI, cv::Size(Sx, Sy), 0, 0, cv::INTER_AREA);
-//        outimage = cv::Mat(inimage.rows , inimage.cols , CV_8UC3);
-        cv::Mat esr_output_shrunken_scaled = cv::Mat(shrinkedI.rows * scale, shrinkedI.cols * scale,
-                                                     CV_8UC3);
-        for (int i = 0; i < loops; i++) {
-            fprintf(stderr, "decensor: processing loop %d/%d, %d*%d -> %d*%d\n", i, loops,
-                    shrinkedI.rows, shrinkedI.cols, esr_output_shrunken_scaled.rows,
-                    esr_output_shrunken_scaled.cols);
+    cv::Mat shrinkedI;
+    // Use INTER_AREA for downsampling, INTER_CUBIC for upsampling (later resize)
+    cv::resize(inimage, shrinkedI, cv::Size(Sx, Sy), 0, 0, cv::INTER_AREA);
 
-            if (process(shrinkedI, esr_output_shrunken_scaled, card_mask) != 0) {
-                fprintf(stderr, "decensor error: MNNSR::process failed for full image.\n");
-                inimage.copyTo(outimage); // Fallback
-                return -1;
-            }
+    cv::Mat esr_output_shrunken_scaled = shrinkedI; // Start the loop with the downscaled image
 
-            esr_output_shrunken_scaled.copyTo(shrinkedI);
-//            fprintf(stderr, "decensor: processing loop %d/%d done, %d*%d & %d*%d\n", i,loops,shrinkedI.rows, shrinkedI.cols, esr_output_shrunken_scaled.rows, esr_output_shrunken_scaled.cols);
+    for (int i = 0; i < loops; i++) {
+        fprintf(stderr, "decensor: processing SR loop %d/%d, input: %d*%d\n",
+                i + 1, loops, esr_output_shrunken_scaled.rows, esr_output_shrunken_scaled.cols);
 
-            esr_output_shrunken_scaled = cv::Mat(shrinkedI.rows * scale, shrinkedI.cols * scale,
-                                                 CV_8UC3);
-//            esr_output_shrunken_scaled.resize((shrinkedI.rows * scale, shrinkedI.cols * scale),scale);
-//            fprintf(stderr, "decensor: processing loop %d/%d resize, %d*%d & %d*%d\n", i,loops,shrinkedI.rows, shrinkedI.cols, esr_output_shrunken_scaled.rows, esr_output_shrunken_scaled.cols);
+        // Prepare output buffer for the current SR pass
+        cv::Mat current_esr_output(esr_output_shrunken_scaled.rows * scale,
+                                   esr_output_shrunken_scaled.cols * scale,
+                                   CV_8UC3);
 
+        // Call MNNSR::process on the intermediate result
+        // We pass the detected card_mask. The process function uses it to skip tiles.
+        if (process(esr_output_shrunken_scaled, current_esr_output, card_mask) != 0) {
+            fprintf(stderr, "decensor error: MNNSR::process failed during SR loop %d.\n", i + 1);
+            inimage.copyTo(outimage); // Fallback
+            return -1;
         }
 
-        fprintf(stderr, "decensor: combine\n");
-
-        // Resize the scaled output back to the original full image size
-        cv::resize(shrinkedI, processed_region_esr, inimage.size(), 0, 0,
-                   cv::INTER_AREA);
-
-        // Combine the processed ESRGAN output with the original image using the full card_mask
-        outimage = inimage.clone(); // Start with the original image
-
-        cv::Mat full_inv_mask; // Mask where mosaic is detected (255=mosaic, 0=not)
-        cv::threshold(card_mask, full_inv_mask, 1, 255,
-                      cv::THRESH_BINARY); // Ensure mask is binary 0/255
-
-        // Copy ESRGAN output pixels onto outimage where full_inv_mask is non-zero
-        if (processed_region_esr.channels() == outimage.channels()) {
-            processed_region_esr.copyTo(outimage, full_inv_mask);
-        } else {
-            fprintf(stderr,
-                    "decensor warning: Channel mismatch (%d vs %d) between processed region and output image. copyTo with mask may not work as expected.\n",
-                    processed_region_esr.channels(), outimage.channels());
-            // Fallback: simple copy which ignores the mask - not ideal
-            processed_region_esr.copyTo(outimage); // This replaces the entire image
-        }
-
+        // The output of this pass becomes the input for the next pass
+        // or the final result if this is the last pass.
+        esr_output_shrunken_scaled = current_esr_output;
     }
+
+    fprintf(stderr, "decensor: Combining processed image with original...\n");
+
+    // The final result `esr_output_shrunken_scaled` is now total_model_upscale times
+    // the initial `shrinkedI` size. We need to resize it back to the original image size.
+    // Use INTER_CUBIC for upsampling or potentially INTER_LANCZOS4 for better quality if needed.
+    cv::resize(esr_output_shrunken_scaled, processed_region_esr, inimage.size(), 0, 0,
+               cv::INTER_CUBIC);
+
+    // Combine the processed ESRGAN output with the original image using the full card_mask
+    // Regions in card_mask that are 255 will take pixels from processed_region_esr.
+    // Regions in card_mask that are 0 will keep pixels from the original image.
+    outimage = inimage.clone(); // Start with the original image content
+
+    // Ensure mask is strictly 0 or 255 if needed by copyTo, though CV_8U mask usually works.
+    // cv::Mat binary_mask;
+    // cv::threshold(card_mask, binary_mask, 1, 255, cv::THRESH_BINARY);
+
+    // Copy ESRGAN output pixels onto outimage where card_mask is non-zero (255)
+    if (processed_region_esr.channels() == outimage.channels()) {
+        // Use the mask to only copy pixels in the detected mosaic regions
+        processed_region_esr.copyTo(outimage, card_mask);
+    } else {
+        fprintf(stderr,
+                "decensor warning: Channel mismatch (%d vs %d) between processed region and output image. copyTo with mask may not work as expected. Falling back to simple copy (entire image replaced).\n",
+                processed_region_esr.channels(), outimage.channels());
+        // Fallback: simple copy which replaces the entire image - not ideal for blending
+        processed_region_esr.copyTo(outimage);
+    }
+
+    // Handle Alpha channel if original image had one
+    if (original_channels == 4) {
+        // Split the original BGRA image
+        std::vector<cv::Mat> original_channels_split(4);
+        cv::split(inimage, original_channels_split);
+        cv::Mat alpha_channel = original_channels_split[3]; // The alpha channel
+
+        // Convert the output BGR image to BGRA
+        cv::cvtColor(outimage, outimage, cv::COLOR_BGR2BGRA);
+
+        // Copy the original alpha channel to the output BGRA image's alpha channel
+        std::vector<cv::Mat> output_channels_split(4);
+        cv::split(outimage, output_channels_split);
+        alpha_channel.copyTo(output_channels_split[3]);
+        cv::merge(output_channels_split, outimage);
+    }
+
 
     fprintf(stderr, "decensor: Processing complete.\n");
     return 0; // Success
