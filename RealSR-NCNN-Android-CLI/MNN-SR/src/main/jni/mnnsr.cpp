@@ -279,8 +279,8 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
 
             if (!inMask.empty()) {
                 int x0 = xi * tileWidth, x = xi == xtiles - 1 ? inWidth - xi * tileWidth :
-                                             (xi + 1) * tileWidth, y0 = yi * tileHeight, y =
-                        yi == ytiles - 1 ? inHeight - yi * tileHeight : (yi + 1) * tileHeight;
+                                             tileWidth, y0 = yi * tileHeight, y =
+                        yi == ytiles - 1 ? inHeight - yi * tileHeight : tileHeight;
                 cv::Mat maskTile = inMask(cv::Rect(x0, y0, x, y));
 
                 // 判断maskTile是否全部为0
@@ -813,9 +813,6 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage) {
         }
     } // End if extrema_indices.size() >= 2
 
-    fprintf(stderr, "decensor: Detected Mosaic Resolution is: %d\n", MosaicResolutionOfImage);
-
-
     // --- 4. ESRGAN Processing ---
     // This part uses the detected MosaicResolutionOfImage.
     // Keeping the original decensor's approach of downscaling the whole image,
@@ -841,9 +838,8 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage) {
     Sx = std::max(1, Sx);
     Sy = std::max(1, Sy);
 
-    fprintf(stderr,
-            "decensor: Resizing full input to (%d, %d) for processing. pre_scale=%.3f, loops=%d\n",
-            Sx, Sy, pre_scale, loops);
+    fprintf(stderr, "decensor: Mosaic Resolution: %d, pre_scale=%.3f, loops=%d\n",
+            MosaicResolutionOfImage, pre_scale, loops);
 
     cv::Mat shrinkedI;
     // Use INTER_AREA for downsampling, INTER_CUBIC for upsampling (later resize)
@@ -852,38 +848,25 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage) {
     cv::Mat esr_output_shrunken_scaled = shrinkedI; // Start the loop with the downscaled image
 
     for (int i = 0; i < loops; i++) {
-        fprintf(stderr, "decensor: processing SR loop %d/%d, input: %d*%d\n",
-                i + 1, loops, esr_output_shrunken_scaled.rows, esr_output_shrunken_scaled.cols);
-
-        // Prepare output buffer for the current SR pass
         cv::Mat current_esr_output(esr_output_shrunken_scaled.rows * scale,
                                    esr_output_shrunken_scaled.cols * scale,
                                    CV_8UC3);
 
-        // Call MNNSR::process on the intermediate result
-        // We pass the detected card_mask. The process function uses it to skip tiles.
+        fprintf(stderr, "decensor: processing loop %d/%d, %d*%d -> %d*%d\n",
+                i + 1, loops, esr_output_shrunken_scaled.rows, esr_output_shrunken_scaled.cols,
+                current_esr_output.rows, current_esr_output.cols
+        );
         if (process(esr_output_shrunken_scaled, current_esr_output, card_mask) != 0) {
             fprintf(stderr, "decensor error: MNNSR::process failed during SR loop %d.\n", i + 1);
             inimage.copyTo(outimage); // Fallback
             return -1;
         }
-
-        // The output of this pass becomes the input for the next pass
-        // or the final result if this is the last pass.
-        esr_output_shrunken_scaled = current_esr_output;
+        current_esr_output.copyTo(esr_output_shrunken_scaled);
     }
 
     fprintf(stderr, "decensor: Combining processed image with original...\n");
-
-    // The final result `esr_output_shrunken_scaled` is now total_model_upscale times
-    // the initial `shrinkedI` size. We need to resize it back to the original image size.
-    // Use INTER_CUBIC for upsampling or potentially INTER_LANCZOS4 for better quality if needed.
     cv::resize(esr_output_shrunken_scaled, processed_region_esr, inimage.size(), 0, 0,
                cv::INTER_CUBIC);
-
-    // Combine the processed ESRGAN output with the original image using the full card_mask
-    // Regions in card_mask that are 255 will take pixels from processed_region_esr.
-    // Regions in card_mask that are 0 will keep pixels from the original image.
     outimage = inimage.clone(); // Start with the original image content
 
     // Ensure mask is strictly 0 or 255 if needed by copyTo, though CV_8U mask usually works.
