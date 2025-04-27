@@ -223,13 +223,16 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
 
     int xPrepadding = prepadding, yPrepadding = prepadding;
 
+    // 待重新分配的像素数
     int left = inWidth % tileWidth;
-    if (left > 0) {
+    if (xtiles > 1 && left > 0) {
+//        fprintf(stderr, "process, xtiles=( (%d + %d - 1) / %d)=%d, left=%d, prepadding=%d\n",
+//                inWidth, tileWidth, tileWidth, xtiles, left, prepadding);
         if (left < prepadding) {
             // 倒数第2个tile的prepadding已经包含了推理结果
             xtiles--;
         } else {
-            if (left / 2 <= prepadding)
+            if ((left + 1) / 2 <= prepadding)
                 xtiles--;
             // xtiles * (tilesize - 2 * xPrepadding) + xPrepadding = inWidth
             xPrepadding = (xtiles * tilesize - inWidth) / (2 * xtiles - 1);
@@ -237,12 +240,12 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
         }
     }
     left = inHeight % tileHeight;
-    if (left > 0) {
+    if (ytiles > 1 && left > 0) {
         if (left < prepadding) {
             // 倒数第2个tile的prepadding已经包含了推理结果
             ytiles--;
         } else {
-            if (left / 2 <= prepadding)
+            if ((left + 1) / 2 <= prepadding)
                 ytiles--;
             // ytiles * (tilesize - 2 * yPrepadding) + yPrepadding = inHeight
             yPrepadding = (ytiles * tilesize - inHeight) / (2 * ytiles - 1);
@@ -336,8 +339,8 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
                 int l = (xi == 0) ? xPrepadding : 0;
                 int r = tilesize + in_tile_x0 - in_tile_x1 - l;
 
-//                fprintf(stderr, "process y=%d, x=%d copyMakeBorder %d %d %d %d\n", yi, xi, t, b, l,
-//                        r);
+//                fprintf(stderr, "process y=%d, x=%d copyMakeBorder %d %d %d %d, %d %d\n", yi, xi, t,
+//                        b, l, r, inputTile.cols, inputTile.rows);
 //                cv::Mat paddedTile;
                 cv::copyMakeBorder(inputTile, paddedTile, t, b, l, r, cv::BORDER_CONSTANT);
 
@@ -346,6 +349,8 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
                                    input_tensor);
 
             } else {
+//                fprintf(stderr, "process y=%d, x=%d copyMakeBorder 0, %d %d\n", yi, xi,
+//                        inputTile.cols, inputTile.rows);
 //                cv::Mat paddedTile;
                 cv::copyMakeBorder(inputTile, paddedTile, 0, 0, 0, 0, cv::BORDER_CONSTANT);
 
