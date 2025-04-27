@@ -30,7 +30,9 @@
         -s 放大倍数，可选(2/3/4, default=2)\n
         -c sync gap mode，可选(0/1/2/3, default=3)\n
         \n其中mnnsr-ncnn额外支持：\n
-        -b 推理的后端类型，可选(CPU=0,AUTO=4,OPENCL=3,OPENGL=6,VULKAN=7,NN=5, default=3)\n
+        -b 推理后端类型（需要注意的是，这只是设置的后端类型，实际调用时mnn框架可能会自动调整，请留意程序运行时打印的信息）(CPU=0,AUTO=4,CUDA=2,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)\n
+        -c 模型和输出图片的色彩空间(RGB=1, BGR=2, YCbCr=5, YUV=6, GRAY=10, GRAY模型+YCbCr色彩转换=11, GRAY模型+YUV色彩转换=12, default=1)\n
+        -d 去审核模式，使用此模式则输出的图片与输入图片的分辨率相同(关闭=-1, 去马赛克=0, default=-1)\n
 
 
         \n\n二、调用经典插值算法

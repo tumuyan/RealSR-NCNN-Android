@@ -69,7 +69,7 @@ RealSR-NCNN-Android
 
 
 # MNN-SR
-这个模块是用 [mnn](https://github.com/alibaba/MNN) 实现的超分辨率命令行程序。经测试确认，mnn要比ncnn慢，但是可以兼容更多模型。  
+这个模块是用 [mnn](https://github.com/alibaba/MNN) 实现的超分辨率命令行程序。经测试确认，mnn可以比ncnn兼容更多模型。  
 另外我想把这个模块能同时兼容VS和AS，这样不止是Android，连Windows也有脱离Python的通用性的超分辨率工具了！但是目前VS仍然有许多错误，**如果可能的话，请你帮帮我🙏！**
 
 ### 如何在AS中编译
@@ -87,6 +87,12 @@ RealSR-NCNN-Android
 4. 从mnn库中复制 *.so 文件到GUI项目的assest中.
 
 ### 用法
-和realsr-ncnn基本相同.
+和realsr-ncnn基本相同，增加了如下参数：
+```console
+  -b backend           推理后端类型（需要注意的是，这只是设置的后端类型，实际调用时mnn框架可能会自动调整，请留意程序运行时打印的信息）(CPU=0,AUTO=4,CUDA=2,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)
+  -c color-type        模型和输出图片的色彩空间(RGB=1, BGR=2, YCbCr=5, YUV=6, GRAY=10, GRAY模型+YCbCr色彩转换=11, GRAY模型+YUV色彩转换=12, default=1)
+  -d decensor-mode     去审核模式，使用此模式则输出的图片与输入图片的分辨率相同(关闭=-1, 去马赛克=0, default=-1)
+  
+```
 
 

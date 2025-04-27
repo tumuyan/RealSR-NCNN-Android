@@ -76,8 +76,7 @@ If you encounter crash or error, try to upgrade your derive
 
 
 # MNN-SR
-This module is a [mnn](https://github.com/alibaba/MNN) implementation for super resolution. 
-MNN could support more models than ncnn, but it is slower in my experiment.  
+This module is a [mnn](https://github.com/alibaba/MNN) implementation for super resolution. MNN could support more models than ncnn.  
 I am trying to make this module a CLI program that can be compiled in both VS(for Windows) and AS(for Android), 
 but it has some problem in VS. **🙏Waiting your help!**
 
@@ -97,6 +96,11 @@ but it has some problem in VS. **🙏Waiting your help!**
 5. run mnnsr commands in App
 
 ### Usages
-The usage of others program is same as realsr-ncnn.
-
+The usage of others program is same as realsr-ncnn. Add these param:  
+```console
+  -b backend           forward backend type(CPU=0,AUTO=4,CUDA=2,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)
+  -c color-type        model & output color space type (RGB=1, BGR=2, YCbCr=5, YUV=6, GRAY=10, GRAY model & YCbCr output=11, GRAY model & YUV output=12, default=1)
+  -d decensor-mode     remove censor mode (Not=-1, Mosaic=0, default=-1)
+  
+```
 
