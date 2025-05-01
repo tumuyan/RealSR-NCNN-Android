@@ -28,13 +28,13 @@ public:
     int load(const std::wstring& modelpath, bool cachemodel);
 #else
 
-    int load(const std::string &modelpath, bool cachemodel);
+    int load(const std::string &modelpath, bool cachemodel, const bool nchw = true);
 
 #endif
 
     int process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mask = cv::Mat());
 
-    int decensor(const cv::Mat &inimage, cv::Mat &outimage);
+    int decensor(const cv::Mat &inimage, cv::Mat &outimage, const bool det_box = false);
 
     cv::Mat TensorToCvMat(void);
 

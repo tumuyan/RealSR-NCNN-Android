@@ -60,7 +60,7 @@ MNNSR::~MNNSR() {
 int MNNSR::load(const std::wstring& modelpath, bool cachemodel)
 #else
 
-int MNNSR::load(const std::string &modelpath, bool cachemodel)
+int MNNSR::load(const std::string &modelpath, bool cachemodel, bool nchw)
 #endif
 {
     MNN::ScheduleConfig config;
@@ -120,8 +120,13 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel)
     interpreter->resizeSession(session);
     interpreter_output = interpreter->getSessionOutput(session, nullptr);
 
-    input_tensor = new MNN::Tensor(interpreter_input, MNN::Tensor::CAFFE);
-    output_tensor = new MNN::Tensor(interpreter_output, MNN::Tensor::CAFFE);
+    if (nchw) {
+        input_tensor = new MNN::Tensor(interpreter_input, MNN::Tensor::CAFFE);
+        output_tensor = new MNN::Tensor(interpreter_output, MNN::Tensor::CAFFE);
+    } else {
+        input_tensor = new MNN::Tensor(interpreter_input, MNN::Tensor::TENSORFLOW);
+        output_tensor = new MNN::Tensor(interpreter_output, MNN::Tensor::TENSORFLOW);
+    }
 
     input_buffer = input_tensor->host<float>();
     output_buffer = output_tensor->host<float>();
@@ -457,7 +462,7 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
  * @param outimage Output image with mosaic removed (same format as input).
  * @return 0 on success, -1 on failure or if no mosaic was detected.
  */
-int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage) {
+int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage, const bool det_box) {
     if (inimage.empty()) {
         fprintf(stderr, "decensor error: Input image is empty.\n");
         return -1;
@@ -469,7 +474,7 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage) {
     const int CannyTr1 = 8;      // Canny lower threshold
     const int CannyTr2 = 30;     // Canny upper threshold
     const int LowRange = 2;      // Minimum mosaic block size to check
-    const int HighRange = 25;    // Maximum mosaic block size to check
+    const int HighRange = 32;    // Maximum mosaic block size to check
     const float DetectionTr = 0.29f; // Threshold for template matching correlation (kept float)
 
     // Validate Gaussian blur kernel size (from detectMosaicResolution)
@@ -818,6 +823,28 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage) {
         }
     } // End if extrema_indices.size() >= 2
 
+
+    {
+        // 检测 cv::Mat card_mask 的每个连通的区域。如果区域的长、宽都小于 MosaicResolutionOfImage *1.5,则擦除这个区域。
+        // 检测连通区域
+        cv::Mat labels, stats, centroids;
+        int num_labels = cv::connectedComponentsWithStats(card_mask, labels, stats, centroids, 8);
+
+        // 遍历所有连通区域（跳过背景0）
+        for (int i = 1; i < num_labels; i++) {
+            int width = stats.at<int>(i, cv::CC_STAT_WIDTH);
+            int height = stats.at<int>(i, cv::CC_STAT_HEIGHT);
+
+            // 如果区域尺寸小于阈值则擦除
+            if (width < MosaicResolutionOfImage * 1.5 ||
+                height < MosaicResolutionOfImage * 1.5) {
+                cv::Mat region_mask = (labels == i);
+                card_mask.setTo(0, region_mask); // 将该区域置为0
+            }
+        }
+
+    }
+
     // --- 4. ESRGAN Processing ---
     // This part uses the detected MosaicResolutionOfImage.
     // Keeping the original decensor's approach of downscaling the whole image,
@@ -851,6 +878,7 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage) {
     cv::resize(inimage, shrinkedI, cv::Size(Sx, Sy), 0, 0, cv::INTER_AREA);
 
     cv::Mat esr_output_shrunken_scaled = shrinkedI; // Start the loop with the downscaled image
+    cv::Mat out_mask;
 
     for (int i = 0; i < loops; i++) {
         cv::Mat current_esr_output(esr_output_shrunken_scaled.rows * scale,
@@ -866,28 +894,24 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage) {
             inimage.copyTo(outimage); // Fallback
             return -1;
         }
-        current_esr_output.copyTo(esr_output_shrunken_scaled);
+
+        cv::resize(inimage, esr_output_shrunken_scaled, current_esr_output.size(), 0, 0,
+                   cv::INTER_LANCZOS4);
+        cv::resize(card_mask, out_mask, current_esr_output.size(), 0, 0,
+                   cv::INTER_NEAREST);
+        current_esr_output.copyTo(esr_output_shrunken_scaled, out_mask);
+
+//        current_esr_output.copyTo(esr_output_shrunken_scaled);
     }
 
     fprintf(stderr, "decensor: Combining processed image with original...\n");
     cv::resize(esr_output_shrunken_scaled, processed_region_esr, inimage.size(), 0, 0,
                cv::INTER_CUBIC);
-    outimage = inimage.clone(); // Start with the original image content
+    outimage = inimage.clone();
+    processed_region_esr.copyTo(outimage, card_mask);
 
-    // Ensure mask is strictly 0 or 255 if needed by copyTo, though CV_8U mask usually works.
-    // cv::Mat binary_mask;
-    // cv::threshold(card_mask, binary_mask, 1, 255, cv::THRESH_BINARY);
-
-    // Copy ESRGAN output pixels onto outimage where card_mask is non-zero (255)
-    if (processed_region_esr.channels() == outimage.channels()) {
-        // Use the mask to only copy pixels in the detected mosaic regions
-        processed_region_esr.copyTo(outimage, card_mask);
-    } else {
-        fprintf(stderr,
-                "decensor warning: Channel mismatch (%d vs %d) between processed region and output image. copyTo with mask may not work as expected. Falling back to simple copy (entire image replaced).\n",
-                processed_region_esr.channels(), outimage.channels());
-        // Fallback: simple copy which replaces the entire image - not ideal for blending
-        processed_region_esr.copyTo(outimage);
+    if (det_box) {
+        drawSemiTransparentMask(outimage, card_mask, 0.3f);
     }
 
     // Handle Alpha channel if original image had one
