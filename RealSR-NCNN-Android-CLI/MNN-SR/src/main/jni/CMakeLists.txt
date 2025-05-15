@@ -9,6 +9,7 @@ set(CMAKE_BUILD_TYPE Debug)
 
 if (MSVC)  # Visual Studio
     message(STATUS "==Configuring for Visual Studio==")
+    add_definitions(-DNOMINMAX)
 
     if ("${CMAKE_GENERATOR}" MATCHES "(Win64|IA64)")
         set(TARGET_ARCH "x64")

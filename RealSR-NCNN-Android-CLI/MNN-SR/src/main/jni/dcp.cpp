@@ -40,7 +40,7 @@ DCP::~DCP() {
 #if _WIN32
 #include <codecvt>
 
-int DCP::load(const std::wstring& modelpath, bool cachemodel, bool nchw))
+int DCP::load(const std::wstring& modelpath, bool cachemodel, bool nchw)
 #else
 
 int DCP::load(const std::string &modelpath, bool cachemodel, bool nchw)
@@ -73,9 +73,14 @@ int DCP::load(const std::string &modelpath, bool cachemodel, bool nchw)
 
     this->cachemodel = cachemodel;
     if (cachemodel) {
+#if _WIN32
+        std::string cachefile = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(modelpath) + ".cache";
+#else
         std::string cachefile = modelpath + ".cache";
+#endif
         interpreter->setCacheFile(cachefile.c_str());
     }
+
 
     session = interpreter->createSession(config);
     if (session == nullptr) {

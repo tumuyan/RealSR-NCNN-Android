@@ -67,7 +67,7 @@ MNNSR::~MNNSR() {
 #if _WIN32
 #include <codecvt>
 
-int MNNSR::load(const std::wstring& modelpath, bool cachemodel, bool nchw))
+int MNNSR::load(const std::wstring& modelpath, bool cachemodel, bool nchw)
 #else
 
 int MNNSR::load(const std::string &modelpath, bool cachemodel, bool nchw)
@@ -116,7 +116,12 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel, bool nchw)
 
     this->cachemodel = cachemodel;
     if (cachemodel) {
+
+#if _WIN32
+        std::string cachefile = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(modelpath) + ".cache";
+#else
         std::string cachefile = modelpath + ".cache";
+#endif
         interpreter->setCacheFile(cachefile.c_str());
     }
 
@@ -153,11 +158,14 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel, bool nchw)
     MNNForwardType backendType[2];
     interpreter->getSessionInfo(session, MNN::Interpreter::BACKENDS, backendType);
 
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::high_resolution_clock::now() - start);
-    fprintf(stderr, "load model %.3f s, session memory %sB, flops %s, ",
-            static_cast<double>(duration.count()) / 1000, float2str(memoryUsage, 6).c_str(),
-            float2str(flops, 6).c_str());
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::high_resolution_clock::now() - start);
+	fprintf(stderr, "load model %.3f s, session memory %sB, flops %s, "
+		, static_cast<double>(duration.count()) / 1000
+		, float2str(memoryUsage, 6).c_str()
+		, float2str(flops, 6).c_str()
+	);
+
 
     if (backendType[0] == MNN_FORWARD_CPU)
         fprintf(stderr, "backend: CPU, numThread=%d\n", config.numThread);
@@ -891,6 +899,7 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage, const bool det_bo
     // Ensure Sx, Sy are at least 1
     Sx = std::max(1, Sx);
     Sy = std::max(1, Sy);
+
 
     fprintf(stderr, "decensor: Mosaic Resolution: %d, pre_scale=%.3f, loops=%d\n",
             MosaicResolutionOfImage, pre_scale, loops);

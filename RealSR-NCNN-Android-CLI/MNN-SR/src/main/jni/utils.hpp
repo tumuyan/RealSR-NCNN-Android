@@ -40,7 +40,8 @@ static std::string get_backend_name(MNNForwardType backend_type) {
 }
 
 
-static std::string float2str(float f) {
+static std::string float2str(float v, int unit =0) {
+    float f = v * pow(10, unit);
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(2);
     if (f >= 10000000000000000.0f) {
@@ -61,13 +62,6 @@ static std::string float2str(float f) {
 
     return oss.str();
 }
-
-
-static std::string float2str(float v, int unit) {
-    float f = v * pow(10, unit);
-    return float2str(f);
-}
-
 
 typedef enum {
     UnSet = 0,
@@ -128,7 +122,9 @@ static void drawSemiTransparentMask(cv::Mat& color_image, const cv::Mat& mask_8u
     }
 
     // 确保 alpha 在有效范围内
+//	alpha = (alpha > 1.0) ? 1.0 : (alpha < 0.0) ? 0.0 : alpha;
     alpha = std::max(0.0, std::min(1.0, alpha));
+
     double beta = 1.0 - alpha;
 
     // 创建一个临时红色覆盖层图像，与彩色图像大小和类型相同

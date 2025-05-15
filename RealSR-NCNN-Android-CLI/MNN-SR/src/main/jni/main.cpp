@@ -18,7 +18,7 @@
 
 #if _WIN32
 // image decoder and encoder with wic
-#include "wic_image.h"
+//#include "wic_image.h"
 #else // _WIN32
 // image decoder and encoder with stb
 #define STB_IMAGE_IMPLEMENTATION
@@ -224,8 +224,12 @@ void *load(void *args) {
 #endif
         }
         // 读取图像
-        Mat image = imread(imagepath, IMREAD_UNCHANGED);
-
+        #if _WIN32
+           std::string imagepath_str(imagepath.begin(), imagepath.end());
+           Mat image = imread(imagepath_str, IMREAD_UNCHANGED);
+        #else
+           Mat image = imread(imagepath, IMREAD_UNCHANGED);
+        #endif
         if (image.empty()) {
 #if _WIN32
             fwprintf(stderr, L"decode image %ls failed\n", imagepath.c_str());
@@ -447,11 +451,7 @@ int main(int argc, char **argv)
     int tilesize = 0;
     int color_type = UnSet;
     int decensor_mode = -1;
-#if _DEMO_PATH
     path_t model = optarg_mo;
-#else
-    path_t model = PATHSTR("models-MNN/ESRGAN-MoeSR-jp_Illustration-x4.mnn");
-#endif
     std::vector<int> gpuid;
     int jobs_load = 1;
     std::vector<int> jobs_proc;
@@ -669,14 +669,20 @@ int main(int argc, char **argv)
         }
     }
 
-    int prepadding = 0;
+	int prepadding = 0;
 
-    if (model.find(PATHSTR("models-")) != path_t::npos || model.ends_with(".mnn")) {
-        prepadding = 4;
-    } else {
-        fprintf(stderr, "unknown model dir type\n");
-        return -1;
-    }
+	//if (model.find(PATHSTR("models-")) != path_t::npos || model.ends_with(".mnn")) {
+#if _WIN32
+	if (model.find(PATHSTR("models-")) != path_t::npos || model.rfind(L".mnn") == (model.size() - 4)) {
+#else
+	if (model.find(PATHSTR("models-")) != path_t::npos || model.rfind(".mnn") == (model.size() - 4)) {
+#endif
+		prepadding = 4;
+	}
+	else {
+		fprintf(stderr, "unknown model dir type\n");
+		return -1;
+	}
 
     std::cout << "build time: " << __DATE__ << " " << __TIME__ << std::endl;
 
@@ -700,7 +706,8 @@ int main(int argc, char **argv)
 
 #if _WIN32
     wchar_t modelpath[256];
-    if(model.ends_with(".mnn")){
+    //if(model.ends_with(".mnn")){
+    if (model.rfind(L".mnn") == (model.size() - 4)) {
         swprintf(modelpath, 256, L"%s", model.c_str());
     }else{
         swprintf(modelpath, 256, L"%s/x%d.mnn", model.c_str(), scale);
@@ -761,9 +768,9 @@ int main(int argc, char **argv)
     fseek(mp, 0, SEEK_SET);
     fclose(mp);
 
-#if _WIN32
-    CoInitializeEx(NULL, COINIT_MULTITHREADED);
-#endif
+//#if _WIN32
+//    CoInitializeEx(NULL, COINIT_MULTITHREADED);
+//#endif
 
 
     int cpu_count = 4;

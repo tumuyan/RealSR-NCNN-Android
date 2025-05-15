@@ -26,7 +26,7 @@ public:
     ~MNNSR();
 
 #if _WIN32
-    int load(const std::wstring& modelpath, bool cachemodel);
+    int load(const std::wstring& modelpath, bool cachemodel, const bool nchw = true);
 #else
 
     int load(const std::string &modelpath, bool cachemodel, const bool nchw = true);
