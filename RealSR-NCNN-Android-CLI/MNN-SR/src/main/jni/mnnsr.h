@@ -15,12 +15,13 @@
 #include "MNN/Interpreter.hpp"
 #include "MNN/ImageProcess.hpp"
 #include "utils.hpp"
+#include "dcp.h"
 
 using namespace std::chrono;
 
 class MNNSR {
 public:
-    MNNSR(int color_type);
+    MNNSR(int color_type, int decensor_mode);
 
     ~MNNSR();
 
@@ -48,6 +49,8 @@ public:
     float *input_buffer;
     float *output_buffer;
     MNNForwardType backend_type;
+    DCP *dcp = nullptr;
+
 
 private:
     MNN::Interpreter *interpreter;
@@ -60,6 +63,7 @@ private:
     const float meanVals_[3] = {0, 0, 0};
     const float normVals_[3] = {1.0 / 255, 1.0 / 255, 1.0 / 255};
     bool cachemodel;
+    int decensor_mode=-1;
 };
 
 #endif // MNNSR_H

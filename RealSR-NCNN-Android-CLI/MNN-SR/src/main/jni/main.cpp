@@ -428,7 +428,7 @@ const std::wstring& optarg_mo (L"");
 #else
 const char *optarg_in = "input.png";
 const char *optarg_out = "output.png";
-const char *optarg_mo = "models-Real-ESRGAN-anime";
+const char *optarg_mo = "models-MNN/ESRGAN-MoeSR-jp_Illustration-x4.mnn";
 #endif
 
 #if _WIN32
@@ -450,7 +450,7 @@ int main(int argc, char **argv)
 #if _DEMO_PATH
     path_t model = optarg_mo;
 #else
-    path_t model = PATHSTR("models-Real-ESRGAN-anime");
+    path_t model = PATHSTR("models-MNN/ESRGAN-MoeSR-jp_Illustration-x4.mnn");
 #endif
     std::vector<int> gpuid;
     int jobs_load = 1;
@@ -773,7 +773,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "busy...\n");
     {
 
-        MNNSR mnnsr = MNNSR(color_type);
+        MNNSR mnnsr = MNNSR(color_type,decensor_mode);
         if (tilesize == 0) {
             tilesize = 128;
             if (modelsize < 10)

@@ -136,7 +136,7 @@ if (NOT USE_SYSTEM_WEBP)
 endif ()
 
 
-add_executable(${PROJECT_NAME} main.cpp mnnsr.cpp)
+add_executable(${PROJECT_NAME} main.cpp mnnsr.cpp dcp.cpp)
 
 target_link_libraries(${PROJECT_NAME} webp MNN MNN_CL MNN_Vulkan ${OpenCV_LIBS} ${NCNN_LIB})
 

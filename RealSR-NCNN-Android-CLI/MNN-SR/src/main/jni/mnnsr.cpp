@@ -18,7 +18,13 @@
 
 using namespace MNN;
 
-MNNSR::MNNSR(int color_type) {
+MNNSR::MNNSR(int color_type, int decensor_mode) {
+    this->decensor_mode = decensor_mode;
+    if (decensor_mode > 0) {
+        dcp = new DCP();
+        return;
+    }
+
     color = static_cast<ColorType>(color_type);
     if (color == ColorType::RGB)
         pretreat_ = std::shared_ptr<MNN::CV::ImageProcess>(
@@ -46,6 +52,10 @@ MNNSR::MNNSR(int color_type) {
 }
 
 MNNSR::~MNNSR() {
+    if (decensor_mode > 0) {
+        dcp->~DCP();
+        return;
+    }
     MNN::Tensor::destroy(input_tensor);
     MNN::Tensor::destroy(output_tensor);
     interpreter->releaseSession(session);
@@ -57,12 +67,17 @@ MNNSR::~MNNSR() {
 #if _WIN32
 #include <codecvt>
 
-int MNNSR::load(const std::wstring& modelpath, bool cachemodel)
+int MNNSR::load(const std::wstring& modelpath, bool cachemodel, bool nchw))
 #else
 
 int MNNSR::load(const std::string &modelpath, bool cachemodel, bool nchw)
 #endif
 {
+
+    if (decensor_mode > 0) {
+        return dcp->load(modelpath, cachemodel, nchw);
+    }
+
     MNN::ScheduleConfig config;
     MNN::BackendConfig backendConfig;
     backendConfig.memory = MNN::BackendConfig::Memory_High;
@@ -463,6 +478,13 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
  * @return 0 on success, -1 on failure or if no mosaic was detected.
  */
 int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage, const bool det_box) {
+
+    if (decensor_mode > 0) {
+        outimage = dcp->decensor(inimage, inimage, false);
+        return 0;
+    }
+
+
     if (inimage.empty()) {
         fprintf(stderr, "decensor error: Input image is empty.\n");
         return -1;
@@ -829,6 +851,7 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage, const bool det_bo
         // 检测连通区域
         cv::Mat labels, stats, centroids;
         int num_labels = cv::connectedComponentsWithStats(card_mask, labels, stats, centroids, 8);
+        int removed = 0;
 
         // 遍历所有连通区域（跳过背景0）
         for (int i = 1; i < num_labels; i++) {
@@ -840,17 +863,16 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage, const bool det_bo
                 height < MosaicResolutionOfImage * 1.5) {
                 cv::Mat region_mask = (labels == i);
                 card_mask.setTo(0, region_mask); // 将该区域置为0
+                removed++;
             }
         }
+
+        if (removed > 0)
+            fprintf(stderr, "decensor: Removed %d regions, total %d.\n", removed, num_labels);
 
     }
 
     // --- 4. ESRGAN Processing ---
-    // This part uses the detected MosaicResolutionOfImage.
-    // Keeping the original decensor's approach of downscaling the whole image,
-    // processing, upscaling, and blending based on the detected mask.
-    // The 'process_only_mosaic_region' logic from the original prompt was removed
-    // in your initial MNNSR::decensor, so we stick to the full image downscale approach.
 
     cv::Mat processed_region_esr; // Will hold the ESRGAN output resized to the target area size
 
@@ -896,7 +918,7 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage, const bool det_bo
         }
 
         cv::resize(inimage, esr_output_shrunken_scaled, current_esr_output.size(), 0, 0,
-                   cv::INTER_LANCZOS4);
+                   cv::INTER_AREA);
         cv::resize(card_mask, out_mask, current_esr_output.size(), 0, 0,
                    cv::INTER_NEAREST);
         current_esr_output.copyTo(esr_output_shrunken_scaled, out_mask);
@@ -930,7 +952,6 @@ int MNNSR::decensor(const cv::Mat &inimage, cv::Mat &outimage, const bool det_bo
         alpha_channel.copyTo(output_channels_split[3]);
         cv::merge(output_channels_split, outimage);
     }
-
 
     fprintf(stderr, "decensor: Processing complete.\n");
     return 0; // Success
