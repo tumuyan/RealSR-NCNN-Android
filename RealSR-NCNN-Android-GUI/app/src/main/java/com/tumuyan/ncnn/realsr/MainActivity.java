@@ -62,8 +62,7 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1, SELECT_MULTI_IMAGE = 2;
     private static final int MY_PERMISSIONS_REQUEST = 100;
-
-    private static String CMD_RESET_CACHE = "cp /system/vendor/lib64/libOpenCL.so ./;rm *.cache;rm */*.cache;chmod 777 *; echo Cache has been reset.;ls";
+    private static String CMD_RESET_CACHE = "[ -f /system/lib/egl/libGLES_mali.so ] && cp -f /system/lib/egl/libGLES_mali.so ./ || echo \"[warning]not find file: /system/lib/egl/libGLES_mali.so\"; [ -f /system/vendor/lib64/libOpenCL.so ] && cp -f /system/vendor/lib64/libOpenCL.so ./ || echo \"[warning]not find file: /system/vendor/lib64/libOpenCL.so\";rm -f *.cache;rm -f */*.cache;chmod 777 *; echo Cache has been reset.;ls";
     private int selectCommand = 0;
     private String threadCount = "";
     private SubsamplingScaleImageView imageView;
@@ -621,6 +620,7 @@ public class MainActivity extends AppCompatActivity {
         cache_dir = this.getCacheDir().getAbsolutePath();
         AssetsCopyer.releaseAssets(this, "realsr", cache_dir, version == BuildConfig.VERSION_CODE);
 
+
         SharedPreferences.Editor editor = mySharePerferences.edit();
         editor.putInt("version", BuildConfig.VERSION_CODE);
         editor.apply();
@@ -644,7 +644,13 @@ public class MainActivity extends AppCompatActivity {
         titleFile = new File(dir, "img/realsr.png");
         showImage(titleFile, getString(R.string.default_log));
 
-        run_command("chmod 777 " + dir + " -R");
+
+        if (version != BuildConfig.VERSION_CODE) {
+            run_command("[ -f /system/lib/egl/libGLES_mali.so ] && cp -f /system/lib/egl/libGLES_mali.so ./ || echo \"[warning]not find file: /system/lib/egl/libGLES_mali.so\"; [ -f /system/vendor/lib64/libOpenCL.so ] && cp -f /system/vendor/lib64/libOpenCL.so ./ || echo \"[warning]not find file: /system/vendor/lib64/libOpenCL.so\";chmod 777 " + dir + " -R");
+        } else {
+            run_command("chmod 777 " + dir + " -R");
+        }
+
 
         spinner = findViewById(R.id.spinner);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
