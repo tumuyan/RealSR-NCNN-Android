@@ -110,6 +110,13 @@ static path_t get_file_extension(const path_t& path)
     return path.substr(dot + 1);
 }
 
+static path_t get_lowcase_extension(const path_t& path)
+{
+	path_t ext = get_file_extension(path);
+	std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+	return ext;
+}
+
 #if _WIN32
 static path_t get_executable_directory()
 {

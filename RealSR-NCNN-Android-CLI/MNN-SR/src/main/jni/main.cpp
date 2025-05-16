@@ -5,9 +5,10 @@
 #include <vector>
 #include <clocale>
 #include <thread>
+#include <filesystem>
 
-#undef min
-#undef max
+//#undef min
+//#undef max
 
 #include "MNN/Tensor.hpp"
 #include "MNN/MNNForwardType.h"
@@ -38,6 +39,7 @@
 #include <chrono>
 
 using namespace std::chrono;
+namespace fs = std::filesystem;
 
 #if _WIN32
 #include <wchar.h>
@@ -122,18 +124,18 @@ static void print_usage() {
     fprintf(stderr,
             "  -t tile-size         tile size (>=32/0=auto, default=0) can be 0,0,0 for multi-gpu\n");
     fprintf(stderr, "  -m model-path        realsr model path (default=models-DF2K_JPEG)\n");
-    fprintf(stderr,
-            "  -g gpu-id            gpu device to use (-1=cpu, default=auto) can be 0,1,2 for multi-gpu\n");
-    fprintf(stderr,
-            "  -j load:proc:save    thread count for load/proc/save (default=1:2:2) can be 1:2,2,2:2 for multi-gpu\n");
+    //fprintf(stderr,
+    //        "  -g gpu-id            gpu device to use (-1=cpu, default=auto) can be 0,1,2 for multi-gpu\n");
+    //fprintf(stderr,
+    //        "  -j load:proc:save    thread count for load/proc/save (default=1:2:2) can be 1:2,2,2:2 for multi-gpu\n");
 //    fprintf(stderr, "  -x                   enable tta mode\n");
     fprintf(stderr, "  -f format            output image format (jpg/png/webp, default=ext/png)\n");
+    //fprintf(stderr, "  -b backend           forward backend type(CPU=0,AUTO=4,CUDA=2,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)\n");
+    fprintf(stderr, "  -b backend           forward backend type(CPU=0,AUTO=4,OPENCL=3,VULKAN=7, default=3)\n");
     fprintf(stderr,
-            "  -b backend           forward backend type(CPU=0,AUTO=4,CUDA=2,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)\n");
+            "  -c color-type        model & output color space type (RGB=1, BGR=2, YCbCr=5, YUV=6, GRAY=10, GRAY model & YCbCr output=11, GRAY model & YUV output=12, default=1)\n");
     fprintf(stderr,
-            "  -c color-type             model & output color space type (RGB=1, BGR=2, YCbCr=5, YUV=6, GRAY=10, GRAY model & YCbCr output=11, GRAY model & YUV output=12, default=1)\n");
-    fprintf(stderr,
-            "  -d decensor-mode             remove censor mode (Not=-1, Mosaic=0, default=-1)\n");
+            "  -d decensor-mode     remove censor mode (Not=-1, Mosaic=0, default=-1)\n");
 }
 
 class Task {
@@ -225,8 +227,7 @@ void *load(void *args) {
         }
         // 读取图像
         #if _WIN32
-           std::string imagepath_str(imagepath.begin(), imagepath.end());
-           Mat image = imread(imagepath_str, IMREAD_UNCHANGED);
+            Mat image = imread_unicode(imagepath, IMREAD_UNCHANGED);
         #else
            Mat image = imread(imagepath, IMREAD_UNCHANGED);
         #endif
@@ -263,7 +264,11 @@ void *load(void *args) {
 
             // 判断 alpha 通道是否为单一颜色
             if (countNonZero(alphaChannel != alphaChannel.at<uchar>(0, 0)) == 0) {
-                fprintf(stderr, "ignore alpha channel, %s\n", imagepath.c_str());
+                #if _WIN32  
+                           fwprintf(stderr, L"ignore alpha channel, %ls\n", imagepath.c_str());  
+                #else  
+                           fprintf(stderr, "ignore alpha channel, %s\n", imagepath.c_str());  
+                #endif
                 c = 3;
             } else {
                 v.inalpha = alphaChannel;
@@ -273,16 +278,23 @@ void *load(void *args) {
         } else if (c == 3) {
             v.inimage = image;
         } else {
-            fprintf(stderr, "[error] channel=%d, %s\n", image.channels(), imagepath.c_str());
+#if _WIN32  
+            fwprintf(stderr, L"[err] channel=%d, %ls\n", image.channels(), imagepath.c_str());
+#else  
+            fprintf(stderr, "[err] channel=%d, %s\n", image.channels(), imagepath.c_str());
+#endif
+
             continue;
         }
 
         v.outimage = cv::Mat(v.inimage.rows * scale, v.inimage.cols * scale, CV_8UC3);
 
-        fprintf(stderr, "scale=%d, w/h/c %d/%d/%d -> %d/%d/%d (%d)\n", scale,
+        if (ltp->input_files.size() == 1) {
+            fprintf(stderr, "scale=%d, w/h/c %d/%d/%d -> %d/%d/%d (%d)\n", scale,
                 v.inimage.cols, v.inimage.rows, v.inimage.channels(),
                 v.outimage.cols, v.outimage.rows, v.outimage.channels(), c
-        );
+            );
+        }
 
         path_t ext = get_file_extension(v.outpath);
         if (c == 4 &&
@@ -291,10 +303,11 @@ void *load(void *args) {
             path_t output_filename2 = ltp->output_files[i] + PATHSTR(".png");
             v.outpath = output_filename2;
 #if _WIN32
-            fwprintf(stderr, L"image %ls has alpha channel ! %ls will output %ls\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
+			fwprintf(stderr, L"image %ls has alpha channel ! %ls will output %ls\n"
+				, imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
 #else // _WIN32
-            fprintf(stderr, "image %s has alpha channel ! %s will output %s\n",
-                    imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
+			fprintf(stderr, "image %s has alpha channel ! %s will output %s\n"
+				, imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
 #endif // _WIN32
         }
 
@@ -339,13 +352,14 @@ void *proc(void *args) {
 class SaveThreadParams {
 public:
     int verbose;
-    bool f_print;
+    int input_files_size;
 };
 
 void *save(void *args) {
     const SaveThreadParams *stp = (const SaveThreadParams *) args;
     const int verbose = stp->verbose;
-    for (;;) {
+
+    for (int saved_count = 1;;saved_count++) {
         Task v;
 
         tosave.get(v);
@@ -354,7 +368,11 @@ void *save(void *args) {
             break;
 
         if (v.outimage.empty()) {
+#if _WIN32  
+            fwprintf(stderr, L"[err] invalid result %ls\n", v.inpath.c_str());
+#else  
             fprintf(stderr, "[err] invalid result %s\n", v.inpath.c_str());
+#endif
             continue;
         }
 
@@ -372,9 +390,7 @@ void *save(void *args) {
             compressionParams.push_back(90);
 
 #if _WIN32
-            std::wstring outpath_wstr = v.outpath;
-            std::string outpath_str(outpath_wstr.begin(), outpath_wstr.end());
-            success = (cv::imwrite(outpath_str, v.outimage, compressionParams));
+            success = (imwrite_unicode(v.outpath, v.outimage, compressionParams));
 #else
             success = (cv::imwrite(v.outpath.c_str(), v.outimage, compressionParams));
 #endif
@@ -382,19 +398,20 @@ void *save(void *args) {
             if (!v.inalpha.empty()) {
                 cv::Mat scaledAlphaChannel;
                 cv::resize(v.inalpha, scaledAlphaChannel, cv::Size(), v.scale, v.scale,
-                           cv::INTER_LINEAR);
+                           cv::INTER_LANCZOS4);
                 std::vector<cv::Mat> outChannels;
                 cv::split(v.outimage, outChannels);
-                scaledAlphaChannel.copyTo(outChannels[3]); // 更新 alpha 通道
-                cv::Mat outputImageWithAlpha(v.outimage.rows, v.outimage.cols, CV_8UC4);
-                cv::merge(outChannels, outputImageWithAlpha); // 合并回输出图像
-                v.outimage = outputImageWithAlpha;
+                std::vector<cv::Mat> channelsToMerge;
+                channelsToMerge.push_back(outChannels[0]);
+                channelsToMerge.push_back(outChannels[1]);
+                channelsToMerge.push_back(outChannels[2]);
+                channelsToMerge.push_back(scaledAlphaChannel);     // Alpha
+                cv::merge(channelsToMerge, v.outimage);
+//                fprintf(stderr, "merge alpha channel, %d/%d/%d/%d\n",v.outimage.rows, v.outimage.cols, v.outimage.channels());
             }
 
 #if _WIN32
-            std::wstring outpath_wstr = v.outpath;
-            std::string outpath_str(outpath_wstr.begin(), outpath_wstr.end());
-            success = (cv::imwrite(outpath_str, v.outimage ));
+            success = (imwrite_unicode(v.outpath, v.outimage ));
 #else
             success = (cv::imwrite(v.outpath.c_str(), v.outimage));
 #endif
@@ -402,14 +419,13 @@ void *save(void *args) {
         if (success) {
             high_resolution_clock::time_point end = high_resolution_clock::now();
             duration<double> time_span = duration_cast<duration<double>>(end - begin);
-            if (stp->f_print)
+            if (stp->input_files_size==1)
                 fprintf(stderr, "save result use time: %.3lf\n", time_span.count());
-
-            if (verbose) {
+            else {
 #if _WIN32
-                fwprintf(stdout, L"%ls -> %ls done\n", v.inpath.c_str(), v.outpath.c_str());
+                fwprintf(stdout, L"[done] %d/%d %ls -> %ls\n", saved_count,stp->input_files_size, v.inpath.c_str(), v.outpath.c_str());
 #else
-                fprintf(stdout, "%s -> %s done\n", v.inpath.c_str(), v.outpath.c_str());
+                fprintf(stdout, "[done] %d/%d %s -> %s\n", saved_count, stp->input_files_size, v.inpath.c_str(), v.outpath.c_str());
 #endif
             }
 
@@ -428,7 +444,7 @@ void *save(void *args) {
 #if _WIN32
 const std::wstring& optarg_in (L"");
 const std::wstring& optarg_out(L"");
-const std::wstring& optarg_mo (L"");
+const std::wstring& optarg_mo (L"models-MNN/ESRGAN-MoeSR-jp_Illustration-x4.mnn");
 #else
 const char *optarg_in = "input.png";
 const char *optarg_out = "output.png";
@@ -487,10 +503,10 @@ int main(int argc, char **argv)
                 backend_type = MNN_FORWARD_CPU;
             }
             break;
-        case L'j':
-            swscanf(optarg, L"%d:%*[^:]:%d", &jobs_load, &jobs_save);
-            jobs_proc = parse_optarg_int_array(wcschr(optarg, L':') + 1);
-            break;
+        //case L'j':
+        //    swscanf(optarg, L"%d:%*[^:]:%d", &jobs_load, &jobs_save);
+        //    jobs_proc = parse_optarg_int_array(wcschr(optarg, L':') + 1);
+        //    break;
         case L'f':
             format = optarg;
             break;
@@ -540,10 +556,10 @@ int main(int argc, char **argv)
                     backend_type = MNN_FORWARD_CPU;
                 }
                 break;
-            case 'j':
-                sscanf(optarg, "%d:%*[^:]:%d", &jobs_load, &jobs_save);
-                jobs_proc = parse_optarg_int_array(strchr(optarg, ':') + 1);
-                break;
+            //case 'j':
+            //    sscanf(optarg, "%d:%*[^:]:%d", &jobs_load, &jobs_save);
+            //    jobs_proc = parse_optarg_int_array(strchr(optarg, ':') + 1);
+            //    break;
             case 'f':
                 format = optarg;
                 break;
@@ -598,33 +614,32 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    if (!path_is_directory(outputpath)) {
-        // guess format from outputpath no matter what format argument specified
-        path_t ext = get_file_extension(outputpath);
 
-        if (ext == PATHSTR("png") || ext == PATHSTR("PNG")) {
-            format = PATHSTR("png");
-        } else if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP")) {
-            format = PATHSTR("webp");
-        } else if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") ||
-                   ext == PATHSTR("JPEG")) {
-            format = PATHSTR("jpg");
-        } else {
-            fprintf(stderr, "invalid outputpath extension type\n");
-            return -1;
-        }
-    }
-
-    if (format != PATHSTR("png") && format != PATHSTR("webp") && format != PATHSTR("jpg")) {
-        fprintf(stderr, "invalid format argument\n");
-        return -1;
-    }
 
     // collect input and output filepath
     std::vector<path_t> input_files;
     std::vector<path_t> output_files;
     {
-        if (path_is_directory(inputpath) && path_is_directory(outputpath)) {
+        if (path_is_directory(inputpath)) {
+
+			if (fs::exists(outputpath)) {
+				if (!path_is_directory(outputpath)) {
+					fprintf(stderr, "[err]inputpath is directory, outputpath is file\n");
+					return -1;
+				}
+			}
+			else {
+                fs::create_directories(outputpath);
+				if (!fs::exists(outputpath)) {
+                    #if _WIN32  
+                    fwprintf(stderr, L"[err]create outputpath failed: %ls\n", outputpath.c_str());  
+                    #else  
+                    fprintf(stderr, "[err]create outputpath failed: %s\n", outputpath.c_str());  
+                    #endif
+					return -1;
+				}
+			}
+
             std::vector<path_t> filenames;
             int lr = list_directory(inputpath, filenames);
             if (lr != 0)
@@ -659,14 +674,24 @@ int main(int argc, char **argv)
                 input_files[i] = inputpath + PATHSTR('/') + filename;
                 output_files[i] = outputpath + PATHSTR('/') + output_filename;
             }
-        } else if (!path_is_directory(inputpath) && !path_is_directory(outputpath)) {
-            input_files.push_back(inputpath);
-            output_files.push_back(outputpath);
-        } else {
-            fprintf(stderr,
-                    "inputpath and outputpath must be either file or directory at the same time\n");
-            return -1;
-        }
+		}
+		else if (fs::exists(inputpath)) {
+
+			format = get_lowcase_extension(outputpath);
+			if (format == PATHSTR("jpeg"))
+				format = PATHSTR("jpg");
+			if (format != PATHSTR("png") && format != PATHSTR("webp") && format != PATHSTR("jpg")) {
+				//fprintf(stderr, "invalid format argument -%s-\n", format);
+				return -1;
+			}
+
+			input_files.push_back(inputpath);
+			output_files.push_back(outputpath);
+		}
+		else {
+			fprintf(stderr, "[err]inputpath not exists\n");
+			return -1;
+		}
     }
 
 	int prepadding = 0;
@@ -675,7 +700,7 @@ int main(int argc, char **argv)
 #if _WIN32
 	if (model.find(PATHSTR("models-")) != path_t::npos || model.rfind(L".mnn") == (model.size() - 4)) {
 #else
-	if (model.find(PATHSTR("models-")) != path_t::npos || model.rfind(".mnn") == (model.size() - 4)) {
+	if (model.find(PATHSTR("models-")) != path_t::npos || model.ends_with(".mnn")) {
 #endif
 		prepadding = 4;
 	}
@@ -826,7 +851,7 @@ int main(int argc, char **argv)
             // save image
             SaveThreadParams stp;
             stp.verbose = verbose;
-            stp.f_print = (input_files.size() == 1);
+            stp.input_files_size = input_files.size();
 
             ncnn::Thread *save_thread;
             save_thread = new ncnn::Thread(save, (void *) &stp);

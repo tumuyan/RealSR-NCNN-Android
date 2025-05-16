@@ -3,7 +3,7 @@ project(mnnsr-ncnn)
 cmake_minimum_required(VERSION 3.4.1)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Debug)
 #set(CMAKE_BUILD_TYPE Release)
 
 
@@ -26,10 +26,6 @@ if (MSVC)  # Visual Studio
     # 设置目标属性，指定 MNN 库的路径
     set(mnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/mnn_windows_x64_cpu_opencl)
     find_library(MNN_LIB mnn HINTS "${mnn_DIR}/lib/${TARGET_ARCH}/Release/Dynamic/MD")
-
-    #    add_library(MNN_Vulkan SHARED IMPORTED)
-    #    set_target_properties(MNN_Vulkan PROPERTIES IMPORTED_LOCATION
-    #            ${mnn_DIR}/${ANDROID_ABI}/libMNN_Vulkan.so)
 
     set(OpenCV_DIR "C:/Lib/opencv/build")
 
@@ -139,10 +135,49 @@ endif ()
 
 add_executable(${PROJECT_NAME} main.cpp mnnsr.cpp dcp.cpp)
 
-target_link_libraries(${PROJECT_NAME} webp MNN MNN_CL MNN_Vulkan ${OpenCV_LIBS} ${NCNN_LIB})
 
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../RealSR-NCNN-Android-GUI/app/src/main/assets/realsr
-)
+if (MSVC)  # Visual Studio
+    target_link_libraries(${PROJECT_NAME} webp ${OpenCV_LIBS} ${NCNN_LIB} ${MNN_LIB})
+    set(TARGET_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/MNNSR-Win64")
+
+    # DLL 路径
+    set(MNN_DLL "${mnn_DIR}/lib/${TARGET_ARCH}/Release/Dynamic/MD/MNN.dll")
+    set(NCNN_DLL "${ncnn_DIR}/${TARGET_ARCH}/bin/ncnn.dll")
+
+    # 自动查找 OpenCV DLL 目录
+    if(EXISTS "${OpenCV_DIR}/x64/vc16/bin")
+        set(OpenCV_DLL_DIR "${OpenCV_DIR}/x64/vc16/bin")
+    elseif(EXISTS "${OpenCV_DIR}/bin")
+        set(OpenCV_DLL_DIR "${OpenCV_DIR}/bin")
+    else()
+        message(FATAL_ERROR "Cannot find OpenCV DLL directory!")
+    endif()
+    # file(GLOB OpenCV_DLLS "${OpenCV_DLL_DIR}/opencv_world*.dll" "${OpenCV_DLL_DIR}/opencv_*.dll")
+    file(GLOB OpenCV_DLLS "${OpenCV_DLL_DIR}/opencv_world*[0-9].dll")
+
+    # 合并所有需要复制的 DLL
+    set(ALL_DLLS "${MNN_DLL}" "${NCNN_DLL}")
+    list(APPEND ALL_DLLS ${OpenCV_DLLS})
+
+    # 生成所有 DLL 的复制命令
+    set(DLL_COPY_COMMANDS "")
+    foreach(dll ${ALL_DLLS})
+        list(APPEND DLL_COPY_COMMANDS
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${dll}" "${TARGET_BIN_DIR}/"
+        )
+    endforeach()
+
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${TARGET_BIN_DIR}/$<TARGET_FILE_NAME:${PROJECT_NAME}>
+        ${DLL_COPY_COMMANDS}
+    )
+else ()
+    target_link_libraries(${PROJECT_NAME} webp MNN MNN_CL MNN_Vulkan ${OpenCV_LIBS} ${NCNN_LIB})
+    
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../RealSR-NCNN-Android-GUI/app/src/main/assets/realsr
+    )
+endif ()
+

@@ -143,4 +143,48 @@ static void drawSemiTransparentMask(cv::Mat& color_image, const cv::Mat& mask_8u
 }
 
 
+#if _WIN32
+#include <fstream>
+// 在 Windows 下，imread 不能直接读取包含中文的宽字符路径，需用 _wfopen 读取文件为字节流，再用 imdecode 解码
+static cv::Mat imread_unicode(const std::wstring& wpath, int flags = cv::IMREAD_UNCHANGED) {
+    // 打开文件为二进制流
+    FILE* fp = _wfopen(wpath.c_str(), L"rb");
+    if (!fp) return cv::Mat();
+    fseek(fp, 0, SEEK_END);
+    long filesize = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    std::vector<uchar> buf(filesize);
+    fread(buf.data(), 1, filesize, fp);
+    fclose(fp);
+    // 解码为Mat
+    return cv::imdecode(buf, flags);
+}
+
+#include <opencv2/opencv.hpp>
+#include <vector>
+#include <string>
+#include <cstdio>
+
+// 保存图片到宽字符路径
+static bool imwrite_unicode(const std::wstring& wpath, const cv::Mat& image, const std::vector<int>& params = {}) {
+    // 推断文件扩展名
+    std::string ext = ".png";
+    size_t dot = wpath.find_last_of(L'.');
+    if (dot != std::wstring::npos) {
+        std::wstring wext = wpath.substr(dot);
+        char extbuf[16] = { 0 };
+        wcstombs(extbuf, wext.c_str(), sizeof(extbuf) - 1);
+        ext = extbuf;
+    }
+    // 编码图片为字节流
+    std::vector<uchar> buf;
+    if (!cv::imencode(ext, image, buf, params)) return false;
+    // 用 _wfopen 写入
+    FILE* fp = _wfopen(wpath.c_str(), L"wb");
+    if (!fp) return false;
+    fwrite(buf.data(), 1, buf.size(), fp);
+    fclose(fp);
+    return true;
+}
+#endif
 #endif //REALSR_NCNN_ANDROID_CLI_UTILS_HPP

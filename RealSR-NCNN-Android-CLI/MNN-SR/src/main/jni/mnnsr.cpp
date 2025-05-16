@@ -66,11 +66,10 @@ MNNSR::~MNNSR() {
 
 #if _WIN32
 #include <codecvt>
-
-int MNNSR::load(const std::wstring& modelpath, bool cachemodel, bool nchw)
+int MNNSR::load(const std::wstring& modelpath, bool cachemodel,const bool nchw)
 #else
 
-int MNNSR::load(const std::string &modelpath, bool cachemodel, bool nchw)
+int MNNSR::load(const std::string &modelpath, bool cachemodel,const bool nchw)
 #endif
 {
 
@@ -89,6 +88,7 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel, bool nchw)
 //    config.type = MNN_FORWARD_OPENCL;
 //    config.type = MNN_FORWARD_AUTO;
     config.type = backend_type;
+    //config.mode = MNN_GPU_TUNING_HEAVY | MNN_GPU_MEMORY_BUFFER;
 //    config.backupType = MNN_FORWARD_OPENCL;
 //    config.backupType = MNN_FORWARD_VULKAN;
 //    config.backupType = MNN_FORWARD_AUTO;
@@ -425,13 +425,25 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
                 // progress2 用于计算剩余时间，由于跳过的tile不会运行这段函数，因此不会出现分母为0或者分子为0的情况
                 double progress2 = (progress_tile - skiped_tile) / (ytiles * xtiles - skiped_tile);
                 double time_span = duration_cast<duration<double>>(end - begin).count();
+#ifdef __ANDROID__
                 fprintf(stderr, "%5.2f%%\t[%5.2fs /%5.2f ETA]\n", progress * 100, time_span,
-                        time_span / progress2 - time_span);
+                    time_span / progress2 - time_span);
+#else
+                fprintf(stderr, " %5.2f%%\t[%5.2fs /%5.2f ETA]   \r", progress * 100, time_span,
+                    time_span / progress2 - time_span);
+                fflush(stderr);
+#endif
+
                 time_print_progress = end;
             }
 
         }
     }
+
+#ifndef __ANDROID__
+	fprintf(stderr, "                                        \r");
+#endif // !__ANDROID__
+
 
     if (color == Gray2YUV) {
         // 把inimage转为YCbCr格式，放大scale倍，把通道2通道3复制给outimage的通道2通道3

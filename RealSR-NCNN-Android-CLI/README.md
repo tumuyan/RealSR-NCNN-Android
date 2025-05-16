@@ -1,7 +1,11 @@
 [中文说明](./README_CHS.md)
+
 # NCNN-Modules
+
 ## How to build RealSR-NCNN-Android-CLI
+
 ### step1
+
 https://github.com/Tencent/ncnn/releases  
 download ncnn-yyyymmdd-android-vulkan-shared.zip.  
 https://github.com/webmproject/libwebp
@@ -10,9 +14,11 @@ https://opencv.org/releases/
 download opencv-android-sdk.
 
 ### step2
+
 extract `ncnn-yyyymmdd-android-vulkan-shared.zip` into `../3rdparty/ncnn-android-vulkan-shared`  
 extract the source of libwebp into `../3rdparty/libwebp`  
 extract `opencv-version-android-sdk` into `../3rdparty/opencv-android-sdk`
+
 ```
 RealSR-NCNN-Android
 ├─3rdparty
@@ -32,15 +38,18 @@ RealSR-NCNN-Android
 ```
 
 ### step3
+
 Open this project with Android Studio, rebuild it and the build result in `RealSR-NCNN-Android-CLI\*\build\intermediates\cmake\release\obj\arm64-v8a` or `RealSR-NCNN-Android-CLI\*\build\intermediates\cmake\debug\obj\arm64-v8a` could copy to the GUI project automatilly.    
 Click `3rdparty/copy_cli_build_result.bat` and it could copy the other files to GUI project.
 
-
 ## How to use RealSR-NCNN-Android-CLI
+
 ### Download models
+
 You could download `assets.zip` from github release page and unzip it to get models, or download models from https://github.com/tumuyan/realsr-models .
 
 ### Example Command
+
 Make sure the elf file has execute permission. Then input command
 
 ```shell
@@ -48,7 +57,9 @@ Make sure the elf file has execute permission. Then input command
 ```
 
 ### Full Usages
+
 The usage of others program is same as realsr-ncnn.
+
 ```console
 Usage: realsr-ncnn -i infile -o outfile [options]...
 
@@ -73,34 +84,35 @@ Usage: realsr-ncnn -i infile -o outfile [options]...
 
 If you encounter crash or error, try to upgrade your derive
 
-
-
 # MNN-SR
+
 This module is a [mnn](https://github.com/alibaba/MNN) implementation for super resolution. MNN could support more models than ncnn.  
-I am trying to make this module a CLI program that can be compiled in both VS(for Windows) and AS(for Android), 
-but it has some problem in VS. **🙏Waiting your help!**
+I am trying to make this module a CLI program that can be compiled in both VS(for Windows) and AS(for Android),  but it not fast than ncnn. **🙏Waiting your help!**
 
 ### How to build in Android Studio
-1. download opencv lib and others libs and extract them to RealSR-NCNN-Android/3rdparty just like the ncnn modules.
-2. download mnn lib and extract them to RealSR-NCNN-Android/3rdparty
-```
-├─libwebp
-├─mnn_android
-│  ├─arm64-v8a
-│  ├─armeabi-v7a
-│  └─include
 
-```
+1. download opencv lib and others libs and extract them to RealSR-NCNN-Android/3rdparty just like the ncnn modules.
+
+2. download mnn lib and extract them to RealSR-NCNN-Android/3rdparty
+   
+   ```
+   ├─libwebp
+   ├─mnn_android
+   │  ├─arm64-v8a
+   │  ├─armeabi-v7a
+   │  └─include
+   ```
+
 3. sync and build this module
+
 4. copy models and *.so from mnn_android  to assets dir and build the GUI App.
+
 5. run mnnsr commands in App
 
 ### Usages
-The usage of others program is same as realsr-ncnn. Add these param:  
-```console
-  -b backend           forward backend type(CPU=0,AUTO=4,CUDA=2,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)
-  -c color-type        model & output color space type (RGB=1, BGR=2, YCbCr=5, YUV=6, GRAY=10, GRAY model & YCbCr output=11, GRAY model & YUV output=12, default=1)
-  -d decensor-mode     remove censor mode (Not=-1, Mosaic=0, default=-1)
-  
-```
 
+The usage of others program is same as realsr-ncnn. Add these param: 
+
+     -b backend           forward backend type(CPU=0,AUTO=4,CUDA=2,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)
+     -c color-type        model & output color space type (RGB=1, BGR=2, YCbCr=5, YUV=6, GRAY=10, GRAY model & YCbCr output=11, GRAY model & YUV output=12, default=1)
+     -d decensor-mode     remove censor mode (Not=-1, Mosaic=0, default=-1)
