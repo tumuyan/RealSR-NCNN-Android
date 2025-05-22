@@ -311,6 +311,25 @@
             android:layout_marginRight="10dp"
             android:padding="5dp" />
 
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/mnn_backend"
+            android:textSize="18sp" />
+
+        <EditText
+            android:id="@+id/editMNNBackend"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/round_corner_bg"
+            android:ems="10"
+            android:inputType="number"
+            android:padding="5dp" />
+
+
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

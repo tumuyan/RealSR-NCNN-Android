@@ -130,8 +130,13 @@ static void print_usage() {
     //        "  -j load:proc:save    thread count for load/proc/save (default=1:2:2) can be 1:2,2,2:2 for multi-gpu\n");
 //    fprintf(stderr, "  -x                   enable tta mode\n");
     fprintf(stderr, "  -f format            output image format (jpg/png/webp, default=ext/png)\n");
-    //fprintf(stderr, "  -b backend           forward backend type(CPU=0,AUTO=4,CUDA=2,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)\n");
-    fprintf(stderr, "  -b backend           forward backend type(CPU=0,AUTO=4,OPENCL=3,VULKAN=7, default=3)\n");
+
+#ifdef __ANDROID__
+    fprintf(stderr, "  -b backend           forward backend type(CPU=0,AUTO=4,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)\n");
+#else
+    fprintf(stderr, "  -b backend           forward backend type(CPU=0,AUTO=4,CUDA=2,OPENCL=3,VULKAN=7, default=3)\n");
+#endif // __ANDROID__
+
     fprintf(stderr,
             "  -c color-type        model & output color space type (RGB=1, BGR=2, YCbCr=5, YUV=6, GRAY=10, GRAY model & YCbCr output=11, GRAY model & YUV output=12, default=1)\n");
     fprintf(stderr,

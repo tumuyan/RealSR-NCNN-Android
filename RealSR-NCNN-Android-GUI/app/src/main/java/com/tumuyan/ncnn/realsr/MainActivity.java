@@ -62,7 +62,7 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1, SELECT_MULTI_IMAGE = 2;
     private static final int MY_PERMISSIONS_REQUEST = 100;
-    private static String CMD_RESET_CACHE = "[ -f /system/lib/egl/libGLES_mali.so ] && cp -f /system/lib/egl/libGLES_mali.so ./ || echo \"[warning]not find file: /system/lib/egl/libGLES_mali.so\"; [ -f /system/vendor/lib64/libOpenCL.so ] && cp -f /system/vendor/lib64/libOpenCL.so ./ || echo \"[warning]not find file: /system/vendor/lib64/libOpenCL.so\";rm -f *.cache;rm -f */*.cache;chmod 777 *; echo Cache has been reset.;ls";
+    private static String CMD_RESET_CACHE = " if [ -e /system/vendor/lib/libOpenCL.so ]; then cp /system/vendor/lib/libOpenCL.so ./; elif [ -e /system/lib/libOpenCL.so ]; then cp /system/lib/libOpenCL.so ./; else echo \"[warning]libOpenCL.so not find\"; fi; if [ -e /system/vendor/lib/egl/libGLES_mali.so ]; then cp /system/vendor/lib/egl/libGLES_mali.so ./; elif [ -e /system/lib/egl/libGLES_mali.so ]; then cp /system/lib/egl/libGLES_mali.so ./; else echo \"[warning]libGLES_mali.so not find\"; fi;rm -f *.cache;rm -f */*.cache;chmod 777 *; echo Cache has been reset.;ls";
     private int selectCommand = 0;
     private String threadCount = "";
     private SubsamplingScaleImageView imageView;
@@ -137,6 +137,7 @@ public class MainActivity extends AppCompatActivity {
     };
     private int tileSize;
     private boolean useCPU;
+    private int mnnBackend;
     private boolean keepScreen;
     private boolean useMultFiles;
     private boolean prePng;
@@ -352,6 +353,7 @@ public class MainActivity extends AppCompatActivity {
         prePng = mySharePerferences.getBoolean("PrePng", true);
         preFrame = mySharePerferences.getBoolean("PreFrame", true);
         useCPU = mySharePerferences.getBoolean("useCPU", false);
+        mnnBackend = mySharePerferences.getInt("mnnBackend", 3);
         autoSave = mySharePerferences.getBoolean("autoSave", false);
         showSearchView = mySharePerferences.getBoolean("showSearchView", false);
         if (showSearchView)
@@ -646,7 +648,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         if (version != BuildConfig.VERSION_CODE) {
-            run_command("[ -f /system/lib/egl/libGLES_mali.so ] && cp -f /system/lib/egl/libGLES_mali.so ./ || echo \"[warning]not find file: /system/lib/egl/libGLES_mali.so\"; [ -f /system/vendor/lib64/libOpenCL.so ] && cp -f /system/vendor/lib64/libOpenCL.so ./ || echo \"[warning]not find file: /system/vendor/lib64/libOpenCL.so\";chmod 777 " + dir + " -R");
+            run_command("if [ -e /system/vendor/lib/libOpenCL.so ]; then cp /system/vendor/lib/libOpenCL.so ./; elif [ -e /system/lib/libOpenCL.so ]; then cp /system/lib/libOpenCL.so ./; else echo \"[warning]libOpenCL.so not find\"; fi; if [ -e /system/vendor/lib/egl/libGLES_mali.so ]; then cp /system/vendor/lib/egl/libGLES_mali.so ./; elif [ -e /system/lib/egl/libGLES_mali.so ]; then cp /system/lib/egl/libGLES_mali.so ./; else echo \"[warning]libGLES_mali.so not find\"; fi; chmod 777 " + dir + " -R");
         } else {
             run_command("chmod 777 " + dir + " -R");
         }
@@ -743,15 +745,18 @@ public class MainActivity extends AppCompatActivity {
                     if (run_fake_command(cmd.toString()))
                         return;
                 } else {
-                    cmd = new StringBuffer(command[selectCommand]);
-
-                    if (command[selectCommand].matches("./(realsr|srmd|waifu2x|realcugan|mnnsr)-ncnn.+")) {
-                        if (tileSize > 0)
+                    final String cmd_head = command[selectCommand];
+                    cmd = new StringBuffer(cmd_head);
+                    if (cmd_head.matches("./(realsr|srmd|waifu2x|realcugan|mnnsr)-ncnn.+")) {
+                        if (tileSize > 0 && !cmd_head.contains(" -t "))
                             cmd.append(" -t ").append(tileSize);
-                        if (threadCount.length() > 0)
+                        if (threadCount.length() > 0 && !cmd_head.contains(" -j "))
                             cmd.append(" -j ").append(threadCount);
-                        if (useCPU && !cmd.toString().startsWith("./srmd"))
+                        if (useCPU && !cmd_head.startsWith("./srmd") && !cmd_head.startsWith("./mnnsr") && !cmd_head.contains(" -g "))
                             cmd.append(" -g -1");
+                        if (cmd_head.startsWith("./mnnsr") && !cmd_head.contains(" -b ")) {
+                            cmd.append(" -b ").append(mnnBackend);
+                        }
                     }
                 }
 

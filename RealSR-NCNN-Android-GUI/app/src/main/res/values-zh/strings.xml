@@ -91,7 +91,7 @@
     <string name="extra_command">在命令列表中添加命令</string>
     <string name="partners_for_preset_command">超分辨率算法的附加参数</string>
     <string name="custom_command">自定义命令</string>
-    <string name="use_cpu">尝试使用CPU完成运算(CPU和GPU哪个更稳定是不确定的，但是CPU运算一定更慢)</string>
+    <string name="use_cpu">NCNN尝试使用CPU推理 (CPU和GPU哪个更稳定是不确定的，但是CPU运算一定更慢)</string>
     <string name="save_format">导出时使用的格式</string>
     <string name="general">通用</string>
     <string name="output_not_exits">错误：没有待导出的文件</string>
@@ -139,6 +139,7 @@
     <string name="not_support_animation">不支持动画</string>
     <string name="choose_mult_files">单次选择多个图片（但只预览其中一个，且结果会自动保存到相册）。\n
         即使关闭此功能，仍然可以在其他应用如相册中选择多个图片并分享到本应用。</string>
+    <string name="mnn_backend">MNN推理后端类型 (CPU=0,AUTO=4,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,default=3)</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>

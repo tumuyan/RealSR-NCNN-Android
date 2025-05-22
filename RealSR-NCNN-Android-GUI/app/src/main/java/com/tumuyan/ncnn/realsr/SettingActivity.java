@@ -14,6 +14,7 @@ import android.widget.Spinner;
 import android.widget.ToggleButton;
 
 import java.io.File;
+import java.text.MessageFormat;
 
 public class SettingActivity extends AppCompatActivity {
     SharedPreferences mySharePerferences;
@@ -25,6 +26,7 @@ public class SettingActivity extends AppCompatActivity {
     EditText editExtraCommand;
     EditText editExtraPath;
     EditText editSavePath;
+    EditText editMNNBackend;
     ToggleButton toggleKeepScreen;
 
     ToggleButton toggleCPU;
@@ -67,6 +69,7 @@ public class SettingActivity extends AppCompatActivity {
         int name2 = mySharePerferences.getInt("name2", 0);
         int orientation = mySharePerferences.getInt("ORIENTATION", 0);
         int notify = mySharePerferences.getInt("notify", 0);
+        int mnnBackend = mySharePerferences.getInt("mnnBackend", 3);
 
         editTile = findViewById(R.id.editTile);
         editTile.setText(String.format("%d", tileSize));
@@ -86,6 +89,8 @@ public class SettingActivity extends AppCompatActivity {
         editSavePath.setHint(galleryPath);
         editThread = findViewById(R.id.editThread);
         editThread.setText(threadCount);
+        editMNNBackend = findViewById(R.id.editMNNBackend);
+        editMNNBackend.setText(MessageFormat.format("{0}", mnnBackend));
         toggleKeepScreen = findViewById(R.id.toggle_keep_screen);
         toggleKeepScreen.setChecked(keepScreen);
         toggleMultFiles = findViewById(R.id.toggle_mult_files);
@@ -152,6 +157,7 @@ public class SettingActivity extends AppCompatActivity {
             editTile.setText("0");
             editThread.setText("");
             editExtraPath.setText("");
+            editMNNBackend.setText("3");
             editDefaultCommand.setText("./realsr-ncnn -i input.png -o output.png -m models-Real-ESRGANv3-anime -s 2");
             editClassicalFilters.setText(getString(R.string.default_classical_filters));
             editMagickFilters.setText(getString(R.string.default_magick_filters));
@@ -170,6 +176,7 @@ public class SettingActivity extends AppCompatActivity {
             editTile.setText("32");
             editThread.setText("1:1:1");
             editExtraPath.setText("");
+            editMNNBackend.setText("3");
             editDefaultCommand.setText("");
             editClassicalFilters.setText(getString(R.string.default_classical_filters));
             editMagickFilters.setText(getString(R.string.default_magick_filters));
@@ -246,6 +253,7 @@ public class SettingActivity extends AppCompatActivity {
         editor.putInt("name2", (int) spinnerName2.getSelectedItemId());
         editor.putInt("ORIENTATION", (int) spinnerOrientation.getSelectedItemId());
         editor.putInt("notify", (int) spinnerNotify.getSelectedItemId());
+        editor.putInt("mnnBackend", Integer.parseInt(editMNNBackend.getText().toString()));
         editor.apply();
     }
 
