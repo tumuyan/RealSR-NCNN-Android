@@ -27,7 +27,8 @@ if (MSVC)  # Visual Studio
     set(mnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/mnn_windows_x64_cpu_opencl)
     find_library(MNN_LIB mnn HINTS "${mnn_DIR}/lib/${TARGET_ARCH}/Release/Dynamic/MD")
 
-    set(OpenCV_DIR "C:/Lib/opencv/build")
+    set(OpenCV_DIR "C:/Lib/opencv/build/x64/vc16/lib")
+    # set(OpenCV_DIR "C:/Lib/opencv/build")
 
     set(ncnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/ncnn-windows-vs2022-shared)
     find_library(NCNN_LIB ncnn HINTS ${ncnn_DIR}/${TARGET_ARCH}/lib)
@@ -101,7 +102,12 @@ message(STATUS "find ncnn result: ${NCNN_LIB}")
 
 set(OpenCV_STATIC ON)
 find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_DIR}/include)
+# include_directories(${OpenCV_DIR}/include)
+include_directories(${OpenCV_INCLUDE_DIRS})
+message(STATUS "OpenCV library status:")
+message(STATUS "    version: ${OpenCV_VERSION}")
+message(STATUS "    libraries: ${OpenCV_LIBS}")
+message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
 set(libwebp_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/libwebp)
 
