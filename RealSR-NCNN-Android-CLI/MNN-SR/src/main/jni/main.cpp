@@ -90,6 +90,9 @@ static std::vector<int> parse_optarg_int_array(const wchar_t* optarg)
 
 #include <unistd.h> // getopt()
 
+
+#include <cstring> 
+
 static std::vector<int> parse_optarg_int_array(const char *optarg) {
     std::vector<int> array;
     array.push_back(atoi(optarg));

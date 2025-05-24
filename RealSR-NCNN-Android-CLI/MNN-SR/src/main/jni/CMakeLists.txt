@@ -4,8 +4,18 @@ cmake_minimum_required(VERSION 3.4.1)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_BUILD_TYPE Debug)
-#set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Release)
 
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Android")
+    message(STATUS "Building for Android")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    message(STATUS "Building for Windows")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    message(STATUS "Building for Linux")
+else()
+    message(WARNING "Unknown system: ${CMAKE_SYSTEM_NAME}")
+endif()
 
 if (MSVC)  # Visual Studio
     message(STATUS "==Configuring for Visual Studio==")
@@ -34,6 +44,21 @@ if (MSVC)  # Visual Studio
     find_library(NCNN_LIB ncnn HINTS ${ncnn_DIR}/${TARGET_ARCH}/lib)
     #  set(ncnn_LIB ${ncnn_DIR}/${TARGET_ARCH}/lib/ncnn.lib)
 
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    message(STATUS "==Configuring for Linux==")
+    add_link_options(-Wl,--disable-new-dtags)
+
+    set(mnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/MNN)
+    find_library(MNN_LIB MNN HINTS "${mnn_DIR}/libs")
+
+    # set(mnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/mnn_linux_x64)
+    # find_library(MNN_LIB MNN HINTS "${mnn_DIR}/lib/Release")
+    # include_directories(${mnn_DIR}/include)
+    message(STATUS "find mnn dir: ${mnn_DIR}")
+    message(STATUS "find mnn: ${MNN_LIB}")
+    set(ncnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/ncnn-ubuntu-shared)
+    find_library(NCNN_LIB ncnn HINTS ${ncnn_DIR}/lib)
+    #  set(ncnn_LIB ${ncnn_DIR}/${TARGET_ARCH}/lib/ncnn.lib)
 
 else ()  # Android Studio
     message(STATUS "Configuring for Android Studio")
@@ -177,6 +202,10 @@ if (MSVC)  # Visual Studio
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${TARGET_BIN_DIR}/$<TARGET_FILE_NAME:${PROJECT_NAME}>
         ${DLL_COPY_COMMANDS}
     )
+
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(${PROJECT_NAME} webp ${OpenCV_LIBS} ${NCNN_LIB} ${MNN_LIB})
+
 else ()
     target_link_libraries(${PROJECT_NAME} webp MNN MNN_CL MNN_Vulkan ${OpenCV_LIBS} ${NCNN_LIB})
     
