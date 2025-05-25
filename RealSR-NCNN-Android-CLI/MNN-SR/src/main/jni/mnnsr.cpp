@@ -6,6 +6,8 @@
 #include <thread>
 
 #include "MNN/ErrorCode.hpp"
+#define MNN_USER_SET_DEVICE
+#include "MNN/MNNSharedContext.h"
 
 
 #include <opencv2/opencv.hpp>
@@ -82,6 +84,21 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel,const bool nchw)
     backendConfig.memory = MNN::BackendConfig::Memory_High;
     backendConfig.power = MNN::BackendConfig::Power_High;
     backendConfig.precision = MNN::BackendConfig::Precision_Low;
+
+    //MNNDeviceContext gpuDeviceConfig;
+    //// CUDA Backend support user set device_id
+    //if (backend_type == MNN_FORWARD_CUDA) {
+    //    gpuDeviceConfig.deviceId = 0;
+    //    backendConfig.sharedContext = &gpuDeviceConfig;
+    //}
+    //// OpenCL Backend support user set platform_size, platform_id, device_id
+    //if (backend_type == MNN_FORWARD_OPENCL) {
+    //    gpuDeviceConfig.platformSize = 1;// GPU Cards number
+    //    gpuDeviceConfig.platformId = 1;  // Execute on Which GPU Card
+    //    gpuDeviceConfig.deviceId = 0;    // Execute on Which GPU device
+    //    backendConfig.sharedContext = &gpuDeviceConfig;
+    //}
+
     config.backendConfig = &backendConfig;
 //    config.type = MNN_FORWARD_NN;
 //    config.type = MNN_FORWARD_VULKAN;
@@ -117,7 +134,7 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel,const bool nchw)
     if (cachemodel) {
 
 #if _WIN32
-        std::string cachefile = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(modelpath) + ".cache";
+        std::string cachefile = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(modelpath + L".cache");
 #else
         std::string cachefile = modelpath + ".cache";
 #endif

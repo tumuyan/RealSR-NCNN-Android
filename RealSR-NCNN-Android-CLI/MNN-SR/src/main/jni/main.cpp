@@ -768,7 +768,7 @@ int main(int argc, char **argv)
     while (!mp && sp < 4) {
         int s = scales[sp];
 #if _WIN32
-        swprintf(modelpath, 256, L"%s/x%d.bin", model.c_str(), s);
+        swprintf(modelpath, 256, L"%s/x%d.mnn", model.c_str(), s);
 
         modelfullpath = sanitize_filepath(modelpath);
         mp = _wfopen(modelfullpath.c_str(), L"rb");
@@ -797,12 +797,21 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    // 移动到文件末尾
-    fseek(mp, 0, SEEK_END);
-    // 获取文件大小
-    long modelsize = ftell(mp) / 1000000;
-    // 重置文件指针到开头
-    fseek(mp, 0, SEEK_SET);
+
+#include <cstdio>
+
+#if _WIN32
+#define FTELL _ftelli64
+#define FSEEK _fseeki64
+    typedef __int64 file_offset_t;
+#else
+#define FTELL ftello
+#define FSEEK fseeko
+    typedef off_t file_offset_t;
+#endif
+
+    FSEEK(mp, 0, SEEK_END);
+    long modelsize = FTELL(mp) / 1000000;
     fclose(mp);
 
 //#if _WIN32
@@ -836,6 +845,7 @@ int main(int argc, char **argv)
         if (backend_type >= 0 && backend_type <= 14)
             mnnsr.backend_type = static_cast<MNNForwardType>(backend_type);
 
+        //fprintf(stderr, "model loaded, %d MB, %s\n", modelsize, modelsize > 10 ? "cache" : "not cache");
         mnnsr.scale = scale;
         mnnsr.load(modelfullpath, modelsize > 10);
 
