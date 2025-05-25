@@ -135,9 +135,9 @@ static void print_usage() {
     fprintf(stderr, "  -f format            output image format (jpg/png/webp, default=ext/png)\n");
 
 #ifdef __ANDROID__
-    fprintf(stderr, "  -b backend           forward backend type(CPU=0,AUTO=4,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)\n");
+    fprintf(stderr, "  -b backend           forward backend type(CPU=0,AUTO=4,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9,default=3)\n");
 #else
-    fprintf(stderr, "  -b backend           forward backend type(CPU=0,AUTO=4,CUDA=2,OPENCL=3,VULKAN=7, default=3)\n");
+    fprintf(stderr, "  -b backend           forward backend type(CPU=0,CUDA=2,OPENCL=3,VULKAN=7,TensorRT=9,AUTO=4,default=3)\n");
 #endif // __ANDROID__
 
     fprintf(stderr,
@@ -205,6 +205,7 @@ private:
 
 TaskQueue toproc;
 TaskQueue tosave;
+high_resolution_clock::time_point batch_start = high_resolution_clock::now();
 
 class LoadThreadParams {
 public:
@@ -363,6 +364,8 @@ public:
     int input_files_size;
 };
 
+ 
+
 void *save(void *args) {
     const SaveThreadParams *stp = (const SaveThreadParams *) args;
     const int verbose = stp->verbose;
@@ -392,15 +395,10 @@ void *save(void *args) {
 
         if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") ||
             ext == PATHSTR("JPEG")) {
-            // 设置 JPEG 压缩率
-            std::vector<int> compressionParams;
-            compressionParams.push_back(cv::IMWRITE_JPEG_QUALITY); // 指定参数类型
-            compressionParams.push_back(90);
-
 #if _WIN32
-            success = (imwrite_unicode(v.outpath, v.outimage, compressionParams));
+            success = (imwrite_unicode(v.outpath, v.outimage, { cv::IMWRITE_JPEG_QUALITY, 90 }));
 #else
-            success = (cv::imwrite(v.outpath.c_str(), v.outimage, compressionParams));
+            success = (cv::imwrite(v.outpath.c_str(), v.outimage, { cv::IMWRITE_JPEG_QUALITY, 90 }));
 #endif
         } else {
             if (!v.inalpha.empty()) {
@@ -429,13 +427,19 @@ void *save(void *args) {
             duration<double> time_span = duration_cast<duration<double>>(end - begin);
             if (stp->input_files_size==1)
                 fprintf(stderr, "save result use time: %.3lf\n", time_span.count());
-            else {
+			else {
+
+				duration<double> batch_time_span = duration_cast<duration<double>>(end - batch_start);
 #if _WIN32
-                fwprintf(stdout, L"[done] %d/%d %ls -> %ls\n", saved_count,stp->input_files_size, v.inpath.c_str(), v.outpath.c_str());
+				fwprintf(stdout, L"[done] %d/%d %ls -> %ls, %hs/%hs\n", saved_count, stp->input_files_size, v.inpath.c_str(), v.outpath.c_str()
+					, format_time_s(batch_time_span.count()).c_str(), format_time_s(batch_time_span.count() * (stp->input_files_size - saved_count) / saved_count).c_str()
+				);
 #else
-                fprintf(stdout, "[done] %d/%d %s -> %s\n", saved_count, stp->input_files_size, v.inpath.c_str(), v.outpath.c_str());
+				fprintf(stdout, "[done] %d/%d %s -> %s, %s/%s\n", saved_count, stp->input_files_size, v.inpath.c_str(), v.outpath.c_str()
+                    , format_time_s(batch_time_span.count()).c_str(), format_time_s(batch_time_span.count() * (stp->input_files_size - saved_count) / saved_count).c_str()
+				);
 #endif
-            }
+			}
 
         } else {
 #if _WIN32
@@ -866,6 +870,7 @@ int main(int argc, char **argv)
 
             // end
             load_thread.join();
+            batch_start = high_resolution_clock::now();
 
             Task end;
             end.id = -233;

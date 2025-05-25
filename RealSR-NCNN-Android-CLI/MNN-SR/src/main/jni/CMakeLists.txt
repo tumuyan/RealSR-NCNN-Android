@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.4.1)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_BUILD_TYPE Release)
 
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Android")
@@ -34,8 +34,9 @@ if (MSVC)  # Visual Studio
     endif ()
 
     # 设置目标属性，指定 MNN 库的路径
-    set(mnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/mnn_windows_x64_cpu_opencl)
-    find_library(MNN_LIB mnn HINTS "${mnn_DIR}/lib/${TARGET_ARCH}/Release/Dynamic/MD")
+    # set(mnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/mnn_windows_x64_cpu_opencl)
+    set(mnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/mnn_windows)
+    find_library(MNN_LIB mnn HINTS "${mnn_DIR}/lib/${TARGET_ARCH}/Release/Dynamic/MT")
 
     set(OpenCV_DIR "C:/Lib/opencv/build/x64/vc16/lib")
     # set(OpenCV_DIR "C:/Lib/opencv/build")
@@ -134,6 +135,21 @@ message(STATUS "    version: ${OpenCV_VERSION}")
 message(STATUS "    libraries: ${OpenCV_LIBS}")
 message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
+# 获取 OpenCV 库文件所在路径
+get_target_property(OpenCV_CORE_DLL_PATH opencv_core IMPORTED_LOCATION_RELEASE)
+if(OpenCV_CORE_DLL_PATH)
+    get_filename_component(OpenCV_CORE_LIB_DIR "${OpenCV_CORE_DLL_PATH}" DIRECTORY)
+    message(STATUS "    DLL might in: ${OpenCV_CORE_LIB_DIR}, OpenCV_CORE_DLL_PATH: ${OpenCV_CORE_DLL_PATH}")
+else()
+    # 可能是静态库，或者属性未设置
+    get_target_property(OpenCV_CORE_LIB_PATH OpenCV::core IMPORTED_LINK_INTERFACE_LIBRARIES_RELEASE)
+    if(OpenCV_CORE_LIB_PATH)
+            get_filename_component(OpenCV_CORE_LIB_DIR "${OpenCV_CORE_LIB_PATH}" DIRECTORY)
+            message(STATUS "    .lib is in: ${OpenCV_CORE_LIB_DIR}, OpenCV_CORE_LIB_PATH: ${OpenCV_CORE_LIB_PATH}")
+    endif()
+endif()
+
+
 set(libwebp_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/libwebp)
 
 
@@ -172,19 +188,12 @@ if (MSVC)  # Visual Studio
     set(TARGET_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/MNNSR-Win64")
 
     # DLL 路径
-    set(MNN_DLL "${mnn_DIR}/lib/${TARGET_ARCH}/Release/Dynamic/MD/MNN.dll")
+    set(MNN_DLL "${mnn_DIR}/lib/${TARGET_ARCH}/Release/Dynamic/MT/MNN.dll")
     set(NCNN_DLL "${ncnn_DIR}/${TARGET_ARCH}/bin/ncnn.dll")
 
-    # 自动查找 OpenCV DLL 目录
-    if(EXISTS "${OpenCV_DIR}/x64/vc16/bin")
-        set(OpenCV_DLL_DIR "${OpenCV_DIR}/x64/vc16/bin")
-    elseif(EXISTS "${OpenCV_DIR}/bin")
-        set(OpenCV_DLL_DIR "${OpenCV_DIR}/bin")
-    else()
-        message(FATAL_ERROR "Cannot find OpenCV DLL directory!")
-    endif()
-    # file(GLOB OpenCV_DLLS "${OpenCV_DLL_DIR}/opencv_world*.dll" "${OpenCV_DLL_DIR}/opencv_*.dll")
-    file(GLOB OpenCV_DLLS "${OpenCV_DLL_DIR}/opencv_world*[0-9].dll")
+    # 自动查找 OpenCV DLL
+    file(GLOB OpenCV_DLLS "${OpenCV_CORE_LIB_DIR}/opencv_world*[0-9].dll")
+    message(STATUS "OpenCV_DLLS: ${OpenCV_DLLS}")
 
     # 合并所有需要复制的 DLL
     set(ALL_DLLS "${MNN_DLL}" "${NCNN_DLL}")

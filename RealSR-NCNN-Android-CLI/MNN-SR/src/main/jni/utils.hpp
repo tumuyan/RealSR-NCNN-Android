@@ -34,9 +34,95 @@ static std::string get_backend_name(MNNForwardType backend_type) {
             return "CUDA";
         case MNN_FORWARD_NN:
             return "NN API";
+        case MNN_FORWARD_AUTO:
+            return "Auto";
         default:
             return std::to_string(static_cast<int>(backend_type));
     }
+}
+
+#include <string>
+#include <sstream>
+#include <iomanip>
+
+inline std::string format_time_ms(double ms) {
+    constexpr double ms_per_sec = 1000.0;
+    constexpr double ms_per_min = 60 * ms_per_sec;
+    constexpr double ms_per_hour = 60 * ms_per_min;
+    constexpr double ms_per_day = 24 * ms_per_hour;
+
+    std::ostringstream oss;
+    if (ms < 2 * ms_per_min) {
+        // 小于2分钟，只显示秒（保留2位小数，无单位）
+        oss << std::fixed << std::setprecision(2) << (ms / ms_per_sec);
+    }
+    else if (ms < 2 * ms_per_hour) {
+        // 小于2小时，显示分和秒
+        int min = static_cast<int>(ms / ms_per_min);
+        double sec = (ms - min * ms_per_min) / ms_per_sec;
+        oss << min << "m";
+        if (sec >= 0.01)
+            oss << std::fixed << std::setprecision(2) << sec;
+    }
+    else if (ms < 2 * ms_per_day) {
+        // 小于2天，显示小时和分
+        int hour = static_cast<int>(ms / ms_per_hour);
+        int min = static_cast<int>((ms - hour * ms_per_hour) / ms_per_min);
+        oss << hour << "h";
+        if (min > 0)
+            oss << min << "m";
+    }
+    else {
+        // 2天及以上，显示天和小时
+        int day = static_cast<int>(ms / ms_per_day);
+        int hour = static_cast<int>((ms - day * ms_per_day) / ms_per_hour);
+        oss << day << "d";
+        if (hour > 0)
+            oss << hour << "h";
+    }
+    return oss.str();
+}
+
+
+#include <string>
+#include <sstream>
+#include <iomanip>
+
+inline std::string format_time_s(double sec) {
+    constexpr double sec_per_min = 60.0;
+    constexpr double sec_per_hour = 3600.0;
+    constexpr double sec_per_day = 86400.0;
+
+    std::ostringstream oss;
+    if (sec < 2 * sec_per_min) {
+        // 小于2分钟，只显示秒（保留2位小数，无单位）
+        oss << std::fixed << std::setprecision(2) << sec;
+    }
+    else if (sec < 2 * sec_per_hour) {
+        // 小于2小时，显示分和秒
+        int min = static_cast<int>(sec / sec_per_min);
+        double s = sec - min * sec_per_min;
+        oss << min << "m";
+        if (s >= 0.01)
+            oss << std::fixed << std::setprecision(2) << s;
+    }
+    else if (sec < 2 * sec_per_day) {
+        // 小于2天，显示小时和分
+        int hour = static_cast<int>(sec / sec_per_hour);
+        int min = static_cast<int>((sec - hour * sec_per_hour) / sec_per_min);
+        oss << hour << "h";
+        if (min > 0)
+            oss << min << "m";
+    }
+    else {
+        // 2天及以上，显示天和小时
+        int day = static_cast<int>(sec / sec_per_day);
+        int hour = static_cast<int>((sec - day * sec_per_day) / sec_per_hour);
+        oss << day << "d";
+        if (hour > 0)
+            oss << hour << "h";
+    }
+    return oss.str();
 }
 
 
@@ -62,6 +148,8 @@ static std::string float2str(float v, int unit =0) {
 
     return oss.str();
 }
+
+
 
 typedef enum {
     UnSet = 0,

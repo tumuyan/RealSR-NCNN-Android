@@ -89,17 +89,16 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel,const bool nchw)
 //    config.type = MNN_FORWARD_AUTO;
     config.type = backend_type;
     //config.mode = MNN_GPU_TUNING_HEAVY | MNN_GPU_MEMORY_BUFFER;
-//    config.backupType = MNN_FORWARD_OPENCL;
-//    config.backupType = MNN_FORWARD_VULKAN;
-//    config.backupType = MNN_FORWARD_AUTO;
-    config.backupType = MNN_FORWARD_CPU;
+	if (backend_type == MNN_FORWARD_AUTO)
+		config.backupType = MNN_FORWARD_CPU;
+	else
+        config.backupType = MNN_FORWARD_AUTO;
     int num_threads = std::thread::hardware_concurrency();
-    if (num_threads < 1)
-        num_threads = 2;
-    config.numThread = num_threads;
+    if (num_threads >1 && backend_type==0)
+        config.numThread = num_threads;
 
-    fprintf(stderr, "set backend: %s, color type: %s\n", get_backend_name(config.type).c_str(),
-            colorTypeToStr(color));
+    fprintf(stderr, "set backend: %s, color type: %s, cpu: %d\n", get_backend_name(config.type).c_str(),
+            colorTypeToStr(color), num_threads);
 
     const auto start = std::chrono::high_resolution_clock::now();
 
@@ -245,8 +244,8 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
     int tileHeight = tilesize - prepadding * 2;
 
 
-    int xtiles = (inWidth + tileWidth - 1) / tileWidth;
-    int ytiles = (inHeight + tileHeight - 1) / tileHeight;
+    uint xtiles = (inWidth + tileWidth - 1) / tileWidth;
+    uint ytiles = (inHeight + tileHeight - 1) / tileHeight;
 
 
     int xPrepadding = prepadding, yPrepadding = prepadding;
@@ -417,7 +416,7 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
 
 
             high_resolution_clock::time_point end = high_resolution_clock::now();
-            float time_span_print_progress = duration_cast<duration<double>>(
+            double time_span_print_progress = duration_cast<duration<double>>(
                     end - time_print_progress).count();
             float progress_tile = (float) (yi * xtiles + xi + 1);
             if (time_span_print_progress > 0.5 || (yi + 1 == ytiles && xi + 3 > xtiles)) {
