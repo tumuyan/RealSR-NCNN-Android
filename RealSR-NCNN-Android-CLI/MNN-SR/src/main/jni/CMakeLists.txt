@@ -3,6 +3,7 @@ project(mnnsr-ncnn)
 cmake_minimum_required(VERSION 3.4.1)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_INSTALL_RPATH "$ORIGIN")
 #set(CMAKE_BUILD_TYPE Debug)
 #set(CMAKE_BUILD_TYPE Release)
 
@@ -193,11 +194,13 @@ if (MSVC)  # Visual Studio
 
     # 自动查找 OpenCV DLL
     file(GLOB OpenCV_DLLS "${OpenCV_CORE_LIB_DIR}/opencv_world*[0-9].dll")
-    message(STATUS "OpenCV_DLLS: ${OpenCV_DLLS}")
+    # message(STATUS "OpenCV_DLLS: ${OpenCV_DLLS}")
 
     # 合并所有需要复制的 DLL
     set(ALL_DLLS "${MNN_DLL}" "${NCNN_DLL}")
     list(APPEND ALL_DLLS ${OpenCV_DLLS})
+    
+    message(STATUS "ALL_DLLS: ${ALL_DLLS}")
 
     # 生成所有 DLL 的复制命令
     set(DLL_COPY_COMMANDS "")
