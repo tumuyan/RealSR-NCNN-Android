@@ -1,22 +1,24 @@
 name: Compile RealSR-NCNN-Android-GUI
 
 on:
-  repository_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'RealSR-NCNN-Android-GUI/**'
+      - '.github/workflows/android.yml'  
   workflow_dispatch:
+  
 env:
-  CI_NAME: Custom CI
-  
-  ASSETS_URL: https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.7.13-1/assets.zip
-  NCNN_URL: https://github.com/Tencent/ncnn/releases/download/20221128/ncnn-20221128-android-vulkan-shared.zip
-  NCNN_NAME: ncnn-20221128-android-vulkan-shared.zip
-  
-  
+  # CI_NAME: Custom CI
+  ASSETS_URL: https://github.com/tumuyan/RealSR-NCNN-Android/releases/download/1.11.1/assets.zip
+  NCNN_URL: https://github.com/Tencent/ncnn/releases/download/20250503/ncnn-20250503-android-vulkan-shared.zip
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout last commit
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -25,11 +27,11 @@ jobs:
         echo $GITHUB_WORKSPACE
         pwd
         wget $ASSETS_URL
-        wget $NCNN_URL
+        wget $NCNN_URL -O ncnn-android-vulkan-shared.zip
         mkdir -p 3rdparty
         ls
         unzip  -o  assets.zip -d RealSR-NCNN-Android-GUI/app/src/main/assets
-        unzip  -o  $NCNN_NAME -d 3rdparty/ncnn-android-vulkan-shared
+        unzip  -o  ncnn-android-vulkan-shared.zip -d 3rdparty/ncnn-android-vulkan-shared
         
 
     - name: Setup Java
@@ -41,7 +43,7 @@ jobs:
 
 
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v2
+      uses: android-actions/setup-android@v3
 
 
     - name: Build Gui
@@ -49,7 +51,7 @@ jobs:
         cd RealSR-NCNN-Android-GUI && chmod +x gradlew && ./gradlew assembleDebug
 
     - name: Upload Apk artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: RealSR-NCNN-Android-GUI.zip
         path: RealSR-NCNN-Android-GUI/app/build/outputs/apk/**/*.apk
