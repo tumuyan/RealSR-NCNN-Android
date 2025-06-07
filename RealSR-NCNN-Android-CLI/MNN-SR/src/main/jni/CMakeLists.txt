@@ -217,6 +217,9 @@ if (MSVC)  # Visual Studio
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(${PROJECT_NAME} webp ${OpenCV_LIBS} ${NCNN_LIB} ${MNN_LIB})
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        BUILD_RPATH "$ORIGIN/lib"
+    )
 
 else ()
     target_link_libraries(${PROJECT_NAME} webp MNN MNN_CL MNN_Vulkan ${OpenCV_LIBS} ${NCNN_LIB})
