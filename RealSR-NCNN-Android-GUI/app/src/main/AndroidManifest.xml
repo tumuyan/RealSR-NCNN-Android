@@ -11,9 +11,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.RealSR">
-<!--        <uses-native-library
+        <uses-native-library
             android:name="libOpenCL.so"
-            android:required="true"/>-->
+            android:required="true"/>
+        <uses-native-library
+            android:name="libGLES_mali.so"
+            android:required="true"/>
         <activity
             android:name=".SettingActivity"
             android:parentActivityName=".MainActivity"
