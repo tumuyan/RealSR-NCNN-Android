@@ -1,0 +1,123 @@
+name: MNN for Linux
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ubuntu:20.04
+            sysname: ubuntu20
+            cuda: "11.0.3"
+          - image: ubuntu:20.04
+            sysname: ubuntu20
+            cuda: "11.8.0"
+          - image: ubuntu:20.04
+            sysname: ubuntu20
+            cuda: "12.2.0"
+          - image: ubuntu:20.04
+            sysname: ubuntu20
+            cuda: "12.8.1"
+          - image: ubuntu:22.04
+            sysname: ubuntu22
+            cuda: "11.8.0"
+          - image: ubuntu:22.04
+            sysname: ubuntu22
+            cuda: "12.3.2"
+          - image: ubuntu:22.04
+            sysname: ubuntu22
+            cuda: "12.8.1"
+          # - image: ubuntu:24.04
+          #   sysname: ubuntu24
+          #   cuda: "11.8.0"
+          #   # Failed to verify gcc version.
+          # - image: ubuntu:24.04
+          #   sysname: ubuntu24
+          #   cuda: '12.3.2'
+          #   # Failed in build mnncuda.
+          - image: ubuntu:24.04
+            sysname: ubuntu24
+            cuda: "12.6.3"
+          # - image: ubuntu:latest
+          #   sysname: ubuntu
+          #   cuda: '12.9.0'
+          #   # Failed in setup cuda
+          # - image: debian:bullseye
+          #   sysname: debian
+          #   cuda: "10.2.89"
+          #   # Failed to verify gcc version.
+          - image: debian:bullseye
+            sysname: debian
+            cuda: "12.2.0"
+
+    container:
+      image: ${{ matrix.image }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies (Debian/Ubuntu)
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates sudo
+          update-ca-certificates
+          apt-get install -y --no-install-recommends build-essential unzip cmake git wget libopencv-dev ocl-icd-opencl-dev clinfo libvulkan-dev vulkan-tools
+          
+      - name: Clone 3rdparty
+        run: |
+          git clone https://github.com/webmproject/libwebp  --depth 1
+          git clone https://github.com/alibaba/MNN --depth 1
+          # wget https://github.com/alibaba/MNN/releases/download/3.1.0/mnn_3.1.0_linux_x64_cpu_opencl.zip; unzip mnn_3.1.0_linux_x64_cpu_opencl.zip ; mv mnn_3.1.0_linux_x64_cpu_opencl mnn_linux_x64;
+          # cp MNN/include  mnn_linux_x64/
+          # wget -nv https://github.com/Tencent/ncnn/releases/download/20250503/ncnn-20250503-ubuntu-2404-shared.zip; unzip ncnn-20250503-ubuntu-2404-shared.zip ; mv ncnn-20250503-ubuntu-2404-shared  ncnn-ubuntu-shared
+        working-directory: 3rdparty
+
+      # - name: Modify CMakeLists.txt for RPATH
+      #   run: |
+      #     echo "Modifying CMakeLists.txt to add RPATH settings..."
+      #     sed -i.bak '/target_link_libraries(MNN PUBLIC -pthread dl)/a \
+      #       set_target_properties(MNN PROPERTIES\
+      #           BUILD_RPATH "$ORIGIN/lib"\
+      #       )
+      #     ' CMakeLists.txt
+      #     echo "--- Verification: Content after modification ---"
+      #     grep -C 5 "target_link_libraries(MNN PUBLIC -pthread dl)" CMakeLists.txt
+      #   working-directory: 3rdparty/MNN
+
+      - name: Verify the System
+        run: |
+          gcc --version
+          sudo whoami
+          echo cpu $(nproc)
+          pwd
+
+      - name: Set up CUDA ${{ matrix.cuda }}
+        id: cuda
+        uses: Jimver/cuda-toolkit@v0.2.25
+        with:
+          cuda: ${{ matrix.cuda }}
+          use-github-cache: false
+          use-local-cache: false
+          log-file-suffix: '${{ matrix.sysname }}-cuda${{ matrix.cuda }}.txt'
+        
+      - name: build mnn
+        id: mnn
+        run: |
+          mkdir build ;cd build; cmake ..  -DCMAKE_BUILD_TYPE=Release -DMNN_TENSORRT=OFF -DMNN_OPENGL=OFF  -DMNN_OPENCL=ON  -DMNN_VULKAN=ON  -DMNN_CUDA=ON  -DMNN_SEP_BUILD=OFF  && make -j$(nproc)
+          mkdir ../libmnn-${{ matrix.sysname }}-cuda${{ matrix.cuda }}-opencl-vulkan-cpu; cd ../libmnn-${{ matrix.sysname }}-cuda${{ matrix.cuda }}-opencl-vulkan-cpu
+          cp ../build/*.so ./ ; ls -lh
+        working-directory: 3rdparty/MNN
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libmnn-${{ matrix.sysname }}-cuda${{ matrix.cuda }}-opencl-vulkan-cpu
+          path: 3rdparty/MNN/libmnn-${{ matrix.sysname }}-cuda${{ matrix.cuda }}-opencl-vulkan-cpu
+          retention-days: 90
+      
