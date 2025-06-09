@@ -146,6 +146,7 @@ jobs:
           ldd mnnsr/lib/libMNN.so | grep "=>" | awk '{print $3}' | xargs -I {} cp  -Ln {} mnnsr/lib/
           ldd mnnsr/mnnsr-ncnn | grep "=>" | awk '{print $3}' | xargs -I {} cp -Ln {} mnnsr/lib/
           # patchelf --set-rpath '$ORIGIN/../lib' mnnsr/mnnsr-ncnn
+          cp ../../../../*.md mnnsr/
         working-directory: RealSR-NCNN-Android-CLI/MNN-SR/src/main/jni
         
       - name: test mnnsr

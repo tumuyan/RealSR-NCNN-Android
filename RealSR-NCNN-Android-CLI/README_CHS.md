@@ -1,5 +1,55 @@
 [English](./README.md)
 
+# MNN-SR
+
+这个模块是用 [mnn](https://github.com/alibaba/MNN) 实现的超分辨率命令行程序。有如下特色:  
+1. mnn可以比ncnn兼容更多模型架构。  
+2. 本模块支持gcc、VS和AS编译，因此不止是Android，连Windows和Linux甚至其他PC系统也有脱离Python的更为通用的超分辨率工具了！  
+3. mnn支持多种后端, 当前配置Android端支持vulkan、opencl和cpu,推荐opencl。Windows端支持vulkan、opencl、CPU和cuda，其中cuda在我的电脑中输出结果错误，需要更多测试和反馈；opencl在系统任务管理器中看不到gpu占用，在nvidia-smi工具中可以看到gpu能够跑满。Linux支持vulkan、opencl、CPU和cuda，我的测试环境中cuda最快，vulkan无法调用到gpu，opencl表现良好。整体来看，各平台都能正常使用并且速度不低于ncnn。  
+**如果可能的话，请你帮我进一步完善🙏！**
+
+### 如何在AS中编译
+
+1. 和前边的ncnn模块一样下载并解压依赖到 RealSR-NCNN-Android/3rdparty  
+
+2. 下载mnn库并解压到RealSR-NCNN-Android/3rdparty
+   
+   ```
+   ├─libwebp
+   ├─mnn_android
+   │  ├─arm64-v8a
+   │  ├─armeabi-v7a
+   │  └─include
+   ```
+
+3. sync 并 build
+
+4. 从mnn库中复制 *.so 文件到GUI项目的assest中. 
+
+### 如何在VS中编译Windows x64
+
+1. 和Android版本一样下载Windows的各项依赖，注意如果需要cuda加速，需要重新编译mnn
+
+2. 根据实际路径调整CMake中的文件路径
+
+3. 使用VS打开MNNSR的jni目录，刷新CMake文件
+
+4. build
+
+### 如何使用gcc编译Linux x64
+请参考ci脚本进行编译  
+
+### 用法
+
+和realsr-ncnn基本相同，增加了如下参数：
+
+```console
+  -b backend           推理后端类型（需要注意的是，这只是设置的后端类型，实际调用时mnn框架可能会自动调整，请留意程序运行时打印的信息）(CPU=0,AUTO=4,CUDA=2,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)
+  -c color-type        模型和输出图片的色彩空间(RGB=1, BGR=2, YCbCr=5, YUV=6, GRAY=10, GRAY模型+YCbCr色彩转换=11, GRAY模型+YUV色彩转换=12, default=1)
+  -d decensor-mode     去审核模式，使用此模式则输出的图片与输入图片的分辨率相同(关闭=-1, 去马赛克=0, default=-1)
+```
+
+
 # NCNN 各模块
 
 ## 如何编译 RealSR-NCNN-Android-CLI
@@ -75,47 +125,4 @@ RealSR-NCNN-Android
   -j load:proc:save    解码/处理/保存的线程数 (默认1:2:2) 多GPU可以设 1:2,2,2:2
   -x                   开启tta模式
   -f format            输出格式(jpg/png/webp, 默认ext/png)
-```
-
-# MNN-SR
-
-这个模块是用 [mnn](https://github.com/alibaba/MNN) 实现的超分辨率命令行程序。经测试确认，mnn可以比ncnn兼容更多模型。  
-另外这个模块能同时兼容VS和AS，这样不止是Android，连Windows甚至其他PC系统也有脱离Python的更为通用的超分辨率工具了！**如果可能的话，请你帮我进一步完善🙏！**
-
-### 如何在AS中编译
-
-1. 和前边的ncnn模块一样下载并解压依赖到 RealSR-NCNN-Android/3rdparty  
-
-2. 下载mnn库并解压到RealSR-NCNN-Android/3rdparty
-   
-   ```
-   ├─libwebp
-   ├─mnn_android
-   │  ├─arm64-v8a
-   │  ├─armeabi-v7a
-   │  └─include
-   ```
-
-3. sync 并 build
-
-4. 从mnn库中复制 *.so 文件到GUI项目的assest中. 
-
-### 如何在VS中编译Windows x64
-
-1. 和Android版本一样下载Windows的各项依赖
-
-2. 根据实际路径调整CMake中的文件路径
-
-3. 使用VS打开MNNSR的jni目录，刷新CMake文件
-
-4. build
-
-### 用法
-
-和realsr-ncnn基本相同，增加了如下参数：
-
-```console
-  -b backend           推理后端类型（需要注意的是，这只是设置的后端类型，实际调用时mnn框架可能会自动调整，请留意程序运行时打印的信息）(CPU=0,AUTO=4,CUDA=2,OPENCL=3,OPENGL=6,VULKAN=7,NN=5,USER_0=8,USER_1=9, default=3)
-  -c color-type        模型和输出图片的色彩空间(RGB=1, BGR=2, YCbCr=5, YUV=6, GRAY=10, GRAY模型+YCbCr色彩转换=11, GRAY模型+YUV色彩转换=12, default=1)
-  -d decensor-mode     去审核模式，使用此模式则输出的图片与输入图片的分辨率相同(关闭=-1, 去马赛克=0, default=-1)
 ```
