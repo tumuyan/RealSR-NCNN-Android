@@ -6,6 +6,7 @@
 #include <clocale>
 #include <thread>
 #include <filesystem>
+#include <regex>
 
 //#undef min
 //#undef max
@@ -795,6 +796,37 @@ int main(int argc, char **argv)
         fprintf(stderr, "Unknow scale for the model (%s)\n", modelfullpath.c_str());
 #endif
         return -1;
+    }
+
+    if (scale == 0) {
+#if _WIN32
+        using string_t = std::wstring;
+        using regex_t = std::wregex;
+        using smatch_t = std::wsmatch;
+#define STR(x) L##x
+#else
+        using string_t = std::string;
+        using regex_t = std::regex;
+        using smatch_t = std::smatch;
+#define STR(x) x
+#endif
+        // 获取文件名
+        string_t filename = std::filesystem::path(model).filename().native();
+
+        //regex_t re1(STR("(.+-|^)[xX]([0-9]+(\\.[0-9]+)?).*"));
+        //regex_t re2(STR("(.+-|^)([0-9]+(\\.[0-9]+)?)[xX].*"));
+        regex_t re1(STR("(.+-|^)[xX]([0-9]+).*"));
+        regex_t re2(STR("(.+-|^)([0-9]+)[xX].*"));
+
+        smatch_t match;
+        if (std::regex_search(filename, match, re1) && match.size() > 1) {
+            //scale = std::stod(match[2]);
+            scale = std::stoi(match[2]);
+        }
+        else if (std::regex_search(filename, match, re2) && match.size() > 1) {
+            //scale = std::stod(match[2]);
+            scale = std::stoi(match[2]);
+        }
     }
 
 

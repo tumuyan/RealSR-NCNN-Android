@@ -148,6 +148,18 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel,const bool nchw)
 
 
     interpreter_input = interpreter->getSessionInput(session, nullptr);
+    auto dims = interpreter_input->shape();
+	if (dims.size() != 4) {
+		fprintf(stderr, "model input tensor shape error, expect 4 dims, but got %zu\n", dims.size());
+		return -1;
+	}
+	else if (dims[2] > 0 && dims[3] > 0 && dims[2] == dims[3]) {
+		if (dims[2] != tilesize) {
+			fprintf(stderr, "fix tilesize %d -> %d\n", tilesize, dims[2]);
+			tilesize = dims[2];
+		}
+	}
+
 //    fprintf(stderr, "model input tensor(b/c/h/w): %d/%d/%d/%d -> 1/%d/%d/%d\n"
 //            , input_tensor->batch(), input_tensor->channel(), input_tensor->height(), input_tensor->width()
 //            ,model_channel, tilesize, tilesize
