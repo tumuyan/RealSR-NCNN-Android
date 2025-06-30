@@ -22,6 +22,6 @@ android {
             path file('src/main/jni/CMakeLists.txt')
         }
     }
-    ndkVersion '25.2.9519653'
+    ndkVersion '29.0.13599879 rc2'
     namespace 'com.tumuyan.ncnn.realsr'
 }

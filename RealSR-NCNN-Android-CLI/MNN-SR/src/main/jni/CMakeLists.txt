@@ -1,6 +1,5 @@
+cmake_minimum_required(VERSION 3.5)
 project(mnnsr-ncnn)
-
-cmake_minimum_required(VERSION 3.4.1)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INSTALL_RPATH "$ORIGIN")
@@ -102,14 +101,14 @@ message(STATUS "TARGET_ARCH: ${TARGET_ARCH}")
 include_directories(${mnn_DIR}/include)
 #include_directories(${mnn_DIR}/${ANDROID_ABI}/include/MNN)
 
-
+message(STATUS "Find mnn in: ${mnn_DIR}")
 if (EXISTS ${MNN_LIB})
-    message(STATUS "find mnn: ${MNN_LIB}")
+    #message(STATUS "find mnn: ${MNN_LIB}")
 else ()
-    message(STATUS "mnn library not found!")
+    message(STATUS "    mnn library not found!")
     set(MNN_LIB "${mnn_DIR}/${ANDROID_ABI}/libMNN.so")
 endif ()
-message(STATUS "find mnn result: ${MNN_LIB}")
+message(STATUS "Found mnn: ${MNN_LIB}")
 
 
 add_library(ncnn SHARED IMPORTED)
@@ -117,15 +116,15 @@ include_directories(${ncnn_DIR}/${TARGET_ARCH}/include/ncnn)
 # set_target_properties(ncnn PROPERTIES IMPORTED_LOCATION  ${ncnn_LIB})
 
 
-message(STATUS "find ncnn in: ${ncnn_DIR}/${TARGET_ARCH}/lib")
+message(STATUS "Find ncnn in: ${ncnn_DIR}/${TARGET_ARCH}/lib")
 find_library(NCNN_LIB NAMES ncnn libncnn PATHS "${ncnn_DIR}/${TARGET_ARCH}/lib")
 if (EXISTS ${NCNN_LIB})
-    message(STATUS "Found ncnn: ${NCNN_LIB}")
+    #message(STATUS "Found ncnn: ${NCNN_LIB}")
 else ()
-    message(STATUS "ncnn library not found!")
+    message(STATUS "    ncnn library not found!")
     set(NCNN_LIB "${ncnn_DIR}/${TARGET_ARCH}/lib/libncnn.so")
 endif ()
-message(STATUS "find ncnn result: ${NCNN_LIB}")
+message(STATUS "Found ncnn: ${NCNN_LIB}")
 
 set(OpenCV_STATIC ON)
 find_package(OpenCV REQUIRED)

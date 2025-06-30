@@ -58,6 +58,11 @@
 2. （举例转换onnx模型到mnn格式）直接输入命令 `MNNConvert -f ONNX  --modelFile "{onnx_path}" --MNNModel "{mnn_path}"  --bizCode biz --fp16  --info  --detectSparseSpeedUp`
 3. 修改mnn模型文件名，使包含缩放倍率信息，如：`4xabcdefg.mnn`或者`abc-x4-def.mnn`或者者`abc_4x_def.mnn`，并复制mnn模型到设置的自定义模型目录中。如果文件名包含关键字`Grayscale` `Gray2YCbCr` `Gray2YUV` `YCbCr` `YUV`则应用相应的色彩空间。
 
+## 在线/脚本快速转换 mnn 模型
+1. 你可以通过如下网址在线转换mnn模型。输入pth/onnx模型文件，点击按钮并等待即可得到mnn文件。下载转换好的mnn模型并复制到自定义模型目录中即可。  
+https://huggingface.co/spaces/tumuyan2/model2mnn
+2. 这个仓库同时也提供了Windows版本的bat，这需要一些Python的使用经验。简单讲打包下载仓库文件，在python环境中安装必要的依赖，然后打开`pth2onnx.bat`并拖入pth文件即可转换pth到onnx，同理可以用`onnx2mnn.bat`转换onnx到mnn。
+
 ## 为 RealSR-NCNN-Android-GUI 增加更多ncnn模型
 
 RealSR-NCNN-Android-GUI 在 ver 1.7.6 以上的版本可以自动加载自定义模型。
