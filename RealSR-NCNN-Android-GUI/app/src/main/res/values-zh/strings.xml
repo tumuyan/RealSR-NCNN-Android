@@ -74,7 +74,7 @@
     <string name="busy">在忙</string>
     <string name="default_select_command">默认选中哪个预设命令</string>
     <string name="tile_size">预设命令的Tile Size参数</string>
-    <string name="default_command">在输入框中预设命令</string>
+    <string name="default_command">输入框中的预设命令</string>
     <string name="save_setting">保存设置</string>
 
     <string name="lr">当前显示处理前的图像</string>
@@ -141,6 +141,7 @@
     <string name="choose_mult_files">单次选择多个图片（但只预览其中一个，且结果会自动保存到相册）。\n
         即使关闭此功能，仍然可以在其他应用如相册中选择多个图片并分享到本应用。</string>
     <string name="mnn_backend">MNN推理后端类型 (CPU=0,AUTO=4,OPENCL=3,VULKAN=7,默认3)</string>
+    <string name="show_final_command">使用列表中的模型时，在命令输入框内显示最终调用的命令</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>

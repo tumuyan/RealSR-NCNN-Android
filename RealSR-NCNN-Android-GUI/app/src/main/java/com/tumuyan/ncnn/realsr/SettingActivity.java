@@ -35,6 +35,7 @@ public class SettingActivity extends AppCompatActivity {
     ToggleButton togglePreFrame;
     ToggleButton toggleAutoSave;
     ToggleButton toggleSearchView;
+    ToggleButton toggleFinalCommand;
     Spinner spinnerFormat, spinnerName, spinnerName2, spinnerOrientation, spinnerNotify;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
@@ -64,6 +65,7 @@ public class SettingActivity extends AppCompatActivity {
         boolean useCPU = mySharePerferences.getBoolean("useCPU", false);
         boolean autoSave = mySharePerferences.getBoolean("autoSave", false);
         boolean showSearchView = mySharePerferences.getBoolean("showSearchView", false);
+        boolean showFinalCommand = mySharePerferences.getBoolean("showFinalCommand", false);
         int format = mySharePerferences.getInt("format", 0);
         int name = mySharePerferences.getInt("name", 0);
         int name2 = mySharePerferences.getInt("name2", 0);
@@ -105,6 +107,8 @@ public class SettingActivity extends AppCompatActivity {
         toggleCPU.setChecked(useCPU);
         toggleSearchView = findViewById(R.id.toggle_serarch_view);
         toggleSearchView.setChecked(showSearchView);
+        toggleFinalCommand = findViewById(R.id.toggle_final_command);
+        toggleFinalCommand.setChecked(showFinalCommand);
 
         spinnerFormat = findViewById(R.id.spinner_format);
         spinnerFormat.setSelection(format);
@@ -153,6 +157,7 @@ public class SettingActivity extends AppCompatActivity {
             toggleCPU.setChecked(false);
             toggleAutoSave.setChecked(false);
             toggleSearchView.setChecked(false);
+            toggleFinalCommand.setChecked(false);
             editSavePath.setText("");
             editTile.setText("0");
             editThread.setText("");
@@ -172,6 +177,7 @@ public class SettingActivity extends AppCompatActivity {
             toggleCPU.setChecked(false);
             toggleAutoSave.setChecked(false);
             toggleSearchView.setChecked(false);
+            toggleFinalCommand.setChecked(false);
             editSavePath.setText("");
             editTile.setText("32");
             editThread.setText("1:1:1");
@@ -248,6 +254,7 @@ public class SettingActivity extends AppCompatActivity {
         editor.putBoolean("useCPU", toggleCPU.isChecked());
         editor.putBoolean("autoSave", toggleAutoSave.isChecked());
         editor.putBoolean("showSearchView", toggleSearchView.isChecked());
+        editor.putBoolean("showFinalCommand", toggleFinalCommand.isChecked());
         editor.putInt("format", (int) spinnerFormat.getSelectedItemId());
         editor.putInt("name", (int) spinnerName.getSelectedItemId());
         editor.putInt("name2", (int) spinnerName2.getSelectedItemId());

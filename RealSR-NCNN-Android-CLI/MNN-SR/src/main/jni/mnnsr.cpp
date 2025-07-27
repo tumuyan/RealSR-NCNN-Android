@@ -186,6 +186,9 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel,const bool nchw)
     MNNForwardType backendType[2];
     interpreter->getSessionInfo(session, MNN::Interpreter::BACKENDS, backendType);
 
+    if (cachemodel)
+        interpreter->updateCacheFile(session);
+
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
 		std::chrono::high_resolution_clock::now() - start);
 	fprintf(stderr, "load model %.3f s, session memory %sB, flops %s, "
@@ -494,8 +497,6 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
     }
 
 
-    if (cachemodel)
-        interpreter->updateCacheFile(session);
     return 0;
 }
 

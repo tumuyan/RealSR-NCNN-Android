@@ -126,6 +126,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
 Even if this feature is disabled, you can still select multiple images from other apps (like Gallery) and share them to this app.
 </string>
     <string name="mnn_backend">MNN forward backend type(CPU=0,AUTO=4,OPENCL=3,VULKAN=7,default=3)</string>
+    <string name="show_final_command">Show the final command in the command input area.</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>

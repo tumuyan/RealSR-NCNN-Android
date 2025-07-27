@@ -143,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean prePng;
     private boolean preFrame;
     private boolean autoSave;
-    private boolean showSearchView;
+    private boolean showSearchView, showFinalCommand;
     private String savePath = galleryPath;
     private static final int NOTIFY_ID = 1;
     private static final String CHANNEL_NAME_RESULT = "channel_result";
@@ -360,6 +360,9 @@ public class MainActivity extends AppCompatActivity {
             searchView.setVisibility(View.VISIBLE);
         else
             searchView.setVisibility(View.GONE);
+
+        showFinalCommand = mySharePerferences.getBoolean("showFinalCommand", false) && showSearchView;
+
 
         notify = mySharePerferences.getInt("notify", 0);
 
@@ -648,7 +651,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         if (version != BuildConfig.VERSION_CODE) {
-            run_command("if [ -e /system/vendor/lib64/libOpenCL.so ]; then cp /system/vendor/lib64/libOpenCL.so ./; elif [ -e /system/lib64/libOpenCL.so ]; then cp /system/lib64/libOpenCL.so ./; elif [ -e /system/vendor/lib/libOpenCL.so ]; then cp /system/vendor/lib/libOpenCL.so ./; elif [ -e /system/lib/libOpenCL.so ]; then cp /system/lib/libOpenCL.so ./; else echo \"[warning]libOpenCL.so not find\"; fi; if [ -e /system/vendor/lib/egl/libGLES_mali.so ]; then cp /system/vendor/lib/egl/libGLES_mali.so ./; elif [ -e /system/lib/egl/libGLES_mali.so ]; then cp /system/lib/egl/libGLES_mali.so ./; else echo \"[warning]libGLES_mali.so not find\"; fi; chmod 777 " + dir + " -R");
+            run_command("cd " + dir + ";if [ -e /system/vendor/lib64/libOpenCL.so ]; then cp /system/vendor/lib64/libOpenCL.so ./; elif [ -e /system/lib64/libOpenCL.so ]; then cp /system/lib64/libOpenCL.so ./; elif [ -e /system/vendor/lib/libOpenCL.so ]; then cp /system/vendor/lib/libOpenCL.so ./; elif [ -e /system/lib/libOpenCL.so ]; then cp /system/lib/libOpenCL.so ./; else echo \"[warning]libOpenCL.so not find\"; fi; if [ -e /system/vendor/lib/egl/libGLES_mali.so ]; then cp /system/vendor/lib/egl/libGLES_mali.so ./; elif [ -e /system/lib/egl/libGLES_mali.so ]; then cp /system/lib/egl/libGLES_mali.so ./; else echo \"[warning]libGLES_mali.so not find\"; fi; chmod 777 *");
         } else {
             run_command("chmod 777 " + dir + " -R");
         }
@@ -767,6 +770,11 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if (keepScreen) {
                     logTextView.setKeepScreenOn(true);
+                }
+
+                if (showFinalCommand) {
+                    searchView.setQuery(cmd.toString(), false);
+                    Toast.makeText(this, cmd.toString(), Toast.LENGTH_SHORT).show();
                 }
 
                 new Thread(() -> {
