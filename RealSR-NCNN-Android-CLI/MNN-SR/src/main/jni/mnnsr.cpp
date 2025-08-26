@@ -84,6 +84,7 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel,const bool nchw)
     backendConfig.memory = MNN::BackendConfig::Memory_High;
     backendConfig.power = MNN::BackendConfig::Power_High;
     backendConfig.precision = MNN::BackendConfig::Precision_Low;
+//    backendConfig.precision = MNN::BackendConfig::Precision_High;
 
     //MNNDeviceContext gpuDeviceConfig;
     //// CUDA Backend support user set device_id
@@ -140,6 +141,9 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel,const bool nchw)
 #endif
         interpreter->setCacheFile(cachefile.c_str());
     }
+
+    // 可能对某些硬件取得正确推理结果有帮助
+    interpreter->setSessionHint(Interpreter::GEOMETRY_COMPUTE_MASK, 0);
 
     session = interpreter->createSession(config);
     if (session == nullptr) {

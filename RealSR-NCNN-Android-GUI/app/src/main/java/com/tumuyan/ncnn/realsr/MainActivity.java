@@ -62,7 +62,8 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1, SELECT_MULTI_IMAGE = 2;
     private static final int MY_PERMISSIONS_REQUEST = 100;
-    private static String CMD_RESET_CACHE = " if [ -e /system/vendor/lib64/libOpenCL.so ]; then cp /system/vendor/lib64/libOpenCL.so ./; elif [ -e /system/lib64/libOpenCL.so ]; then cp /system/lib64/libOpenCL.so ./; elif  [ -e /system/vendor/lib/libOpenCL.so ]; then cp /system/vendor/lib/libOpenCL.so ./; elif [ -e /system/lib/libOpenCL.so ]; then cp /system/lib/libOpenCL.so ./; else echo \"[warning]libOpenCL.so not find\"; fi; if [ -e /system/vendor/lib/egl/libGLES_mali.so ]; then cp /system/vendor/lib/egl/libGLES_mali.so ./; elif [ -e /system/lib/egl/libGLES_mali.so ]; then cp /system/lib/egl/libGLES_mali.so ./; else echo \"[warning]libGLES_mali.so not find\"; fi;rm -f *.cache;rm -f */*.cache;chmod 777 *; echo Cache has been reset.;ls";
+    private static final String CMD_CP_LIB_OPENCL = " if [ -e /system/vendor/lib64/libOpenCL.so ]; then cp /system/vendor/lib64/libOpenCL.so ./; elif [ -e /system/lib64/libOpenCL.so ]; then cp /system/lib64/libOpenCL.so ./; elif  [ -e /system/vendor/lib/libOpenCL.so ]; then cp /system/vendor/lib/libOpenCL.so ./; elif [ -e /system/lib/libOpenCL.so ]; then cp /system/lib/libOpenCL.so ./; else echo \"[warning]libOpenCL.so not find\"; fi; if [ -e /system/vendor/lib/egl/libGLES_mali.so ]; then cp /system/vendor/lib/egl/libGLES_mali.so ./; elif [ -e /system/lib/egl/libGLES_mali.so ]; then cp /system/lib/egl/libGLES_mali.so ./; else echo \"[warning]libGLES_mali.so not find\"; fi";
+    private static final String CMD_RESET_CACHE = CMD_CP_LIB_OPENCL + ";rm -f *.cache;rm -f */*.cache;chmod 777 *; echo Cache has been reset.;ls";
     private int selectCommand = 0;
     private String threadCount = "";
     private SubsamplingScaleImageView imageView;
@@ -98,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
     private final String[] command_0 = new String[]{
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-anime",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN",
-            "./realsr-ncnn -i input.png -o output.png  -m models-RealeSR-general-v3 -s 4",
+            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-general -s 4",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 2",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 3",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 4",
@@ -195,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
             q = "./magick input.png -resize 25% output.png";
         } else if (v == R.id.menu_out2in) {
             if (inputIsGifAnimation) {
-                Toast.makeText(this, R.string.not_support_animation, Toast.LENGTH_SHORT);
+                Toast.makeText(this, R.string.not_support_animation, Toast.LENGTH_SHORT).show();
                 return false;
             } else {
                 q = "cp output.png input.png";
@@ -234,7 +235,7 @@ public class MainActivity extends AppCompatActivity {
             String finalImageName = imageName;
             boolean final_bench_mark_mode = bench_mark_mode;
             new Thread(() -> {
-                if (q == CMD_RESET_CACHE) {
+                if (q.equals(CMD_RESET_CACHE)) {
                     AssetsCopyer.releaseAssets(this, "realsr", cache_dir, false);
                 }
 
@@ -260,11 +261,13 @@ public class MainActivity extends AppCompatActivity {
         if (f.isDirectory()) {
             //获取目录下所有文件和目录
             File[] files = f.listFiles();
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    deleteFile(file);
-                } else {
-                    file.delete();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        deleteFile(file);
+                    } else {
+                        file.delete();
+                    }
                 }
             }
         }
@@ -376,7 +379,7 @@ public class MainActivity extends AppCompatActivity {
                 , mySharePerferences.getString("magickFilters", getString(R.string.default_magick_filters)).split("\\s+")
         );
 
-        if (extraCmd.size() > 0) {
+        if (!extraCmd.isEmpty()) {
             String[] presetCommand = getResources().getStringArray(R.array.style_array);
             extraCmd.addAll(0, Arrays.asList(presetCommand));
             ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, extraCmd);
@@ -400,14 +403,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public boolean readFileFromShare() {
+    public void readFileFromShare() {
         Intent intent = getIntent();
         String action = intent.getAction();
 
         if (Intent.ACTION_SEND.equals(action)) {
             deleteFile(inputFile);
             Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
-            inputFileName = getFileName(uri, this).replaceFirst("\\.[^\\.]+$", "");
+            inputFileName = getFileName(uri, this);
+            assert inputFileName != null;
+            inputFileName = inputFileName.replaceFirst("\\.[^.]+$", "");
             Log.i("input file name", inputFileName);
             whiteFileFromUri(uri, "");
 
@@ -416,7 +421,6 @@ public class MainActivity extends AppCompatActivity {
             handleSelectedImages(imageUris);
 
         }
-        return false;
     }
 
     private boolean whiteFileFromUri(Uri uri, String path) {
@@ -438,19 +442,11 @@ public class MainActivity extends AppCompatActivity {
     /**
      * 生成用户自定义命令. 自定义模型路径的命令与App预设命令有一样的外观和特性
      *
-     * @param extraPath    自定义模型路径
-     * @param extraCommand 用户预设命令
-     * @return 全部扩展命令
-     */
-
-    /**
-     * 生成用户自定义命令. 自定义模型路径的命令与App预设命令有一样的外观和特性
-     *
      * @param extraPath        自定义模型路径
      * @param extraCommand     用户预设命令
      * @param classicalFilters 经典插值算法列表（resize-ncnn）
      * @param magickFilters    Magick算法列表
-     * @return
+     * @return 命令列表
      */
     private List<String> getExtraCommands(String extraPath, String extraCommand, String[] classicalFilters, String[] magickFilters) {
 
@@ -483,18 +479,20 @@ public class MainActivity extends AppCompatActivity {
             if (folders == null)
                 Log.e("getExtraCommands", "extraPath folders is null");
             else {
-                Arrays.sort(folders, Comparator.comparing(a -> ((File) a).getName()));
+                Arrays.sort(folders, Comparator.comparing(File::getName));
                 for (File folder : folders) {
                     String name = folder.getName();
                     if (name.endsWith(".mnn") || name.startsWith("models-MNN")) {
                         if (folder.isDirectory()) {
                             File[] files = folder.listFiles();
-                            Arrays.sort(files, Comparator.comparing(a -> ((File) a).getName()));
-                            for (File file : files) {
-                                if (file.getName().endsWith(".mnn")) {
-                                    String[] v = getNameFromModelPath(file.getAbsolutePath(), "MNNSR");
-                                    cmdList.add("./mnnsr-ncnn -i input.png -o output.png  -m " + file.getAbsolutePath() + " -s " + v[1]);
-                                    cmdLabel.add(v[0]);
+                            if (files != null && files.length > 0) {
+                                Arrays.sort(files, Comparator.comparing(File::getName));
+                                for (File file : files) {
+                                    if (file.getName().endsWith(".mnn")) {
+                                        String[] v = getNameFromModelPath(file.getAbsolutePath(), "MNNSR");
+                                        cmdList.add("./mnnsr-ncnn -i input.png -o output.png  -m " + file.getAbsolutePath() + " -s " + v[1]);
+                                        cmdLabel.add(v[0]);
+                                    }
                                 }
                             }
                         } else {
@@ -526,7 +524,7 @@ public class MainActivity extends AppCompatActivity {
                             // 匹配realsr模型目录
                             model = name.replace("models-", "RealSR-");
                         } else if (name.startsWith("models-mnn")) {
-
+                            // 匹配mnn模型目录
                         }
 
                         List<String> suffix = genCmdFromModel(folder, scaleMatcher, noiseMatcher);
@@ -572,12 +570,13 @@ public class MainActivity extends AppCompatActivity {
         File[] files = folder.listFiles();
 
         List<String> names = new ArrayList<>();
-        for (File f : files) {
-            String name = f.getName().toLowerCase(Locale.ROOT);
-            if (name.endsWith("bin"))
-                names.add(name);
+        if (files != null) {
+            for (File f : files) {
+                String name = f.getName().toLowerCase(Locale.ROOT);
+                if (name.endsWith("bin"))
+                    names.add(name);
+            }
         }
-
         String[] fileNames = names.toArray(new String[0]);
 
         Arrays.sort(fileNames);
@@ -649,13 +648,11 @@ public class MainActivity extends AppCompatActivity {
         titleFile = new File(dir, "img/realsr.png");
         showImage(titleFile, getString(R.string.default_log));
 
-
         if (version != BuildConfig.VERSION_CODE) {
-            run_command("cd " + dir + ";if [ -e /system/vendor/lib64/libOpenCL.so ]; then cp /system/vendor/lib64/libOpenCL.so ./; elif [ -e /system/lib64/libOpenCL.so ]; then cp /system/lib64/libOpenCL.so ./; elif [ -e /system/vendor/lib/libOpenCL.so ]; then cp /system/vendor/lib/libOpenCL.so ./; elif [ -e /system/lib/libOpenCL.so ]; then cp /system/lib/libOpenCL.so ./; else echo \"[warning]libOpenCL.so not find\"; fi; if [ -e /system/vendor/lib/egl/libGLES_mali.so ]; then cp /system/vendor/lib/egl/libGLES_mali.so ./; elif [ -e /system/lib/egl/libGLES_mali.so ]; then cp /system/lib/egl/libGLES_mali.so ./; else echo \"[warning]libGLES_mali.so not find\"; fi; chmod 777 *");
+            run_command("cd " + dir + ";" + CMD_CP_LIB_OPENCL + "; chmod 777 *");
         } else {
             run_command("chmod 777 " + dir + " -R");
         }
-
 
         spinner = findViewById(R.id.spinner);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -721,7 +718,7 @@ public class MainActivity extends AppCompatActivity {
                         return;
                     } else if (f.isDirectory()) {
                         File[] files = f.listFiles();
-                        if (files.length < 1) {
+                        if (files==null || files.length==0)  {
                             Toast.makeText(this, R.string.output_not_exits, Toast.LENGTH_SHORT).show();
                         } else {
                             Toast.makeText(this, R.string.output_is_dir, Toast.LENGTH_SHORT).show();
@@ -753,7 +750,7 @@ public class MainActivity extends AppCompatActivity {
                     if (cmd_head.matches("./(realsr|srmd|waifu2x|realcugan|mnnsr)-ncnn.+")) {
                         if (tileSize > 0 && !cmd_head.contains(" -t "))
                             cmd.append(" -t ").append(tileSize);
-                        if (threadCount.length() > 0 && !cmd_head.contains(" -j "))
+                        if (!threadCount.isEmpty() && !cmd_head.contains(" -j "))
                             cmd.append(" -j ").append(threadCount);
                         if (useCPU && !cmd_head.startsWith("./srmd") && !cmd_head.startsWith("./mnnsr") && !cmd_head.contains(" -g "))
                             cmd.append(" -g -1");
@@ -902,14 +899,14 @@ public class MainActivity extends AppCompatActivity {
 
     // 处理选中的多个文件
     private void handleSelectedImages(List<Uri> uris) {
-        if (uris.isEmpty())
+        if (uris == null || uris.isEmpty())
             return;
         deleteFile(inputFile);
         if (uris.size() == 1) {
             Uri url = uris.get(0);
             {
 
-                inputFileName = getFileName(url, this).replaceFirst("\\.[^\\.]+$", "");
+                inputFileName = getFileName(url, this).replaceFirst("\\.[^.]+$", "");
                 Log.i("input file name", inputFileName);
                 InputStream in;
 
@@ -932,12 +929,9 @@ public class MainActivity extends AppCompatActivity {
 
         SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");
         String time = f.format(new Date());
-        int k = 0;
         for (int i = 0; i < uris.size(); i++) {
             Uri uri = uris.get(i);
-            inputFileName = getFileName(uri, this).replaceFirst("\\.[^\\.]+$", "");
-//                if (inputFileName.isEmpty())
-//                    inputFileName = "" + i;
+            inputFileName = getFileName(uri, this).replaceFirst("\\.[^.]+$", "");
             switch (name2) {
                 case 0:
                     inputFileName = String.format("%s_%s", inputFileName, time);
@@ -958,7 +952,6 @@ public class MainActivity extends AppCompatActivity {
                 j++;
                 inputFilePath = dir + "/input.png/" + inputFileName + "_" + j + ".png";
             }
-            k++;
             whiteFileFromUri(uri, inputFilePath);
         }
         int inputFileSize = inputFile.listFiles().length;
@@ -973,7 +966,7 @@ public class MainActivity extends AppCompatActivity {
 
             if (requestCode == SELECT_IMAGE && null != url) {
                 deleteFile(inputFile);
-                inputFileName = getFileName(url, this).replaceFirst("\\.[^\\.]+$", "");
+                inputFileName = getFileName(url, this).replaceFirst("\\.[^.]+$", "");
                 Log.i("input file name", inputFileName);
                 InputStream in;
 
@@ -1025,7 +1018,7 @@ public class MainActivity extends AppCompatActivity {
             return -1;
         }
 
-        String[] data = con.toString().strip().split("\s");
+        String[] data = con.toString().strip().split("\\s+");
         if (data.length < 2)
             return 0;
 
@@ -1151,8 +1144,8 @@ public class MainActivity extends AppCompatActivity {
                 sendNotification(this, BUSY);
             });
             modelName = "Real-ESRGAN-anime";
-            if (cmd.matches(".+\\s-m(\\s+)[^\\s]*models-.+")) {
-                modelName = cmd.replaceFirst(".+\\s-m(\\s+)[^\\s]*models-([^\\s]+).*", "$2");
+            if (cmd.matches(".+\\s-m(\\s+)\\S*models-.+")) {
+                modelName = cmd.replaceFirst(".+\\s-m(\\s+)\\S*models-(\\S+).*", "$2");
             }
             if (cmd.startsWith("./Anime4k")) {
                 modelName = "Anime4k";
@@ -1165,9 +1158,9 @@ public class MainActivity extends AppCompatActivity {
             } else if (cmd.startsWith("./realcugan-ncnn")) {
                 modelName = "Real-CUGAN";
                 if (cmd.contains(" -c "))
-                    modelName += cmd.replaceFirst(".+\\s-c(\\s+)([^\\s]+)\\s.*", "-C$2");
+                    modelName += cmd.replaceFirst(".+\\s-c(\\s+)(\\S+)\\s.*", "-C$2");
                 if (cmd.contains(" -n "))
-                    modelName += cmd.replaceFirst(".+\\s-n(\\s+)([^\\s]+)\\s.*", "-Noise$2");
+                    modelName += cmd.replaceFirst(".+\\s-n(\\s+)(\\S+)\\s.*", "-Noise$2");
             } else if (cmd.matches(".+\\s-m(\\s+)(bicubic|bilinear|nearest|avir|de-nearest).*")) {
                 modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest|lancir|avir|de-nearest).*", "Classical-$2");
             } else if (cmd.matches(".*waifu2x.+models-(cugan|cunet|upconv).*")) {
@@ -1181,7 +1174,7 @@ public class MainActivity extends AppCompatActivity {
                 if (cmd.matches(".+\\s-d\\s+\\d+\\s.*")) {
                     modelName = "MNNSR-Decensor" + cmd.replaceFirst(".+\\s-d\\s+(\\d+)\\s.*", "$1");
                 } else {
-                    String[] v = getNameFromModelPath(cmd.replaceFirst(".+\\s-m(\\s+)([^\\s]+)\\s.*", "$2"), "MNNSR");
+                    String[] v = getNameFromModelPath(cmd.replaceFirst(".+\\s-m(\\s+)(\\S+)\\s.*", "$2"), "MNNSR");
                     modelName = v[0];
                 }
             }
@@ -1503,7 +1496,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (q.equals("out")) {
             showImage(outputFile, getString(R.string.hr));
         } else if (q.startsWith("show ")) {
-            String path = q.replaceFirst("\\s*show\\s+([^\\s]+)\\s*", "$1");
+            String path = q.replaceFirst("\\s*show\\s+(\\S+)\\s*", "$1");
             File file = new File(path);
             if (!file.exists()) {
                 path = dir + "/" + path;
