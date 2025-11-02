@@ -418,6 +418,11 @@ int MNNSR::process(const cv::Mat& inimage, cv::Mat& outimage, const cv::Mat& mas
 
 
             if (!scale_checked) {
+                if(scale<=0){
+                    fprintf(stderr, "[err] Invalid scale value: %d\n", scale);
+                    return -1;
+				}
+
                 if (outputTile.cols != paddedTile.cols * scale || outputTile.rows != paddedTile.rows * scale) {
                     float actual_model_scale = static_cast<float>(outputTile.cols) / static_cast<float>(paddedTile.cols);
                     if (actual_model_scale > 1e-5) { // Avoid division by zero or invalid scale
