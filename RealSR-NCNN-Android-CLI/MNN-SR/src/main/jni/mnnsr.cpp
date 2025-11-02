@@ -159,7 +159,7 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel,const bool nchw)
 	}
 	else if (dims[2] > 0 && dims[3] > 0 && dims[2] == dims[3]) {
 		if (dims[2] != tilesize) {
-			fprintf(stderr, "fix tilesize %d -> %d\n", tilesize, dims[2]);
+			fprintf(stderr, "fix tilesize %d -> %d, model input shape:[%d, %d, %d, %d]\n", tilesize, dims[2], dims[0], dims[1], dims[2], dims[3]);
 			tilesize = dims[2];
 		}
 	}
@@ -260,12 +260,16 @@ cv::Mat MNNSR::TensorToCvMat(void) {
     return result;
 }
 
-int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mask) {
+// In mnnsr.cpp
+// Replace the entire MNNSR::process function with this new version.
+
+int MNNSR::process(const cv::Mat& inimage, cv::Mat& outimage, const cv::Mat& mask) {
     int skiped_tile = 0;
     cv::Mat inMask;
     if (mask.empty()) {
         inMask = cv::Mat();
-    } else {
+    }
+    else {
         cv::resize(mask, inMask, inimage.size(), 0, 0, cv::INTER_AREA);
     }
 
@@ -289,12 +293,13 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
     // 待重新分配的像素数
     int left = inWidth % tileWidth;
     if (xtiles > 1 && left > 0) {
-//        fprintf(stderr, "process, xtiles=( (%d + %d - 1) / %d)=%d, left=%d, prepadding=%d\n",
-//                inWidth, tileWidth, tileWidth, xtiles, left, prepadding);
+        //        fprintf(stderr, "process, xtiles=( (%d + %d - 1) / %d)=%d, left=%d, prepadding=%d\n",
+        //                inWidth, tileWidth, tileWidth, xtiles, left, prepadding);
         if (left < prepadding) {
             // 倒数第2个tile的prepadding已经包含了推理结果
             xtiles--;
-        } else {
+        }
+        else {
             if ((left + 1) / 2 <= prepadding)
                 xtiles--;
             // xtiles * (tilesize - 2 * xPrepadding) + xPrepadding = inWidth
@@ -307,7 +312,8 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
         if (left < prepadding) {
             // 倒数第2个tile的prepadding已经包含了推理结果
             ytiles--;
-        } else {
+        }
+        else {
             if ((left + 1) / 2 <= prepadding)
                 ytiles--;
             // ytiles * (tilesize - 2 * yPrepadding) + yPrepadding = inHeight
@@ -317,13 +323,13 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
     }
 
     fprintf(stderr,
-            "process tiles: %d x %d, tilesize: %d -> %d %d, prepadding: %d -> %d %d\n",
-            xtiles, ytiles, tilesize, tileWidth, tileHeight, prepadding, xPrepadding, yPrepadding);
+        "process tiles: %d x %d, tilesize: %d -> %d %d, prepadding: %d -> %d %d\n",
+        xtiles, ytiles, tilesize, tileWidth, tileHeight, prepadding, xPrepadding, yPrepadding);
 
     high_resolution_clock::time_point begin = high_resolution_clock::now();
     high_resolution_clock::time_point time_print_progress;
 
-//    cv::Mat imageOut(outHeight, outWidth, inimage.type()); // 填充灰色背景
+    //    cv::Mat imageOut(outHeight, outWidth, inimage.type()); // 填充灰色背景
 
     for (uint yi = 0; yi < ytiles; yi++) {
         // 从inimage中裁剪出含padding的tile （但是四边的tile需要再次padding）
@@ -345,22 +351,22 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
 
             if (!inMask.empty()) {
                 int x0 = xi * tileWidth, x = xi == xtiles - 1 ? inWidth - xi * tileWidth :
-                                             tileWidth, y0 = yi * tileHeight, y =
-                        yi == ytiles - 1 ? inHeight - yi * tileHeight : tileHeight;
+                    tileWidth, y0 = yi * tileHeight, y =
+                    yi == ytiles - 1 ? inHeight - yi * tileHeight : tileHeight;
                 cv::Mat maskTile = inMask(cv::Rect(x0, y0, x, y));
 
                 // 判断maskTile是否全部为0
                 if (cv::countNonZero(maskTile) == 0) {
                     // 如果maskTile全部为0，跳过该tile
                     cv::Mat inputTile = inimage(
-                            cv::Rect(x0, y0, x, y));
+                        cv::Rect(x0, y0, x, y));
                     cv::Mat outputTile;
                     cv::resize(inputTile, outputTile, cv::Size(x * scale, y * scale), 0, 0,
-                               cv::INTER_CUBIC);
+                        cv::INTER_CUBIC);
 
                     outputTile.copyTo(
-                            outimage(cv::Rect(x0 * scale, y0 * scale, outputTile.cols,
-                                              outputTile.rows)));
+                        outimage(cv::Rect(x0 * scale, y0 * scale, outputTile.cols,
+                            outputTile.rows)));
                     skiped_tile++;
                     continue;
                 }
@@ -382,44 +388,27 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
             int out_x0 = xi * tileWidth * scale;
             int out_tile_w = (xi + 1 == xtiles) ? inWidth * scale - out_x0 : tileWidth * scale;
 
-
-
-
-//            fprintf(stderr, "\nprocess y=%d, x=%d inputTile: x0=%d y0=%d x1=%d y1=%d w=%d h=%d\n",
-//                    yi, xi,
-//                    in_tile_x0, in_tile_y0, in_tile_x1, in_tile_y1, in_tile_x1 - in_tile_x0,
-//                    in_tile_y1 - in_tile_y0);
-
             cv::Mat inputTile = inimage(cv::Rect(in_tile_x0, in_tile_y0, in_tile_x1 - in_tile_x0,
-                                                 in_tile_y1 - in_tile_y0));
+                in_tile_y1 - in_tile_y0));
 
-//            fprintf(stderr, "process inputTile y=%d, x=%d, inputTile: %d/%d/%d\n", yi, xi,
-//                    inputTile.cols, inputTile.rows, inputTile.channels());
             cv::Mat paddedTile;
             if (inputTile.cols < tilesize || inputTile.rows < tilesize) {
                 int t = (yi == 0) ? yPrepadding : 0;
                 int b = tilesize + in_tile_y0 - in_tile_y1 - t;
                 int l = (xi == 0) ? xPrepadding : 0;
                 int r = tilesize + in_tile_x0 - in_tile_x1 - l;
-
-//                fprintf(stderr, "process y=%d, x=%d copyMakeBorder %d %d %d %d, %d %d\n", yi, xi, t,
-//                        b, l, r, inputTile.cols, inputTile.rows);
-//                cv::Mat paddedTile;
                 cv::copyMakeBorder(inputTile, paddedTile, t, b, l, r, cv::BORDER_CONSTANT);
 
                 pretreat_->convert(paddedTile.data, paddedTile.cols, paddedTile.rows,
-                                   paddedTile.cols * paddedTile.channels(),
-                                   input_tensor);
+                    paddedTile.cols * paddedTile.channels(),
+                    input_tensor);
 
-            } else {
-//                fprintf(stderr, "process y=%d, x=%d copyMakeBorder 0, %d %d\n", yi, xi,
-//                        inputTile.cols, inputTile.rows);
-//                cv::Mat paddedTile;
+            }
+            else {
                 cv::copyMakeBorder(inputTile, paddedTile, 0, 0, 0, 0, cv::BORDER_CONSTANT);
-
                 pretreat_->convert(paddedTile.data, paddedTile.cols, paddedTile.rows,
-                                   paddedTile.cols * paddedTile.channels(),
-                                   input_tensor);
+                    paddedTile.cols * paddedTile.channels(),
+                    input_tensor);
             }
 
             bool r = interpreter_input->copyFromHostTensor(input_tensor);
@@ -427,34 +416,50 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
             interpreter->runSession(session);
             cv::Mat outputTile = TensorToCvMat();
 
-            if (outputTile.cols != tilesize * scale || outputTile.rows != tilesize * scale) {
-                fprintf(stderr,
-                        "[err] The model is x%.2f not x%d. input tile: %d x %d, output tile: %d x %d.\n",
-                        sqrt(outputTile.cols * outputTile.rows / paddedTile.cols / paddedTile.rows),
-                        scale,
-                        paddedTile.cols, paddedTile.rows, outputTile.cols, outputTile.rows);
-                return -1;
+
+            if (!scale_checked) {
+                if (outputTile.cols != paddedTile.cols * scale || outputTile.rows != paddedTile.rows * scale) {
+                    float actual_model_scale = static_cast<float>(outputTile.cols) / static_cast<float>(paddedTile.cols);
+                    if (actual_model_scale > 1e-5) { // Avoid division by zero or invalid scale
+                        this->interp_scale = static_cast<float>(scale) / actual_model_scale;
+                        fprintf(stderr,
+                            "\n[warn] Model scale: x%.2f, Target scale: x%d, Apply interp scale x%.2f\n",
+                            actual_model_scale, scale, this->interp_scale);
+                    }
+                }
+                scale_checked = true; // Mark as checked to avoid re-calculating
             }
 
-//            fprintf(stderr,
-//                    "croppe outputTile from x0=%d, y0=%d, x1=%d, y1=%d, %d x %d\n",
-//                    out_tile_x0, out_tile_y0, out_tile_x0 + out_tile_w, out_tile_y0 + out_tile_h,
-//                    outputTile.cols, outputTile.rows);
+            // Apply interpolation if a scale mismatch was found
+            if (std::abs(this->interp_scale - 1.0f) > 1e-5) {
+                cv::Mat tempTile;
+                // Resize the model's output to match the target scale
+                cv::resize(outputTile, tempTile, cv::Size(), this->interp_scale, this->interp_scale, cv::INTER_CUBIC);
+                outputTile = tempTile;
+            }
+
+            // After potential resizing, the outputTile should have dimensions corresponding to the target 'scale'.
+            // Now, we double-check if the final tile size is as expected before cropping.
+            if (outputTile.cols != tilesize * scale || outputTile.rows != tilesize * scale) {
+                fprintf(stderr,
+                    "[err] Post-interpolation tile size is still incorrect. Expected %dx%d, but got %dx%d. Aborting.\n",
+                    tilesize * scale, tilesize * scale, outputTile.cols, outputTile.rows);
+                return -1; // Critical error if even after correction the size is wrong
+            }
+            // --- END: MODIFIED LOGIC ---
+
+
             cv::Rect cropRect(out_tile_x0, out_tile_y0, out_tile_w, out_tile_h);
             cv::Mat croppedTile = outputTile(cropRect);
 
-//            fprintf(stderr,
-//                    "cropped to outimage to x0=%d, y0=%d, x1=%d, y1=%d, %d x %d\n",
-//                    out_x0, out_y0, out_x0 + croppedTile.cols, out_y0 + croppedTile.rows,
-//                    croppedTile.cols, croppedTile.rows);
             croppedTile.copyTo(
-                    outimage(cv::Rect(out_x0, out_y0, croppedTile.cols, croppedTile.rows)));
+                outimage(cv::Rect(out_x0, out_y0, croppedTile.cols, croppedTile.rows)));
 
 
             high_resolution_clock::time_point end = high_resolution_clock::now();
             double time_span_print_progress = duration_cast<duration<double>>(
-                    end - time_print_progress).count();
-            float progress_tile = (float) (yi * xtiles + xi + 1);
+                end - time_print_progress).count();
+            float progress_tile = (float)(yi * xtiles + xi + 1);
             if (time_span_print_progress > 0.5 || (yi + 1 == ytiles && xi + 3 > xtiles)) {
                 double progress = progress_tile / (ytiles * xtiles);
                 // progress2 用于计算剩余时间，由于跳过的tile不会运行这段函数，因此不会出现分母为0或者分子为0的情况
@@ -476,7 +481,7 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
     }
 
 #ifndef __ANDROID__
-	fprintf(stderr, "                                        \r");
+    fprintf(stderr, "                                        \r");
 #endif // !__ANDROID__
 
 
@@ -487,23 +492,23 @@ int MNNSR::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mas
         cv::Mat yuv2;
         yuv2.create(inimage.rows * scale, inimage.cols * scale, CV_8UC3);
         cv::resize(yuv, yuv2, cv::Size(inimage.cols * scale, inimage.rows * scale), 0, 0,
-                   cv::INTER_CUBIC);
+            cv::INTER_CUBIC);
         cv::cvtColor(yuv2, outimage, cv::COLOR_YUV2BGR);
-    } else if (color == Gray2YCbCr) {
+    }
+    else if (color == Gray2YCbCr) {
         // 把inimage转为YCbCr格式，放大scale倍，把通道2通道3复制给outimage的通道2通道3
         cv::Mat ycc;
         cv::cvtColor(inimage, ycc, cv::COLOR_BGR2YCrCb);
         cv::Mat ycc2;
         ycc2.create(inimage.rows * scale, inimage.cols * scale, CV_8UC3);
         cv::resize(ycc, ycc2, cv::Size(inimage.cols * scale, inimage.rows * scale), 0, 0,
-                   cv::INTER_CUBIC);
+            cv::INTER_CUBIC);
         cv::cvtColor(ycc2, outimage, cv::COLOR_YCrCb2BGR);
     }
 
 
     return 0;
 }
-
 
 #include "mnnsr.h"
 #include "utils.hpp"

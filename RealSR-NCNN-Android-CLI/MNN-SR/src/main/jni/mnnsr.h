@@ -64,6 +64,9 @@ private:
     const float normVals_[3] = {1.0 / 255, 1.0 / 255, 1.0 / 255};
     bool cachemodel;
     int decensor_mode=-1;
+
+    bool scale_checked = false; // Flag to check scale only once
+    float interp_scale = 1.0f;  // Interpolation factor to match target scale
 };
 
 #endif // MNNSR_H
