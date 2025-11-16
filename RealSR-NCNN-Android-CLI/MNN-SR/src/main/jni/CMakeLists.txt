@@ -34,8 +34,8 @@ if (MSVC)  # Visual Studio
     endif ()
 
     # 设置目标属性，指定 MNN 库的路径
-    # set(mnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/mnn_windows_x64_cpu_opencl)
-    set(mnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/mnn_windows)
+    set(mnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/mnn_windows_x64_cpu_opencl)
+    # set(mnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/mnn_windows)
     find_library(MNN_LIB mnn HINTS "${mnn_DIR}/lib/${TARGET_ARCH}/Release/Dynamic/MT")
 
     set(OpenCV_DIR "C:/Lib/opencv/build/x64/vc16/lib")
@@ -213,6 +213,7 @@ if (MSVC)  # Visual Studio
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${TARGET_BIN_DIR}/$<TARGET_FILE_NAME:${PROJECT_NAME}>
         ${DLL_COPY_COMMANDS}
     )
+
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(${PROJECT_NAME} webp ${OpenCV_LIBS} ${NCNN_LIB} ${MNN_LIB})

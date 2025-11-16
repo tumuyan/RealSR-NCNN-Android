@@ -143,7 +143,7 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel,const bool nchw)
     }
 
     // 可能对某些硬件取得正确推理结果有帮助
-    interpreter->setSessionHint(Interpreter::GEOMETRY_COMPUTE_MASK, 0);
+    //interpreter->setSessionHint(Interpreter::GEOMETRY_COMPUTE_MASK, 0);
 
     session = interpreter->createSession(config);
     if (session == nullptr) {
@@ -418,7 +418,7 @@ int MNNSR::process(const cv::Mat& inimage, cv::Mat& outimage, const cv::Mat& mas
 
 
             if (!scale_checked) {
-                if(scale<=0){
+                if(scale< 1e-5){
                     fprintf(stderr, "[err] Invalid scale value: %d\n", scale);
                     return -1;
 				}

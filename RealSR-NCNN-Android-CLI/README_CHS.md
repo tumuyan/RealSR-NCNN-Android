@@ -29,6 +29,18 @@
 ### 如何在VS中编译Windows x64
 
 1. 和Android版本一样下载Windows的各项依赖，注意如果需要cuda加速，需要重新编译mnn
+编译mnn的命令参考
+```
+mkdir build && cd build
+
+cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DMNN_BUILD_SHARED_LIBS=ON -DMNN_WIN_RUNTIME_MT=ON -DMNN_CUDA=ON  -DMNN_OPENCL=ON -DMNN_VULKAN=ON  -DCUDA_CUDART_LIBRARY="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.8/lib/x64/cudart.lib"
+
+cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DMNN_BUILD_SHARED_LIBS=ON -DMNN_WIN_RUNTIME_MT=ON -DMNN_CUDA=ON  -DMNN_OPENCL=ON -DMNN_VULKAN=ON  -DCUDA_CUDART_LIBRARY="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.8/lib/x64/cudart_static.lib"
+
+cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DMNN_BUILD_SHARED_LIBS=ON -DMNN_WIN_RUNTIME_MT=ON -DMNN_CUDA=ON -DMNN_TENSORRT=ON  -DMNN_OPENCL=ON -DMNN_VULKAN=ON  -DCUDA_CUDART_LIBRARY="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.8/lib/x64/cudart.lib" 
+
+ninja
+```
 
 2. 根据实际路径调整CMake中的文件路径
 

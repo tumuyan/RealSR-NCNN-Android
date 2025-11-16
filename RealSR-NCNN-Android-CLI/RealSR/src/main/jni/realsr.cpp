@@ -228,7 +228,7 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
     const int xtiles = (w + TILE_SIZE_X - 1) / TILE_SIZE_X;
     const int ytiles = (h + TILE_SIZE_Y - 1) / TILE_SIZE_Y;
 
-    const size_t in_out_tile_elemsize = opt.use_fp16_storage ? 2u : 4u;
+    const size_t in_out_tile_elemsize =  (opt.use_fp16_storage || opt.use_fp16_packed)  ? 2u : 4u;
     high_resolution_clock::time_point begin = high_resolution_clock::now();
     high_resolution_clock::time_point time_print_progress;
 
@@ -242,7 +242,7 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
         int in_tile_y1 = std::min((yi + 1) * TILE_SIZE_Y + prepadding, h);
 
         ncnn::Mat in;
-        if (opt.use_fp16_storage && opt.use_int8_storage)
+        if ((opt.use_fp16_storage || opt.use_fp16_packed) && opt.use_int8_storage)
         {
             in = ncnn::Mat(w, (in_tile_y1 - in_tile_y0), (unsigned char*)pixeldata + in_tile_y0 * w * channels, (size_t)channels, 1);
         }
@@ -284,7 +284,7 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
         int out_tile_y1 = std::min((yi + 1) * TILE_SIZE_Y, h);
 
         ncnn::VkMat out_gpu;
-        if (opt.use_fp16_storage && opt.use_int8_storage)
+        if ((opt.use_fp16_storage || opt.use_fp16_packed) && opt.use_int8_storage)
         {
             out_gpu.create(w * scale, (out_tile_y1 - out_tile_y0) * scale, (size_t)channels, 1, blob_vkallocator);
         }
@@ -573,16 +573,16 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
         {
             ncnn::Mat out;
 
-            if (opt.use_fp16_storage && opt.use_int8_storage)
+            if ((opt.use_fp16_storage || opt.use_fp16_packed) && opt.use_int8_storage)
             {
-                out = ncnn::Mat(out_gpu.w, out_gpu.h, (unsigned char*)outimage.data + yi * scale * TILE_SIZE_Y * w * scale * channels, (size_t)channels, 1);
+                out = ncnn::Mat(out_gpu.w, out_gpu.h, (unsigned char*)outimage.data + yi * scale * TILE_SIZE_Y * w * scale * channels, (size_t)channels, 1, opt.blob_allocator);
             }
 
             cmd.record_clone(out_gpu, out, opt);
 
             cmd.submit_and_wait();
 
-            if (!(opt.use_fp16_storage && opt.use_int8_storage))
+            if (!((opt.use_fp16_storage || opt.use_fp16_packed) && opt.use_int8_storage))
             {
                 if (channels == 3)
                 {
