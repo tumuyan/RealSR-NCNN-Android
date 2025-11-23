@@ -6,10 +6,7 @@
 #include <string>
 
 #include <opencv2/opencv.hpp>
-// ncnn
-#include "net.h"
-#include "gpu.h"
-#include "layer.h"
+
 #include <chrono>
 #include "MNN/Tensor.hpp"
 #include "MNN/Interpreter.hpp"

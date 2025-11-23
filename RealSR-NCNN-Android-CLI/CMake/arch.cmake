@@ -1,11 +1,5 @@
-if(CMAKE_SYSTEM_NAME STREQUAL "Android")
-    message(STATUS "Building for Android")
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     message(STATUS "Building for Windows")
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    message(STATUS "Building for Linux")
-else()
-    message(WARNING "Unknown system: ${CMAKE_SYSTEM_NAME}")
 endif()
 
 if (MSVC)  # Visual Studio
@@ -26,7 +20,19 @@ if (MSVC)  # Visual Studio
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     message(STATUS "==Configuring for Linux==")
     add_link_options(-Wl,--disable-new-dtags)
-else ()  # Android Studio
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        set(TARGET_ARCH "x64")
+    elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+        set(TARGET_ARCH "ARM64")
+    elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
+        set(TARGET_ARCH "ARM")
+    elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "i686" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "i386")
+        set(TARGET_ARCH "x86")
+    else()
+        set(TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR})
+        message(WARNING "Unknown Linux architecture: ${CMAKE_SYSTEM_PROCESSOR}, using as-is")
+    endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
     message(STATUS "Configuring for Android Studio")
     set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
     set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3")
@@ -34,6 +40,8 @@ else ()  # Android Studio
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath=./")
 
     set(TARGET_ARCH ${ANDROID_ABI})
+else()
+    message(WARNING "Unknown system: ${CMAKE_SYSTEM_NAME}")
 endif ()
 
 message(STATUS "TARGET_ARCH: ${TARGET_ARCH}")

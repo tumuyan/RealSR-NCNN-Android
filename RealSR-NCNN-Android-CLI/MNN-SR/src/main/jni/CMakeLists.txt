@@ -9,26 +9,25 @@ set(CMAKE_INSTALL_RPATH "$ORIGIN")
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/arch.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/libwebp.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/opencv.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/ncnn.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/mnn.cmake)
 
 add_executable(${PROJECT_NAME} main.cpp mnnsr.cpp dcp.cpp)
 
 
 if (MSVC)  # Visual Studio
-    target_link_libraries(${PROJECT_NAME} webp ${OpenCV_LIBS} ${NCNN_LIB} ${MNN_LIB})
+    target_link_libraries(${PROJECT_NAME} webp ${OpenCV_LIBS} ${MNN_LIB})
     set(TARGET_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/MNNSR-Win64")
 
     # DLL 路径
     set(MNN_DLL "${mnn_DIR}/lib/${TARGET_ARCH}/Release/Dynamic/MT/MNN.dll")
-    set(NCNN_DLL "${ncnn_DIR}/${TARGET_ARCH}/bin/ncnn.dll")
+
 
     # 自动查找 OpenCV DLL
     file(GLOB OpenCV_DLLS "${OpenCV_CORE_LIB_DIR}/opencv_world*[0-9].dll")
     # message(STATUS "OpenCV_DLLS: ${OpenCV_DLLS}")
 
     # 合并所有需要复制的 DLL
-    set(ALL_DLLS "${MNN_DLL}" "${NCNN_DLL}")
+    set(ALL_DLLS "${MNN_DLL}")
     list(APPEND ALL_DLLS ${OpenCV_DLLS})
     
     message(STATUS "ALL_DLLS: ${ALL_DLLS}")
@@ -48,13 +47,13 @@ if (MSVC)  # Visual Studio
 
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(${PROJECT_NAME} webp ${OpenCV_LIBS} ${NCNN_LIB} ${MNN_LIB})
+    target_link_libraries(${PROJECT_NAME} webp ${OpenCV_LIBS} ${MNN_LIB})
     set_target_properties(${PROJECT_NAME} PROPERTIES
         BUILD_RPATH "$ORIGIN/lib"
     )
 
 else ()
-    target_link_libraries(${PROJECT_NAME} webp MNN MNN_CL MNN_Vulkan ${OpenCV_LIBS} ${NCNN_LIB})
+    target_link_libraries(${PROJECT_NAME} webp MNN MNN_CL MNN_Vulkan ${OpenCV_LIBS})
     
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory

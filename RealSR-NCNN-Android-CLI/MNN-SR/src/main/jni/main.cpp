@@ -7,6 +7,8 @@
 #include <thread>
 #include <filesystem>
 #include <regex>
+#include <mutex>
+#include <condition_variable>
 
 //#undef min
 //#undef max
@@ -169,38 +171,38 @@ public:
     }
 
     void put(const Task &v) {
-        lock.lock();
+        std::unique_lock<std::mutex> lk(lock);
 
         while (tasks.size() >= 8) // FIXME hardcode queue length
         {
-            condition.wait(lock);
+            condition.wait(lk);
         }
 
         tasks.push(v);
 
-        lock.unlock();
+        lk.unlock();
 
-        condition.signal();
+        condition.notify_one();
     }
 
     void get(Task &v) {
-        lock.lock();
+        std::unique_lock<std::mutex> lk(lock);
 
         while (tasks.size() == 0) {
-            condition.wait(lock);
+            condition.wait(lk);
         }
 
         v = tasks.front();
         tasks.pop();
 
-        lock.unlock();
+        lk.unlock();
 
-        condition.signal();
+        condition.notify_one();
     }
 
 private:
-    ncnn::Mutex lock;
-    ncnn::ConditionVariable condition;
+    std::mutex lock;
+    std::condition_variable condition;
     std::queue<Task> tasks;
 };
 
@@ -886,22 +888,22 @@ int main(int argc, char **argv)
             ltp.input_files = input_files;
             ltp.output_files = output_files;
 
-            ncnn::Thread load_thread(load, (void *) &ltp);
+            std::thread load_thread(load, (void *) &ltp);
 
             ProcThreadParams ptp;
             ptp.mnnsr = &mnnsr;
             ptp.decensor_mode = decensor_mode;
 
-            ncnn::Thread *proc_thread;
-            proc_thread = new ncnn::Thread(proc, (void *) &ptp);
+            std::thread *proc_thread;
+            proc_thread = new std::thread(proc, (void *) &ptp);
 
             // save image
             SaveThreadParams stp;
             stp.verbose = verbose;
             stp.input_files_size = input_files.size();
 
-            ncnn::Thread *save_thread;
-            save_thread = new ncnn::Thread(save, (void *) &stp);
+            std::thread *save_thread;
+            save_thread = new std::thread(save, (void *) &stp);
 
             // end
             load_thread.join();

@@ -74,10 +74,10 @@ jobs:
           # 去掉 .zip 后缀获取目录名
           NCNN_DIR_NAME=${NCNN_FILENAME%.zip}
           
-          echo "Renaming directory: $NCNN_DIR_NAME -> ncnn-ubuntu-shared"
-          mv "$NCNN_DIR_NAME" ncnn-ubuntu-shared
+          echo "Renaming directory: $NCNN_DIR_NAME -> ncnn-ubuntu-vulkan-shared"
+          mv "$NCNN_DIR_NAME" ncnn-ubuntu-vulkan-shared
           
-          ls -lh ncnn-ubuntu-shared
+          ls -lh ncnn-ubuntu-vulkan-shared
         working-directory: 3rdparty
 
       - name: Modify CMakeLists.txt for RPATH
