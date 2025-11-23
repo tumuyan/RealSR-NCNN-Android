@@ -3,15 +3,15 @@ plugins {
 }
 
 android {
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.tumuyan.ncnn.realsr"
         minSdk 24
         //noinspection ExpiredTargetSdkVersion
         targetSdk 28
-        versionCode 47
-        versionName '1.11.3'
+        versionCode 48
+        versionName '1.11.4'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
