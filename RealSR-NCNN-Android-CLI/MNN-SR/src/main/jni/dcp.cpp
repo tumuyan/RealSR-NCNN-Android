@@ -26,14 +26,7 @@ DCP::DCP() {
 }
 
 DCP::~DCP() {
-    if (inputs_num > 1) {
-        MNN::Tensor::destroy(input_tensor2);
-    }
-    MNN::Tensor::destroy(input_tensor);
-    MNN::Tensor::destroy(output_tensor);
-    interpreter->releaseSession(session);
-    interpreter->releaseModel();
-    MNN::Interpreter::destroy(interpreter);
+    // Managed by shared_ptr
 }
 
 
@@ -46,29 +39,41 @@ int DCP::load(const std::wstring& modelpath, bool cachemodel, bool nchw)
 int DCP::load(const std::string &modelpath, bool cachemodel, bool nchw)
 #endif
 {
-    MNN::ScheduleConfig config;
+    MNN::ScheduleConfig scheduleConfig;
+    scheduleConfig.type = backend_type;
+    scheduleConfig.backupType = MNN_FORWARD_CPU;
+
     MNN::BackendConfig backendConfig;
     backendConfig.memory = MNN::BackendConfig::Memory_High;
     backendConfig.power = MNN::BackendConfig::Power_High;
     backendConfig.precision = MNN::BackendConfig::Precision_Low;
-    config.backendConfig = &backendConfig;
-    config.type = backend_type;
-    config.backupType = MNN_FORWARD_CPU;
+    scheduleConfig.backendConfig = &backendConfig;
+
     int num_threads = std::thread::hardware_concurrency();
     if (num_threads < 1)
         num_threads = 2;
-    config.numThread = num_threads;
+    scheduleConfig.numThread = num_threads;
+
+    std::vector<MNN::ScheduleConfig> configs;
+    configs.push_back(scheduleConfig);
+    rtmgr.reset(MNN::Express::Executor::RuntimeManager::createRuntimeManager(configs));
+
+    MNN::Express::Module::Config config;
+    config.shapeMutable = true;
+
     const auto start = std::chrono::high_resolution_clock::now();
 
 #if _WIN32
-    interpreter = MNN::Interpreter::createFromFile(std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(modelpath).c_str());
+    std::string modelPathStr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(modelpath);
+    net.reset(MNN::Express::Module::load(std::vector<std::string>{}, std::vector<std::string>{}, modelPathStr.c_str(), rtmgr, &config));
 #else
-    interpreter = MNN::Interpreter::createFromFile((modelpath).c_str());
+    net.reset(MNN::Express::Module::load(std::vector<std::string>{}, std::vector<std::string>{}, modelpath.c_str(), rtmgr, &config));
 #endif
 
 
-    if (interpreter == nullptr) {
-        fprintf(stderr, "interpreter null\n");
+    if (net == nullptr) {
+        fprintf(stderr, "net null\n");
+        return -1;
     }
 
     this->cachemodel = cachemodel;
@@ -78,19 +83,12 @@ int DCP::load(const std::string &modelpath, bool cachemodel, bool nchw)
 #else
         std::string cachefile = modelpath + ".cache";
 #endif
-        interpreter->setCacheFile(cachefile.c_str());
+        rtmgr->setCache(cachefile.c_str());
+        rtmgr->updateCache();
     }
 
-
-    session = interpreter->createSession(config);
-    if (session == nullptr) {
-        fprintf(stderr, "session null\n");
-    }
-
-    auto interpreter_inputs = interpreter->getSessionInputAll(session);
-    // 获取interpreter_inputs 包含的元素的数量
-
-    inputs_num = interpreter_inputs.size();
+    auto info = net->getInfo();
+    inputs_num = info->inputs.size();
     fprintf(stderr, "model %d inputs (DCP)\n", inputs_num);
 
     if (inputs_num < 1) {
@@ -98,77 +96,39 @@ int DCP::load(const std::string &modelpath, bool cachemodel, bool nchw)
         return -1;
     }
 
+    // We need to identify which input is which based on alphabetical order to match previous logic
+    // Previous logic: it = interpreter_inputs.begin() (sorted by name)
+    // interpreter_input = it->second (first)
+    // interpreter_input2 = it->second (second)
 
-    auto it = interpreter_inputs.begin();
-    interpreter_input = it->second;
-    interpreter->resizeTensor(interpreter_input, 1, model_channel, tilesize, tilesize);
-    fprintf(stderr, "interpreter_input (b/c/h/w): %d/%d/%d/%d %s\n", interpreter_input->batch(),
-            interpreter_input->channel(), interpreter_input->height(), interpreter_input->width(),
-            it->first.c_str());
-
-    if (inputs_num > 1) {
-        std::advance(it, 1);
-        interpreter_input2 = it->second;
-        interpreter->resizeTensor(interpreter_input2, 1, model_channel2, tilesize, tilesize);
-        fprintf(stderr, "interpreter_input2 (b/c/h/w): %d/%d/%d/%d %s\n",
-                interpreter_input2->batch(), interpreter_input2->channel(),
-                interpreter_input2->height(), interpreter_input2->width(), it->first.c_str());
+    // We will resolve this mapping in process(), but here we can print info
+    // For now just print info
+    for(int i=0; i<inputs_num; ++i) {
+        fprintf(stderr, "input %d: dim: ", i);
+        for(int d : info->inputs[i].dim) fprintf(stderr, "%d ", d);
+        fprintf(stderr, "\n");
     }
-
-    interpreter->resizeSession(session);
-    interpreter_output = interpreter->getSessionOutput(session, nullptr);
-
-    if (nchw) {
-        if (inputs_num > 1)
-            input_tensor2 = new MNN::Tensor(interpreter_input2, MNN::Tensor::CAFFE);
-        input_tensor = new MNN::Tensor(interpreter_input, MNN::Tensor::CAFFE);
-        output_tensor = new MNN::Tensor(interpreter_output, MNN::Tensor::CAFFE);
-    } else {
-        if (inputs_num > 1)
-            input_tensor2 = new MNN::Tensor(interpreter_input2, MNN::Tensor::TENSORFLOW);
-        input_tensor = new MNN::Tensor(interpreter_input, MNN::Tensor::TENSORFLOW);
-        output_tensor = new MNN::Tensor(interpreter_output, MNN::Tensor::TENSORFLOW);
-    }
-    if (inputs_num > 1)
-        input_buffer2 = input_tensor2->host<float>();
-    input_buffer = input_tensor->host<float>();
-
-    output_buffer = output_tensor->host<float>();
-
-    float memoryUsage = 0.0f;
-    interpreter->getSessionInfo(session, MNN::Interpreter::MEMORY, &memoryUsage);
-    float flops = 0.0f;
-    interpreter->getSessionInfo(session, MNN::Interpreter::FLOPS, &flops);
-    MNNForwardType backendType[2];
-    interpreter->getSessionInfo(session, MNN::Interpreter::BACKENDS, backendType);
 
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::high_resolution_clock::now() - start);
-    fprintf(stderr, "load model %.3f s, session memory %sB, flops %s, ",
-            static_cast<double>(duration.count()) / 1000, float2str(memoryUsage, 6).c_str(),
-            float2str(flops, 6).c_str());
-
-    if (backendType[0] == MNN_FORWARD_CPU)
-        fprintf(stderr, "backend: CPU, numThread=%d\n", config.numThread);
-    else
-        fprintf(stderr, "backend: %s, %s\n", get_backend_name(backendType[0]).c_str(),
-                get_backend_name(backendType[1]).c_str());
+    fprintf(stderr, "load model %.3f s\n",
+            static_cast<double>(duration.count()) / 1000);
 
     return 0;
 }
 
 
-cv::Mat DCP::TensorToCvMat(void) {
-    interpreter_output->copyToHostTensor(output_tensor);
-    int C = output_tensor->channel();
-    int H = output_tensor->height();
-    int W = output_tensor->width();
-    float *data = output_tensor->host<float>();
+cv::Mat DCP::TensorToCvMat(MNN::Express::VARP output) {
+    auto info = output->getInfo();
+    int C = info->dim[1];
+    int H = info->dim[2];
+    int W = info->dim[3];
+    const float *data = output->readMap<float>();
 
     cv::Mat result;
     if (C == 1) {
         // 灰度模式直接处理
-        cv::Mat gray = cv::Mat(H, W, CV_32FC1, data);
+        cv::Mat gray = cv::Mat(H, W, CV_32FC1, (void*)data);
         gray.convertTo(gray, CV_8UC1, 255.0);
         cv::cvtColor(gray, result, cv::COLOR_GRAY2BGR);
         return result;
@@ -176,7 +136,7 @@ cv::Mat DCP::TensorToCvMat(void) {
         // 处理彩色图像
         std::vector<cv::Mat> channels;
         for (int i = 0; i < C; i++) {
-            channels.emplace_back(H, W, CV_32FC1, data + i * H * W);
+            channels.emplace_back(H, W, CV_32FC1, (void*)(data + i * H * W));
         }
 
         // 如果是RGB输入，需要交换R和B通道
@@ -194,31 +154,42 @@ int DCP::process(const cv::Mat &inimage, cv::Mat &outimage, const cv::Mat &mask)
     cv::Mat paddedTile;
     cv::copyMakeBorder(inimage, paddedTile, 0, 0, 0, 0, cv::BORDER_CONSTANT);
 
+    auto inputVar = MNN::Express::_Input({1, model_channel, (int)tilesize, (int)tilesize}, MNN::Express::NCHW, halide_type_of<float>());
+    float* input_data = inputVar->writeMap<float>();
+
     pretreat_->convert(paddedTile.data, paddedTile.cols, paddedTile.rows,
                        paddedTile.cols * paddedTile.channels(),
-                       input_tensor);
+                       input_data, tilesize, tilesize, model_channel, 0, halide_type_of<float>());
 
-    bool r = interpreter_input->copyFromHostTensor(input_tensor);
+    std::vector<MNN::Express::VARP> args;
+    MNN::Express::VARP inputVar2;
 
     if (inputs_num > 1) {
         cv::Mat inMask;
         cv::copyMakeBorder(mask, inMask, 0, 0, 0, 0, cv::BORDER_CONSTANT);
-//        pretreat_1ch_->convert(inMask.data, inMask.cols, inMask.rows,
-//                               inMask.cols * inMask.channels(),
-//                               input_tensor2);
-//
+
+        inputVar2 = MNN::Express::_Input({1, model_channel2, (int)tilesize, (int)tilesize}, MNN::Express::NCHW, halide_type_of<float>());
+        float* input_data2 = inputVar2->writeMap<float>();
 
         pretreat_->convert(inMask.data, inMask.cols, inMask.rows,
                            inMask.cols * inMask.channels(),
-                           input_tensor2);
+                           input_data2, tilesize, tilesize, model_channel2, 0, halide_type_of<float>());
     }
-    interpreter->runSession(session);
-    outimage = TensorToCvMat();
 
+    args.resize(inputs_num);
+    if (inputs_num > 0) {
+        args[0] = inputVar;
+    }
+    if (inputs_num > 1) {
+        args[1] = inputVar2;
+    }
+
+    auto outputs = net->onForward(args);
+    if (outputs.empty()) return -1;
+    outimage = TensorToCvMat(outputs[0]);
 
     if (cachemodel)
-        interpreter->
-                updateCacheFile(session);
+        rtmgr->updateCache();
     return 0;
 }
 

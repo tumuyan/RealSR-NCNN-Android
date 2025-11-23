@@ -1,5 +1,3 @@
-// MNNSR_H implemented with MNN library
-
 #ifndef MNNSR_H
 #define MNNSR_H
 
@@ -11,8 +9,10 @@
 #include "gpu.h"
 #include "layer.h"
 #include <chrono>
-#include "MNN/Tensor.hpp"
-#include "MNN/Interpreter.hpp"
+#include <MNN/expr/Module.hpp>
+#include <MNN/expr/Executor.hpp>
+#include <MNN/expr/ExprCreator.hpp>
+#include <MNN/Interpreter.hpp>
 #include "MNN/ImageProcess.hpp"
 #include "utils.hpp"
 #include "dcp.h"
@@ -37,7 +37,7 @@ public:
 
     int decensor(const cv::Mat &inimage, cv::Mat &outimage, const bool det_box = false);
 
-    cv::Mat TensorToCvMat(void);
+    cv::Mat TensorToCvMat(MNN::Express::VARP output);
 
 public:
     int scale;
@@ -46,19 +46,13 @@ public:
     uint tilesize;
     uint prepadding;
 
-    float *input_buffer;
-    float *output_buffer;
     MNNForwardType backend_type;
     DCP *dcp = nullptr;
 
 
 private:
-    MNN::Interpreter *interpreter;
-    MNN::Session *session;
-    MNN::Tensor *interpreter_input;
-    MNN::Tensor *interpreter_output;
-    MNN::Tensor *input_tensor;
-    MNN::Tensor *output_tensor;
+    std::shared_ptr<MNN::Express::Module> net;
+    std::shared_ptr<MNN::Express::Executor::RuntimeManager> rtmgr;
     std::shared_ptr<MNN::CV::ImageProcess> pretreat_ = nullptr;
     const float meanVals_[3] = {0, 0, 0};
     const float normVals_[3] = {1.0 / 255, 1.0 / 255, 1.0 / 255};

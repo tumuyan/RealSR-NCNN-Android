@@ -12,8 +12,10 @@
 
 #include <opencv2/opencv.hpp>
 #include <chrono>
-#include "MNN/Tensor.hpp"
-#include "MNN/Interpreter.hpp"
+#include <MNN/expr/Module.hpp>
+#include <MNN/expr/Executor.hpp>
+#include <MNN/expr/ExprCreator.hpp>
+#include <MNN/Interpreter.hpp>
 #include "MNN/ImageProcess.hpp"
 #include "utils.hpp"
 
@@ -45,7 +47,7 @@ public:
 
     int decensor(const cv::Mat &inimage, cv::Mat &outimage);
 
-    cv::Mat TensorToCvMat(void);
+    cv::Mat TensorToCvMat(MNN::Express::VARP output);
 
 
     // DCP
@@ -69,9 +71,6 @@ public:
     int tilesize=256;
     int prepadding;
 
-    float *input_buffer2;
-    float *input_buffer;
-    float *output_buffer;
     MNNForwardType backend_type;
 
 private:
@@ -79,14 +78,8 @@ private:
     int inputs_num = 1;
     int model_channel = 3;
     int model_channel2 = 3;
-    MNN::Interpreter *interpreter;
-    MNN::Session *session;
-    MNN::Tensor *interpreter_input2;
-    MNN::Tensor *interpreter_input;
-    MNN::Tensor *interpreter_output;
-    MNN::Tensor *input_tensor2;
-    MNN::Tensor *input_tensor;
-    MNN::Tensor *output_tensor;
+    std::shared_ptr<MNN::Express::Module> net;
+    std::shared_ptr<MNN::Express::Executor::RuntimeManager> rtmgr;
     std::shared_ptr<MNN::CV::ImageProcess> pretreat_ = nullptr;
     std::shared_ptr<MNN::CV::ImageProcess> pretreat_1ch_ = nullptr;
     const float meanVals_[3] = {0, 0, 0};

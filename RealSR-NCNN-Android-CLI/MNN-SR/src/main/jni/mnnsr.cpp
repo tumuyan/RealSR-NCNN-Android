@@ -58,11 +58,7 @@ MNNSR::~MNNSR() {
         dcp->~DCP();
         return;
     }
-    MNN::Tensor::destroy(input_tensor);
-    MNN::Tensor::destroy(output_tensor);
-    interpreter->releaseSession(session);
-    interpreter->releaseModel();
-    MNN::Interpreter::destroy(interpreter);
+    // Module and ImageProcess are managed by shared_ptr
 }
 
 
@@ -79,154 +75,100 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel,const bool nchw)
         return dcp->load(modelpath, cachemodel, nchw);
     }
 
-    MNN::ScheduleConfig config;
+    MNN::ScheduleConfig scheduleConfig;
+    scheduleConfig.type = backend_type;
+    //config.mode = MNN_GPU_TUNING_HEAVY | MNN_GPU_MEMORY_BUFFER;
+	if (backend_type == MNN_FORWARD_AUTO)
+		scheduleConfig.backupType = MNN_FORWARD_CPU;
+	else
+        scheduleConfig.backupType = MNN_FORWARD_AUTO;
+
     MNN::BackendConfig backendConfig;
     backendConfig.memory = MNN::BackendConfig::Memory_High;
     backendConfig.power = MNN::BackendConfig::Power_High;
     backendConfig.precision = MNN::BackendConfig::Precision_Low;
-//    backendConfig.precision = MNN::BackendConfig::Precision_High;
+    scheduleConfig.backendConfig = &backendConfig;
 
-    //MNNDeviceContext gpuDeviceConfig;
-    //// CUDA Backend support user set device_id
-    //if (backend_type == MNN_FORWARD_CUDA) {
-    //    gpuDeviceConfig.deviceId = 0;
-    //    backendConfig.sharedContext = &gpuDeviceConfig;
-    //}
-    //// OpenCL Backend support user set platform_size, platform_id, device_id
-    //if (backend_type == MNN_FORWARD_OPENCL) {
-    //    gpuDeviceConfig.platformSize = 1;// GPU Cards number
-    //    gpuDeviceConfig.platformId = 1;  // Execute on Which GPU Card
-    //    gpuDeviceConfig.deviceId = 0;    // Execute on Which GPU device
-    //    backendConfig.sharedContext = &gpuDeviceConfig;
-    //}
-
-    config.backendConfig = &backendConfig;
-//    config.type = MNN_FORWARD_NN;
-//    config.type = MNN_FORWARD_VULKAN;
-//    config.type = MNN_FORWARD_OPENCL;
-//    config.type = MNN_FORWARD_AUTO;
-    config.type = backend_type;
-    //config.mode = MNN_GPU_TUNING_HEAVY | MNN_GPU_MEMORY_BUFFER;
-	if (backend_type == MNN_FORWARD_AUTO)
-		config.backupType = MNN_FORWARD_CPU;
-	else
-        config.backupType = MNN_FORWARD_AUTO;
     int num_threads = std::thread::hardware_concurrency();
     if (backend_type==0) {
         if (num_threads > 1)
-            config.numThread = num_threads;
+            scheduleConfig.numThread = num_threads;
     }else{
-        config.numThread = 128+4;
+        scheduleConfig.numThread = 128+4;
     }
 
-    fprintf(stderr, "set backend: %s, color type: %s, cpu: %d\n", get_backend_name(config.type).c_str(),
-            colorTypeToStr(color), num_threads);
-
-    const auto start = std::chrono::high_resolution_clock::now();
-
-#if _WIN32
-    interpreter = MNN::Interpreter::createFromFile(std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(modelpath).c_str());
-#else
-    interpreter = MNN::Interpreter::createFromFile((modelpath).c_str());
-#endif
-
-
-    if (interpreter == nullptr) {
-        fprintf(stderr, "interpreter null\n");
-    }
+    std::vector<MNN::ScheduleConfig> configs;
+    configs.push_back(scheduleConfig);
+    rtmgr.reset(MNN::Express::Executor::RuntimeManager::createRuntimeManager(configs));
 
     this->cachemodel = cachemodel;
     if (cachemodel) {
-
 #if _WIN32
         std::string cachefile = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(modelpath + L".cache");
 #else
         std::string cachefile = modelpath + ".cache";
 #endif
-        interpreter->setCacheFile(cachefile.c_str());
+        rtmgr->setCache(cachefile.c_str());
     }
 
-    // 可能对某些硬件取得正确推理结果有帮助
-    //interpreter->setSessionHint(Interpreter::GEOMETRY_COMPUTE_MASK, 0);
+    MNN::Express::Module::Config config;
+    config.shapeMutable = true;
 
-    session = interpreter->createSession(config);
-    if (session == nullptr) {
-        fprintf(stderr, "session null\n");
+    fprintf(stderr, "set backend: %s, color type: %s, cpu: %d\n", get_backend_name((MNNForwardType)backend_type).c_str(),
+            colorTypeToStr(color), num_threads);
+
+    const auto start = std::chrono::high_resolution_clock::now();
+
+#if _WIN32
+    std::string modelPathStr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(modelpath);
+    net.reset(MNN::Express::Module::load(std::vector<std::string>{}, std::vector<std::string>{}, modelPathStr.c_str(), rtmgr, &config));
+#else
+    net.reset(MNN::Express::Module::load(std::vector<std::string>{}, std::vector<std::string>{}, modelpath.c_str(), rtmgr, &config));
+#endif
+
+
+    if (net == nullptr) {
+        fprintf(stderr, "net null\n");
+        return -1;
     }
 
-
-    interpreter_input = interpreter->getSessionInput(session, nullptr);
-    auto dims = interpreter_input->shape();
-	if (dims.size() != 4) {
-		fprintf(stderr, "model input tensor shape error, expect 4 dims, but got %zu\n", dims.size());
-		return -1;
-	}
-	else if (dims[2] > 0 && dims[3] > 0 && dims[2] == dims[3]) {
-		if (dims[2] != tilesize) {
-			fprintf(stderr, "fix tilesize %d -> %d, model input shape:[%d, %d, %d, %d]\n", tilesize, dims[2], dims[0], dims[1], dims[2], dims[3]);
-			tilesize = dims[2];
-		}
-	}
-
-//    fprintf(stderr, "model input tensor(b/c/h/w): %d/%d/%d/%d -> 1/%d/%d/%d\n"
-//            , input_tensor->batch(), input_tensor->channel(), input_tensor->height(), input_tensor->width()
-//            ,model_channel, tilesize, tilesize
-//            );
-    interpreter->resizeTensor(interpreter_input, 1, model_channel, tilesize, tilesize);
-    interpreter->resizeSession(session);
-    interpreter_output = interpreter->getSessionOutput(session, nullptr);
-
-    if (nchw) {
-        input_tensor = new MNN::Tensor(interpreter_input, MNN::Tensor::CAFFE);
-        output_tensor = new MNN::Tensor(interpreter_output, MNN::Tensor::CAFFE);
-    } else {
-        input_tensor = new MNN::Tensor(interpreter_input, MNN::Tensor::TENSORFLOW);
-        output_tensor = new MNN::Tensor(interpreter_output, MNN::Tensor::TENSORFLOW);
+    if (cachemodel) {
+        rtmgr->updateCache();
     }
 
-    input_buffer = input_tensor->host<float>();
-    output_buffer = output_tensor->host<float>();
+    // Check input shape to adjust tilesize if needed
+    auto info = net->getInfo();
+    if (info && info->inputs.size() > 0) {
+        auto dims = info->inputs[0].dim;
+        if (dims.size() == 4 && dims[2] > 0 && dims[2] == dims[3]) {
+            if (dims[2] != tilesize) {
+                fprintf(stderr, "fix tilesize %d -> %d, model input shape:[%d, %d, %d, %d]\n", tilesize, dims[2], dims[0], dims[1], dims[2], dims[3]);
+                tilesize = dims[2];
+            }
+        }
+    }
 
-    float memoryUsage = 0.0f;
-    interpreter->getSessionInfo(session, MNN::Interpreter::MEMORY, &memoryUsage);
-    float flops = 0.0f;
-    interpreter->getSessionInfo(session, MNN::Interpreter::FLOPS, &flops);
-    MNNForwardType backendType[2];
-    interpreter->getSessionInfo(session, MNN::Interpreter::BACKENDS, backendType);
-
-    if (cachemodel)
-        interpreter->updateCacheFile(session);
-
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-		std::chrono::high_resolution_clock::now() - start);
-	fprintf(stderr, "load model %.3f s, session memory %sB, flops %s, "
-		, static_cast<double>(duration.count()) / 1000
-		, float2str(memoryUsage, 6).c_str()
-		, float2str(flops, 6).c_str()
-	);
-
-
-    if (backendType[0] == MNN_FORWARD_CPU)
-        fprintf(stderr, "backend: CPU, numThread=%d\n", config.numThread);
-    else
-        fprintf(stderr, "backend: %s, %s\n", get_backend_name(backendType[0]).c_str(),
-                get_backend_name(backendType[1]).c_str());
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::high_resolution_clock::now() - start);
+    fprintf(stderr, "load model %.3f s\n"
+        , static_cast<double>(duration.count()) / 1000
+    );
 
     return 0;
 }
 
 
-cv::Mat MNNSR::TensorToCvMat(void) {
-    interpreter_output->copyToHostTensor(output_tensor);
-    int C = output_tensor->channel();
-    int H = output_tensor->height();
-    int W = output_tensor->width();
-    float *data = output_tensor->host<float>();
+cv::Mat MNNSR::TensorToCvMat(MNN::Express::VARP output) {
+    auto info = output->getInfo();
+    int C = info->dim[1];
+    int H = info->dim[2];
+    int W = info->dim[3];
+    const float *data = output->readMap<float>();
 
     cv::Mat result;
     if (C == 1) {
         // 灰度模式直接处理
-        cv::Mat gray = cv::Mat(H, W, CV_32FC1, data);
+        cv::Mat gray = cv::Mat(H, W, CV_32FC1, (void*)data);
         gray.convertTo(gray, CV_8UC1, 255.0);
         cv::cvtColor(gray, result, cv::COLOR_GRAY2BGR);
         return result;
@@ -234,7 +176,7 @@ cv::Mat MNNSR::TensorToCvMat(void) {
         // 处理彩色图像
         std::vector<cv::Mat> channels;
         for (int i = 0; i < C; i++) {
-            channels.emplace_back(H, W, CV_32FC1, data + i * H * W);
+            channels.emplace_back(H, W, CV_32FC1, (void*)(data + i * H * W));
         }
 
         // 合并通道（注意OpenCV默认是BGR顺序）
@@ -395,6 +337,8 @@ int MNNSR::process(const cv::Mat& inimage, cv::Mat& outimage, const cv::Mat& mas
             cv::Mat inputTile = inimage(cv::Rect(in_tile_x0, in_tile_y0, in_tile_x1 - in_tile_x0,
                 in_tile_y1 - in_tile_y0));
 
+            auto inputVar = MNN::Express::_Input({1, model_channel, (int)tilesize, (int)tilesize}, MNN::Express::NCHW, halide_type_of<float>());
+            float* input_data = inputVar->writeMap<float>();
             cv::Mat paddedTile;
             if (inputTile.cols < tilesize || inputTile.rows < tilesize) {
                 int t = (yi == 0) ? yPrepadding : 0;
@@ -405,20 +349,20 @@ int MNNSR::process(const cv::Mat& inimage, cv::Mat& outimage, const cv::Mat& mas
 
                 pretreat_->convert(paddedTile.data, paddedTile.cols, paddedTile.rows,
                     paddedTile.cols * paddedTile.channels(),
-                    input_tensor);
+                    input_data, tilesize, tilesize, model_channel, 0, halide_type_of<float>());
 
             }
             else {
                 cv::copyMakeBorder(inputTile, paddedTile, 0, 0, 0, 0, cv::BORDER_CONSTANT);
                 pretreat_->convert(paddedTile.data, paddedTile.cols, paddedTile.rows,
                     paddedTile.cols * paddedTile.channels(),
-                    input_tensor);
+                    input_data, tilesize, tilesize, model_channel, 0, halide_type_of<float>());
             }
 
-            bool r = interpreter_input->copyFromHostTensor(input_tensor);
-
-            interpreter->runSession(session);
-            cv::Mat outputTile = TensorToCvMat();
+            auto outputs = net->onForward({inputVar});
+            if (outputs.empty()) return -1;
+            auto outputVar = outputs[0];
+            cv::Mat outputTile = TensorToCvMat(outputVar);
 
 
             if (!scale_checked) {
@@ -515,6 +459,9 @@ int MNNSR::process(const cv::Mat& inimage, cv::Mat& outimage, const cv::Mat& mas
         cv::cvtColor(ycc2, outimage, cv::COLOR_YCrCb2BGR);
     }
 
+    if (cachemodel) {
+        rtmgr->updateCache();
+    }
 
     return 0;
 }
