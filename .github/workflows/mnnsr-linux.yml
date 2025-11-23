@@ -8,7 +8,6 @@ on:
   workflow_dispatch:
 
 env:
-  # 定义 NCNN 版本常量
   ncnn_data_tag: "20250916"
 
 jobs:
@@ -19,10 +18,6 @@ jobs:
       matrix:
         include:
           # Ubuntu 22.04 组
-#          - image: nvidia/cuda:13.0.2-cudnn-devel-ubuntu22.04
-#            sysname: ubuntu22
-#            cuda: "13.0.2"
-#            ncnn_ver: "2204"
           - image: nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
             sysname: ubuntu22
             cuda: "12.8.1"
@@ -37,10 +32,6 @@ jobs:
             ncnn_ver: "2204"
 
           # Ubuntu 24.04 组
-#          - image: nvidia/cuda:13.0.2-cudnn-devel-ubuntu24.04
-#            sysname: ubuntu24
-#            cuda: "13.0.2"
-#            ncnn_ver: "2404"
           - image: nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
             sysname: ubuntu24
             cuda: "12.8.1"
@@ -54,13 +45,6 @@ jobs:
       image: ${{ matrix.image }}
 
     steps:
-
-#      - name: Remove unnecessary files
-#        run: |
-#          sudo rm -rf /usr/share/dotnet
-#          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-#
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -69,9 +53,9 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends ca-certificates sudo
+          apt-get install -y --no-install-recommends ca-certificates sudo git wget unzip cmake build-essential
           update-ca-certificates
-          apt-get install -y --no-install-recommends build-essential unzip cmake git wget libopencv-dev ocl-icd-opencl-dev clinfo libvulkan-dev vulkan-tools
+          apt-get install -y --no-install-recommends libopencv-dev ocl-icd-opencl-dev clinfo libvulkan-dev vulkan-tools
 
       - name: Clone 3rdparty & Download NCNN
         run: |
@@ -87,6 +71,7 @@ jobs:
           unzip $NCNN_FILENAME
           rm $NCNN_FILENAME
           
+          # 去掉 .zip 后缀获取目录名
           NCNN_DIR_NAME=${NCNN_FILENAME%.zip}
           
           echo "Renaming directory: $NCNN_DIR_NAME -> ncnn-ubuntu-shared"
@@ -108,7 +93,7 @@ jobs:
       - name: Verify the System
         run: |
           gcc --version
-          sudo whoami
+          # sudo whoami # 在某些 docker 容器中 sudo 可能不可用，视情况而定
           echo cpu $(nproc)
           pwd
 
@@ -119,21 +104,21 @@ jobs:
           mkdir ../libs ; cp -v $(find . -name "libMNN*.so") ../libs/ ; ls -lh ../libs/
         working-directory: 3rdparty/MNN
 
-      - name: Upload CUDA install & MNN build files on failure
-        if: steps.cuda.outcome == 'failure' || steps.mnn.outcome == 'failure'
+      # 删除了旧的引用 steps.cuda 的步骤，改为仅在 MNN 失败时上传日志
+      - name: Upload MNN build logs on failure
+        if: failure() && steps.mnn.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
-          name: nmm-cmake-cuda${{ matrix.cuda }}-install-log-${{ matrix.sysname }}
-          path: |
-            /var/log/cuda-installer.log
-            3rdparty/MNN/build/Makefile
-          if-no-files-found: ignore
+          name: mnn-build-log-${{ matrix.sysname }}-${{ matrix.cuda }}
+          path: 3rdparty/MNN/build/Makefile
           retention-days: 1
 
       - name: build mnnsr
         run: |
-          # 使用 github.workspace 避免层级过多的相对路径错误
-          MNN_LIB_PATH="${{ github.workspace }}/3rdparty/MNN/libs"
+          # 【关键修复】使用 $GITHUB_WORKSPACE 环境变量，确保在 Docker 容器内路径正确
+          MNN_LIB_PATH="$GITHUB_WORKSPACE/3rdparty/MNN/libs"
+          
+          echo "Checking path: $MNN_LIB_PATH"
           ls -lh $MNN_LIB_PATH
           
           mkdir build ;cd build; cmake .. && make -j$(nproc)
@@ -148,7 +133,7 @@ jobs:
           mkdir -p mnnsr/lib
           cp build/*.so mnnsr/lib/ ;cp build/mnnsr-ncnn mnnsr/
           
-          # 复制依赖库 (建议未来排除 libc 等基础系统库)
+          # 复制依赖库
           ldd mnnsr/lib/libMNN.so | grep "=>" | awk '{print $3}' | xargs -I {} cp  -Ln {} mnnsr/lib/
           ldd mnnsr/mnnsr-ncnn | grep "=>" | awk '{print $3}' | xargs -I {} cp -Ln {} mnnsr/lib/
           
@@ -208,6 +193,7 @@ jobs:
           path: mnn-cuda
           pattern:  |
             nmm-cmake-*
+            mnn-build-log-*
             cuda-*
           merge-multiple: false
 
@@ -224,3 +210,4 @@ jobs:
           name: |
             cuda-*
             nmm-cmake-*
+            mnn-build-log-*
