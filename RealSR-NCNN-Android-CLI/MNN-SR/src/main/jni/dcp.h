@@ -76,7 +76,7 @@ public:
 
 private:
 
-    bool inputs_num = 1;
+    int inputs_num = 1;
     int model_channel = 3;
     int model_channel2 = 3;
     MNN::Interpreter *interpreter;

@@ -288,7 +288,7 @@ int MNNSR::process(const cv::Mat& inimage, cv::Mat& outimage, const cv::Mat& mas
     uint ytiles = (inHeight + tileHeight - 1) / tileHeight;
 
 
-    int xPrepadding = prepadding, yPrepadding = prepadding;
+    uint xPrepadding = prepadding, yPrepadding = prepadding;
 
     // 待重新分配的像素数
     int left = inWidth % tileWidth;

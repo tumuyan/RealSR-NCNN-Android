@@ -28,7 +28,7 @@
 
 ### 如何在VS中编译Windows x64
 
-1. 和Android版本一样下载Windows的各项依赖，注意如果需要cuda加速，需要重新编译mnn
+1. 和Android版本一样下载Windows的各项依赖，注意如果需要cuda加速，需要重新编译mnn （然而即使编译成功，也不见得可以获得正确的推理结果）
 编译mnn的命令参考
 ```
 mkdir build && cd build
@@ -38,6 +38,9 @@ cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DMNN_BUILD_SHARED_LIBS=ON -DMNN_WI
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DMNN_BUILD_SHARED_LIBS=ON -DMNN_WIN_RUNTIME_MT=ON -DMNN_CUDA=ON  -DMNN_OPENCL=ON -DMNN_VULKAN=ON  -DCUDA_CUDART_LIBRARY="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.8/lib/x64/cudart_static.lib"
 
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DMNN_BUILD_SHARED_LIBS=ON -DMNN_WIN_RUNTIME_MT=ON -DMNN_CUDA=ON -DMNN_TENSORRT=ON  -DMNN_OPENCL=ON -DMNN_VULKAN=ON  -DCUDA_CUDART_LIBRARY="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.8/lib/x64/cudart.lib" 
+
+cmake .. -G Ninja  -DCMAKE_CUDA_STANDARD=17 -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Release -DMNN_BUILD_SHARED_LIBS=ON -DMNN_WIN_RUNTIME_MT=ON -DMNN_CUDA=ON -DMNN_TENSORRT=ON  -DMNN_OPENCL=ON -DMNN_VULKAN=ON -DMNN_SUPPORT_TRANSFORMER_FUSE=ON  -DCUDA_CUDART_LIBRARY="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.8/lib/x64/cudart.lib" 
+
 
 ninja
 ```

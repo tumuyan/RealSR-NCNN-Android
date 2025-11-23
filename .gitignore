@@ -22,3 +22,4 @@ RealSR-NCNN-Android-GUI/.idea/easycode/codebase-v2.xml
 3rdparty/*
 RealSR-NCNN-Android-CLI/MNN-SR/src/main/jni/build/*
 RealSR-NCNN-Android-CLI/MNN-SR/src/main/jni/my_app/*
+/RealSR-NCNN-Android-CLI/build

@@ -43,8 +43,8 @@ public:
     int scale;
     ColorType color;
     int model_channel = 3;
-    int tilesize;
-    int prepadding;
+    uint tilesize;
+    uint prepadding;
 
     float *input_buffer;
     float *output_buffer;

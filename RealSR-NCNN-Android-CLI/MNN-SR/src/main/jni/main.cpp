@@ -369,7 +369,7 @@ public:
 
 void *save(void *args) {
     const SaveThreadParams *stp = (const SaveThreadParams *) args;
-    const int verbose = stp->verbose;
+//    const int verbose = stp->verbose;
 
     for (int saved_count = 1;;saved_count++) {
         Task v;
@@ -835,21 +835,14 @@ int main(int argc, char **argv)
 #if _WIN32
 #define FTELL _ftelli64
 #define FSEEK _fseeki64
-    typedef __int64 file_offset_t;
 #else
 #define FTELL ftello
 #define FSEEK fseeko
-    typedef off_t file_offset_t;
 #endif
 
     FSEEK(mp, 0, SEEK_END);
     long modelsize = FTELL(mp) / 1000000;
     fclose(mp);
-
-//#if _WIN32
-//    CoInitializeEx(NULL, COINIT_MULTITHREADED);
-//#endif
-
 
     int cpu_count = 4;
     jobs_load = std::min(jobs_load, cpu_count);
