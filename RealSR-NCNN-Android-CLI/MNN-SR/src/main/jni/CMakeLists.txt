@@ -6,11 +6,11 @@ set(CMAKE_INSTALL_RPATH "$ORIGIN")
 #set(CMAKE_BUILD_TYPE Debug)
 #set(CMAKE_BUILD_TYPE Release)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/arch.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/libwebp.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/opencv.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/ncnn.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/mnn.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/arch.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/libwebp.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/opencv.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/ncnn.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/mnn.cmake)
 
 add_executable(${PROJECT_NAME} main.cpp mnnsr.cpp dcp.cpp)
 

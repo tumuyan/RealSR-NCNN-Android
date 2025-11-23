@@ -112,8 +112,12 @@ int MNNSR::load(const std::string &modelpath, bool cachemodel,const bool nchw)
 	else
         config.backupType = MNN_FORWARD_AUTO;
     int num_threads = std::thread::hardware_concurrency();
-    if (num_threads >1 && backend_type==0)
-        config.numThread = num_threads;
+    if (backend_type==0) {
+        if (num_threads > 1)
+            config.numThread = num_threads;
+    }else{
+        config.numThread = 128+4;
+    }
 
     fprintf(stderr, "set backend: %s, color type: %s, cpu: %d\n", get_backend_name(config.type).c_str(),
             colorTypeToStr(color), num_threads);

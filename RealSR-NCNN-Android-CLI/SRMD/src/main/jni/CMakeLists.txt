@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.5)
 project(srmd-ncnn)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/arch.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/libwebp.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/opencv.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/ncnn.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/arch.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/libwebp.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/opencv.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/ncnn.cmake)
+
 
 add_executable(${PROJECT_NAME}  main.cpp srmd.cpp)
 
