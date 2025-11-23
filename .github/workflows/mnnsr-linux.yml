@@ -5,9 +5,11 @@ on:
     paths:
       - 'RealSR-NCNN-Android-CLI/MNN-SR/src/main/jni/**'
       - '.github/workflows/mnnsr-linux.yml'
-  # pull_request:
-  #   branches: [ master ]
   workflow_dispatch:
+
+env:
+  # 定义 NCNN 版本常量
+  ncnn_data_tag: "20250916"
 
 jobs:
   build:
@@ -16,54 +18,49 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: ubuntu:20.04
-            sysname: ubuntu20
-            cuda: "11.0.3"
-          - image: ubuntu:20.04
-            sysname: ubuntu20
-            cuda: "11.8.0"
-          - image: ubuntu:20.04
-            sysname: ubuntu20
-            cuda: "12.2.0"
-          - image: ubuntu:20.04
-            sysname: ubuntu20
-            cuda: "12.8.1"
-          - image: ubuntu:22.04
+          # Ubuntu 22.04 组
+#          - image: nvidia/cuda:13.0.2-cudnn-devel-ubuntu22.04
+#            sysname: ubuntu22
+#            cuda: "13.0.2"
+#            ncnn_ver: "2204"
+          - image: nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
             sysname: ubuntu22
-            cuda: "11.8.0"
-          - image: ubuntu:22.04
+            cuda: "12.8.1"
+            ncnn_ver: "2204"
+          - image: nvidia/cuda:12.6.3-cudnn-devel-ubuntu22.04
+            sysname: ubuntu22
+            cuda: "12.6.3"
+            ncnn_ver: "2404"
+          - image: nvidia/cuda:12.3.2-devel-ubuntu22.04
             sysname: ubuntu22
             cuda: "12.3.2"
-          - image: ubuntu:22.04
-            sysname: ubuntu22
+            ncnn_ver: "2204"
+
+          # Ubuntu 24.04 组
+#          - image: nvidia/cuda:13.0.2-cudnn-devel-ubuntu24.04
+#            sysname: ubuntu24
+#            cuda: "13.0.2"
+#            ncnn_ver: "2404"
+          - image: nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
+            sysname: ubuntu24
             cuda: "12.8.1"
-          # - image: ubuntu:24.04
-          #   sysname: ubuntu24
-          #   cuda: "11.8.0"
-          #   # Failed to verify gcc version.
-          # - image: ubuntu:24.04
-          #   sysname: ubuntu24
-          #   cuda: '12.3.2'
-          #   # Failed in build mnncuda.
-          - image: ubuntu:24.04
+            ncnn_ver: "2404"
+          - image: nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04
             sysname: ubuntu24
             cuda: "12.6.3"
-          # - image: ubuntu:latest
-          #   sysname: ubuntu
-          #   cuda: '12.9.0'
-          #   # Failed in setup cuda
-          # - image: debian:bullseye
-          #   sysname: debian
-          #   cuda: "10.2.89"
-          #   # Failed to verify gcc version.
-          - image: debian:bullseye
-            sysname: debian
-            cuda: "12.2.0"
+            ncnn_ver: "2404"
 
     container:
       image: ${{ matrix.image }}
 
     steps:
+
+#      - name: Remove unnecessary files
+#        run: |
+#          sudo rm -rf /usr/share/dotnet
+#          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+#
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -75,14 +72,27 @@ jobs:
           apt-get install -y --no-install-recommends ca-certificates sudo
           update-ca-certificates
           apt-get install -y --no-install-recommends build-essential unzip cmake git wget libopencv-dev ocl-icd-opencl-dev clinfo libvulkan-dev vulkan-tools
-          
-      - name: Clone 3rdparty
+
+      - name: Clone 3rdparty & Download NCNN
         run: |
           git clone https://github.com/webmproject/libwebp  --depth 1
           git clone https://github.com/alibaba/MNN --depth 1
-          # wget https://github.com/alibaba/MNN/releases/download/3.1.0/mnn_3.1.0_linux_x64_cpu_opencl.zip; unzip mnn_3.1.0_linux_x64_cpu_opencl.zip ; mv mnn_3.1.0_linux_x64_cpu_opencl mnn_linux_x64;
-          # cp MNN/include  mnn_linux_x64/
-          wget -nv https://github.com/Tencent/ncnn/releases/download/20250503/ncnn-20250503-ubuntu-2404-shared.zip; unzip ncnn-20250503-ubuntu-2404-shared.zip ; mv ncnn-20250503-ubuntu-2404-shared  ncnn-ubuntu-shared
+          
+          NCNN_FILENAME="ncnn-${{ env.ncnn_data_tag }}-ubuntu-${{ matrix.ncnn_ver }}-shared.zip"
+          NCNN_URL="https://github.com/Tencent/ncnn/releases/download/${{ env.ncnn_data_tag }}/$NCNN_FILENAME"
+          
+          echo "Downloading NCNN from: $NCNN_URL"
+          wget -nv $NCNN_URL
+          
+          unzip $NCNN_FILENAME
+          rm $NCNN_FILENAME
+          
+          NCNN_DIR_NAME=${NCNN_FILENAME%.zip}
+          
+          echo "Renaming directory: $NCNN_DIR_NAME -> ncnn-ubuntu-shared"
+          mv "$NCNN_DIR_NAME" ncnn-ubuntu-shared
+          
+          ls -lh ncnn-ubuntu-shared
         working-directory: 3rdparty
 
       - name: Modify CMakeLists.txt for RPATH
@@ -93,8 +103,6 @@ jobs:
                 BUILD_RPATH "$ORIGIN/lib"\
             )
           ' CMakeLists.txt
-          echo "--- Verification: Content after modification ---"
-          grep -C 5 "target_link_libraries(MNN PUBLIC -pthread dl)" CMakeLists.txt
         working-directory: 3rdparty/MNN
 
       - name: Verify the System
@@ -104,15 +112,6 @@ jobs:
           echo cpu $(nproc)
           pwd
 
-      - name: Set up CUDA ${{ matrix.cuda }}
-        id: cuda
-        uses: Jimver/cuda-toolkit@v0.2.25
-        with:
-          cuda: ${{ matrix.cuda }}
-          use-github-cache: false
-          use-local-cache: false
-          log-file-suffix: '${{ matrix.sysname }}-cuda${{ matrix.cuda }}.txt'
-        
       - name: build mnn
         id: mnn
         run: |
@@ -130,12 +129,17 @@ jobs:
             3rdparty/MNN/build/Makefile
           if-no-files-found: ignore
           retention-days: 1
-        
+
       - name: build mnnsr
         run: |
-          ls ../../../../../3rdparty/MNN/libs/
+          # 使用 github.workspace 避免层级过多的相对路径错误
+          MNN_LIB_PATH="${{ github.workspace }}/3rdparty/MNN/libs"
+          ls -lh $MNN_LIB_PATH
+          
           mkdir build ;cd build; cmake .. && make -j$(nproc)
-          cp ../../../../../../3rdparty/MNN/libs/* ./  ; chmod 777 *;ls -lh
+          
+          # 复制编译好的 MNN 库
+          cp $MNN_LIB_PATH/* ./  ; chmod 777 *;ls -lh
         working-directory: RealSR-NCNN-Android-CLI/MNN-SR/src/main/jni/
 
       - name: Copy libs
@@ -143,12 +147,14 @@ jobs:
         run: |
           mkdir -p mnnsr/lib
           cp build/*.so mnnsr/lib/ ;cp build/mnnsr-ncnn mnnsr/
+          
+          # 复制依赖库 (建议未来排除 libc 等基础系统库)
           ldd mnnsr/lib/libMNN.so | grep "=>" | awk '{print $3}' | xargs -I {} cp  -Ln {} mnnsr/lib/
           ldd mnnsr/mnnsr-ncnn | grep "=>" | awk '{print $3}' | xargs -I {} cp -Ln {} mnnsr/lib/
-          # patchelf --set-rpath '$ORIGIN/../lib' mnnsr/mnnsr-ncnn
+          
           cp ../../../../*.md mnnsr/
         working-directory: RealSR-NCNN-Android-CLI/MNN-SR/src/main/jni
-        
+
       - name: test mnnsr
         run: |
           wget -nv https://huggingface.co/tumuyan2/realsr-models/resolve/main/models-MNNSR/RealESRGAN-SourceBook-latest.mnn
@@ -157,33 +163,27 @@ jobs:
           cd ../;cp -r mnnsr mnnsr-${{ matrix.sysname }}-cuda${{ matrix.cuda }}-opencl-vulkan-cpu
         working-directory: RealSR-NCNN-Android-CLI/MNN-SR/src/main/jni/
 
-      # - name: Package artifacts
-      #   if: always()
-      #   run: |
-      #     tar -czvf mnnsr.tar.gz mnnsr-${{ matrix.sysname }}-cuda${{ matrix.cuda }}-opencl-vulkan-cpu
-      #   working-directory: RealSR-NCNN-Android-CLI/MNN-SR/src/main/jni
-
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: mnnsr-${{ matrix.sysname }}-cuda${{ matrix.cuda }}
           path: RealSR-NCNN-Android-CLI/MNN-SR/src/main/jni/mnnsr-${{ matrix.sysname }}-cuda${{ matrix.cuda }}-opencl-vulkan-cpu
           retention-days: 90
-          
+
   package:
     continue-on-error: true
     needs: build
     runs-on: ubuntu-latest
     if: always()
 
-    steps:        
+    steps:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
           path: mnnsr-artifacts
           pattern: mnnsr-*
           merge-multiple: true
-        
+
       - name: List downloaded files
         run: |
           echo "Listing contents of the download directory:"
@@ -194,15 +194,14 @@ jobs:
           mkdir mnnsr-test-result
           cp mnnsr-artifacts/*.png mnnsr-test-result/
           tar -czvf mnnsr-test-result.tar.gz mnnsr-test-result
-          
+
       - name: Upload test result
         uses: actions/upload-artifact@v4
         with:
           name: all-mnnsr-test-result
           path: mnnsr-test-result
           retention-days: 90
-          
-        
+
       - name: Download cuda & mnn artifacts
         uses: actions/download-artifact@v4
         with:
@@ -211,28 +210,14 @@ jobs:
             nmm-cmake-*
             cuda-*
           merge-multiple: false
-      
-      - name: Download cuda artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: mnn-cuda
-          pattern: cuda-*
-          merge-multiple: false
-          
-      - name: Download mnn artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: mnn-cuda
-          pattern: nmm-cmake-*
-          merge-multiple: false
-        
+
       - name: Upload final package
         uses: actions/upload-artifact@v4
         with:
           name: all-mnn-cuda
           path: mnn-cuda
-          retention-days: 90 # 最终产物，可以保留更长时间
-          
+          retention-days: 90
+
       - uses: geekyeggo/delete-artifact@v5
         with:
           failOnError: false
