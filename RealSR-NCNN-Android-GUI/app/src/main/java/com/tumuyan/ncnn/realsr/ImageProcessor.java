@@ -72,6 +72,7 @@ public class ImageProcessor {
                 // 过滤无用日志
                 if (line.contains("unused DT entry")) continue;
                 
+                Log.d(TAG, line);
                 callback.onProgress(line);
                 resultBuilder.append(line).append("\n");
             }
