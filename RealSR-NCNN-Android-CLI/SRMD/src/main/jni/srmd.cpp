@@ -45,14 +45,16 @@ static const uint32_t srmd_postproc_tta_int8s_spv_data[] = {
 
 SRMD::SRMD(int gpuid, bool _tta_mode)
 {
-    net.opt.use_vulkan_compute = true;
+    ncnn::VulkanDevice* vkdev = gpuid == -1 ? 0 : ncnn::get_gpu_device(gpuid);
+    net.opt.use_vulkan_compute = vkdev != nullptr;
     net.opt.use_fp16_packed = true;
     net.opt.use_fp16_storage = true;
-    net.opt.use_fp16_arithmetic = false;
+    net.opt.use_fp16_arithmetic = true;
     net.opt.use_int8_storage = true;
-    net.opt.use_int8_arithmetic = false;
-
-    net.set_vulkan_device(gpuid);
+    net.opt.use_int8_arithmetic = false; // 如果是 int8 模型，这一项也建议为 true
+    net.opt.use_winograd_convolution = true; // 开启 Winograd 卷积优化 (通常默认开启)
+    net.opt.use_sgemm_convolution = true;    // 开启 SGEMM 卷积优化
+    if (vkdev) net.set_vulkan_device(vkdev);
 
     srmd_preproc = 0;
     srmd_postproc = 0;
