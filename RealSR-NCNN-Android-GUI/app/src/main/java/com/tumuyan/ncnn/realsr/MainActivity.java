@@ -1,6 +1,5 @@
 package com.tumuyan.ncnn.realsr;
 
-
 import static com.tumuyan.ncnn.realsr.UriUntils.getFileName;
 
 import androidx.annotation.NonNull;
@@ -17,7 +16,11 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.ClipData;
 import android.content.Context;
+import android.content.ComponentName;
+import android.content.ServiceConnection;
 import android.content.Intent;
+import android.app.PendingIntent;
+import android.os.IBinder;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -58,20 +61,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
-
 public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1, SELECT_MULTI_IMAGE = 2;
     private static final int MY_PERMISSIONS_REQUEST = 100;
     private static final String CMD_CP_LIB_OPENCL = " if [ -e /system/vendor/lib64/libOpenCL.so ]; then cp /system/vendor/lib64/libOpenCL.so ./; elif [ -e /system/lib64/libOpenCL.so ]; then cp /system/lib64/libOpenCL.so ./; elif  [ -e /system/vendor/lib/libOpenCL.so ]; then cp /system/vendor/lib/libOpenCL.so ./; elif [ -e /system/lib/libOpenCL.so ]; then cp /system/lib/libOpenCL.so ./; else echo \"[warning]libOpenCL.so not find\"; fi; if [ -e /system/vendor/lib/egl/libGLES_mali.so ]; then cp /system/vendor/lib/egl/libGLES_mali.so ./; elif [ -e /system/lib/egl/libGLES_mali.so ]; then cp /system/lib/egl/libGLES_mali.so ./; else echo \"[warning]libGLES_mali.so not find\"; fi";
-    private static final String CMD_RESET_CACHE = CMD_CP_LIB_OPENCL + ";rm -f *.cache;rm -f */*.cache;chmod 777 *; echo Cache has been reset.;ls";
+    private static final String CMD_RESET_CACHE = CMD_CP_LIB_OPENCL
+            + ";rm -f *.cache;rm -f */*.cache;chmod 777 *; echo Cache has been reset.;ls";
     private int selectCommand = 0;
     private String threadCount = "";
     private SubsamplingScaleImageView imageView;
     private TextView logTextView;
     private boolean initProcess;
-    private final String galleryPath =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
-                    + File.separator + "RealSR";
+    private final String galleryPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
+            + File.separator + "RealSR";
     private File outputFile, outputGif, inputFile, titleFile;
     private String dir, cache_dir;
     // dir="/data/data/com.tumuyan.ncnn.realsr/cache/realsr";
@@ -90,12 +92,12 @@ public class MainActivity extends AppCompatActivity {
     private String[] command = null;
     private String log = "";
 
-    private final String[] bench_mark_commands = new String[]{
+    private final String[] bench_mark_commands = new String[] {
             "./realsr-ncnn -c 46 -i img/PM5544.jpeg -o input.png  -m models-Real-ESRGAN",
             "./realsr-ncnn -c 46 -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 4"
     };
 
-    private final String[] command_0 = new String[]{
+    private final String[] command_0 = new String[] {
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-anime",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN",
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-general -s 4",
@@ -145,10 +147,49 @@ public class MainActivity extends AppCompatActivity {
     private boolean autoSave;
     private boolean showSearchView, showFinalCommand;
     private String savePath = galleryPath;
-    private static final int NOTIFY_ID = 1;
-    private static final String CHANNEL_NAME_RESULT = "channel_result";
-    private static final String CHANNEL_NAME_PROGRESS = "channel_progress";
 
+    private static final int NOTIFY_ID = 1;
+    private static final String CHANNEL_ID_RESULT = "channel_result";
+
+    private void sendNotification(Context mContext, String text) {
+        // New Logic: 0=Silent, 1=Result, 2=Detailed, 3=Detailed(AutoDismiss).
+        // So if notify == 0 or 3, we don't show result notification.
+        if (notify == 0 || notify == 3)
+            return;
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        if (text == null) {
+            notificationManager.cancel(NOTIFY_ID);
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID_RESULT,
+                    getString(R.string.notification_channel_result),
+                    NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("Shows result of image processing tasks");
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT
+                        | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0));
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mContext, CHANNEL_ID_RESULT);
+        mBuilder.setContentTitle(getString(R.string.app_name))
+                .setContentText(text)
+                .setWhen(System.currentTimeMillis())
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE);
+        Notification notification = mBuilder.build();
+        notificationManager.notify(NOTIFY_ID, notification); // Use same ID as Service to update/replace it
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -161,7 +202,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
     }
-
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
@@ -218,7 +258,8 @@ public class MainActivity extends AppCompatActivity {
                 append_param += (" -g -1");
 
             append_param += ";";
-            q = "rm -rf *.png; ls *.png; " + bench_mark_commands[0] + append_param + bench_mark_commands[1] + append_param;
+            q = "rm -rf *.png; ls *.png; " + bench_mark_commands[0] + append_param + bench_mark_commands[1]
+                    + append_param;
 
             imageName = "/img/realsr.png";
             bench_mark_mode = true;
@@ -258,7 +299,7 @@ public class MainActivity extends AppCompatActivity {
     // 删除文件或者目录
     public static void deleteFile(File f) {
         if (f.isDirectory()) {
-            //获取目录下所有文件和目录
+            // 获取目录下所有文件和目录
             File[] files = f.listFiles();
             if (files != null) {
                 for (File file : files) {
@@ -272,7 +313,6 @@ public class MainActivity extends AppCompatActivity {
         }
         f.delete();
     }
-
 
     public void shareImage(String path) {
         Intent share_intent = new Intent();
@@ -320,7 +360,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
             }
 
-            share_intent.setAction(Intent.ACTION_SEND);//设置分享行为
+            share_intent.setAction(Intent.ACTION_SEND);// 设置分享行为
             share_intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             share_intent.putExtra(Intent.EXTRA_STREAM, contentUri);
             Log.i("shareImage()", "uri = " + contentUri);
@@ -330,7 +370,6 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), R.string.output_not_exits, Toast.LENGTH_SHORT).show();
         }
     }
-
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
@@ -343,7 +382,7 @@ public class MainActivity extends AppCompatActivity {
 
         formats = getResources().getStringArray(R.array.format);
         BUSY = getResources().getString(R.string.busy);
-        ERR = getString(R.string.error);
+        ERR = getString(R.string.notification_fail);
         DONE = getString(R.string.done);
 
         SharedPreferences mySharePerferences = getSharedPreferences("config", Activity.MODE_PRIVATE);
@@ -365,18 +404,18 @@ public class MainActivity extends AppCompatActivity {
 
         showFinalCommand = mySharePerferences.getBoolean("showFinalCommand", false) && showSearchView;
 
-
         notify = mySharePerferences.getInt("notify", 0);
 
         format = mySharePerferences.getInt("format", 0);
         name = mySharePerferences.getInt("name", 0);
         name2 = mySharePerferences.getInt("name2", 0);
         List<String> extraCmd = getExtraCommands(
-                mySharePerferences.getString("extraPath", "").trim()
-                , mySharePerferences.getString("extraCommand", "").trim()
-                , mySharePerferences.getString("classicalFilters", getString(R.string.default_classical_filters)).split("\\s+")
-                , mySharePerferences.getString("magickFilters", getString(R.string.default_magick_filters)).split("\\s+")
-        );
+                mySharePerferences.getString("extraPath", "").trim(),
+                mySharePerferences.getString("extraCommand", "").trim(),
+                mySharePerferences.getString("classicalFilters", getString(R.string.default_classical_filters))
+                        .split("\\s+"),
+                mySharePerferences.getString("magickFilters", getString(R.string.default_magick_filters))
+                        .split("\\s+"));
 
         if (!extraCmd.isEmpty()) {
             String[] presetCommand = getResources().getStringArray(R.array.style_array);
@@ -400,7 +439,6 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
-
 
     public void readFileFromShare() {
         Intent intent = getIntent();
@@ -447,7 +485,8 @@ public class MainActivity extends AppCompatActivity {
      * @param magickFilters    Magick算法列表
      * @return 命令列表
      */
-    private List<String> getExtraCommands(String extraPath, String extraCommand, String[] classicalFilters, String[] magickFilters) {
+    private List<String> getExtraCommands(String extraPath, String extraCommand, String[] classicalFilters,
+            String[] magickFilters) {
 
         // 解析结果，包含模型目录、用户自定义命令（命令列表）
         List<String> cmdList = new ArrayList<>();
@@ -455,7 +494,7 @@ public class MainActivity extends AppCompatActivity {
         // 解析模型目录的结果（下拉列表中的label）
         List<String> cmdLabel = new ArrayList<>();
 
-        String[] classicalResize = {"2", "4", "10"};
+        String[] classicalResize = { "2", "4", "10" };
 
         for (String f : classicalFilters) {
             for (String s : classicalResize) {
@@ -464,7 +503,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        String[] magickResize = {"200%", "400%", "1000%"};
+        String[] magickResize = { "200%", "400%", "1000%" };
 
         for (String f : magickFilters) {
             for (String s : magickResize) {
@@ -489,14 +528,16 @@ public class MainActivity extends AppCompatActivity {
                                 for (File file : files) {
                                     if (file.getName().endsWith(".mnn")) {
                                         String[] v = getNameFromModelPath(file.getAbsolutePath(), "MNNSR");
-                                        cmdList.add("./mnnsr-ncnn -i input.png -o output.png  -m " + file.getAbsolutePath() + " -s " + v[1]);
+                                        cmdList.add("./mnnsr-ncnn -i input.png -o output.png  -m "
+                                                + file.getAbsolutePath() + " -s " + v[1]);
                                         cmdLabel.add(v[0]);
                                     }
                                 }
                             }
                         } else {
                             String[] v = getNameFromModelPath(folder.getAbsolutePath(), "MNNSR");
-                            cmdList.add("./mnnsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s " + v[1]);
+                            cmdList.add("./mnnsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath()
+                                    + " -s " + v[1]);
                             cmdLabel.add(v[0]);
                         }
                     } else if (folder.isDirectory() && name.startsWith("models")) {
@@ -504,13 +545,15 @@ public class MainActivity extends AppCompatActivity {
                         String model = name.replace("models-", "");
                         String scaleMatcher = ".*x(\\d+).*";
                         String noiseMatcher = "";
-                        String command = "./realsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
+                        String command = "./realsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath()
+                                + " -s ";
 
                         if (name.matches("models-(cugan|cunet|upconv).*")) {
                             // 匹配waifu2x模型目录
                             model = name.replace("models-", "Waifu2x-");
                             scaleMatcher = ".*scale(\\d+).*";
-                            command = "./waifu2x-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
+                            command = "./waifu2x-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath()
+                                    + " -s ";
                             noiseMatcher = "noise(\\d+).*";
                         } else if (name.matches("models-srmd.*")) {
                             // 匹配srmd模型目录
@@ -536,7 +579,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-
         // 模型目录显示label
         int l = command_0.length;
         command = new String[cmdList.size() + l];
@@ -544,7 +586,6 @@ public class MainActivity extends AppCompatActivity {
         System.arraycopy(command_0, 0, command, 0, l);
         for (int i = 0; i < cmdList.size(); i++)
             command[l + i] = cmdList.get(i);
-
 
         // 预设命令显示命令
         if (!extraCommand.isEmpty()) {
@@ -554,7 +595,6 @@ public class MainActivity extends AppCompatActivity {
 
         return cmdLabel;
     }
-
 
     /**
      * 从用户自定义模型路径加载文件，自动列出可用命令
@@ -601,19 +641,34 @@ public class MainActivity extends AppCompatActivity {
         return list;
     }
 
-    private ImageProcessor imageProcessor;
+    private ProcessingService processingService;
+    private boolean isBound = false;
+
+    private ServiceConnection connection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            ProcessingService.LocalBinder binder = (ProcessingService.LocalBinder) service;
+            processingService = binder.getService();
+            isBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            isBound = false;
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        imageProcessor = new ImageProcessor();
+        Intent serviceIntent = new Intent(this, ProcessingService.class);
+        bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE);
 
         imageView = findViewById(R.id.photo_view);
         logTextView = findViewById(R.id.tv_log);
         searchView = findViewById(R.id.serarch_view);
-
 
         SharedPreferences mySharePerferences = getSharedPreferences("config", Activity.MODE_PRIVATE);
         prePng = mySharePerferences.getBoolean("PrePng", true);
@@ -626,11 +681,9 @@ public class MainActivity extends AppCompatActivity {
         cache_dir = this.getCacheDir().getAbsolutePath();
         AssetsCopyer.releaseAssets(this, "realsr", cache_dir, version == BuildConfig.VERSION_CODE);
 
-
         SharedPreferences.Editor editor = mySharePerferences.edit();
         editor.putInt("version", BuildConfig.VERSION_CODE);
         editor.apply();
-
 
         int orientation = mySharePerferences.getInt("ORIENTATION", 0);
         if (orientation == 1) {
@@ -640,7 +693,6 @@ public class MainActivity extends AppCompatActivity {
         else if (orientation == 3) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         }
-
 
         dir = cache_dir + "/realsr";
 
@@ -685,7 +737,7 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
 
-            //用户输入字符时激发该方法
+            // 用户输入字符时激发该方法
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (newText.trim().length() < 2) {
@@ -714,24 +766,23 @@ public class MainActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btn_save).setOnClickListener(view -> {
-                    File f = inputIsGifAnimation ? outputGif : outputFile;
+            File f = inputIsGifAnimation ? outputGif : outputFile;
 
-                    if (!f.exists()) {
-                        Toast.makeText(this, R.string.output_not_exits, Toast.LENGTH_SHORT).show();
-                        return;
-                    } else if (f.isDirectory()) {
-                        File[] files = f.listFiles();
-                        if (files==null || files.length==0)  {
-                            Toast.makeText(this, R.string.output_not_exits, Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(this, R.string.output_is_dir, Toast.LENGTH_SHORT).show();
-                        }
-                        return;
-                    }
-                    run_command(saveOutputCmd());
-                    checkSaveOutput();
+            if (!f.exists()) {
+                Toast.makeText(this, R.string.output_not_exits, Toast.LENGTH_SHORT).show();
+                return;
+            } else if (f.isDirectory()) {
+                File[] files = f.listFiles();
+                if (files == null || files.length == 0) {
+                    Toast.makeText(this, R.string.output_not_exits, Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, R.string.output_is_dir, Toast.LENGTH_SHORT).show();
                 }
-        );
+                return;
+            }
+            run_command(saveOutputCmd());
+            checkSaveOutput();
+        });
 
         findViewById(R.id.btn_run).setOnClickListener(view -> {
             menuProgress.setTitle("");
@@ -755,7 +806,8 @@ public class MainActivity extends AppCompatActivity {
                             cmd.append(" -t ").append(tileSize);
                         if (!threadCount.isEmpty() && !cmd_head.contains(" -j "))
                             cmd.append(" -j ").append(threadCount);
-                        if (useCPU && !cmd_head.startsWith("./srmd") && !cmd_head.startsWith("./mnnsr") && !cmd_head.contains(" -g "))
+                        if (useCPU && !cmd_head.startsWith("./srmd") && !cmd_head.startsWith("./mnnsr")
+                                && !cmd_head.contains(" -g "))
                             cmd.append(" -g -1");
                         if (cmd_head.startsWith("./mnnsr") && !cmd_head.contains(" -b ")) {
                             cmd.append(" -b ").append(mnnBackend);
@@ -787,11 +839,12 @@ public class MainActivity extends AppCompatActivity {
             overridePendingTransition(0, android.R.anim.slide_out_right);
         });
 
-
         requirePremision();
 
-        if (menuProgress != null) menuProgress.setTitle("");
-        else initProcess = true;
+        if (menuProgress != null)
+            menuProgress.setTitle("");
+        else
+            initProcess = true;
 
         readFileFromShare();
     }
@@ -799,21 +852,21 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (imageProcessor != null) {
-            imageProcessor.shutdown();
+        if (isBound) {
+            unbindService(connection);
+            isBound = false;
         }
     }
 
     private void requirePremision() {
         if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    new String[] { Manifest.permission.WRITE_EXTERNAL_STORAGE },
                     MY_PERMISSIONS_REQUEST);
 
         } else {
-            //权限已经被授予，在这里直接写要执行的相应方法即可
+            // 权限已经被授予，在这里直接写要执行的相应方法即可
             File file = new File(savePath);
             if (file.isFile())
                 file.delete();
@@ -822,51 +875,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-    private void sendNotification(Context mContext, String text) {
-        if (notify == 0)
-            return;
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        if (text == null) {
-            notificationManager.cancel(NOTIFY_ID);   //取消Notification
-            return;
-        }
-
-        String channel_name;
-        if ((text.equals(ERR) || text.equals(DONE))) {
-            channel_name = CHANNEL_NAME_RESULT;
-        } else if (notify == 2) {
-            return;
-        } else {
-            channel_name = CHANNEL_NAME_PROGRESS;
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    channel_name,
-                    channel_name,
-                    NotificationManager.IMPORTANCE_HIGH);
-            notificationManager.createNotificationChannel(channel);
-        }
-
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mContext, channel_name);
-        mBuilder.setContentTitle(getString(R.string.app_name))                        //标题
-                .setContentText(text)
-                .setWhen(System.currentTimeMillis())
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setDefaults(Notification.DEFAULT_SOUND);
-//                .setDefaults(Notification.FLAG_ONGOING_EVENT)
-//                .setAutoCancel(true);                           //设置点击后取消Notification
-
-        Notification notification = mBuilder.build();
-        notificationManager.notify(NOTIFY_ID, notification);
-    }
-
-
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+            @NonNull int[] grantResults) {
         if (requestCode == MY_PERMISSIONS_REQUEST) {
             if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(MainActivity.this, "Permission Denied", Toast.LENGTH_SHORT).show();
@@ -971,7 +982,6 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-
     // 在主进程执行命令但是不刷新UI，也不被打断
     public int get_gif_frame_delay(@NonNull String path) {
 
@@ -982,9 +992,10 @@ public class MainActivity extends AppCompatActivity {
             ProcessBuilder processBuilder = new ProcessBuilder("sh");
             processBuilder.redirectErrorStream(true);
             Process process = processBuilder.start();
-            
+
             OutputStream os = process.getOutputStream();
-            String cmd = "cd " + dir + "; export LD_LIBRARY_PATH=" + dir + " ; " + "./magick  identify  -format  \"%T \" " + path + " ";
+            String cmd = "cd " + dir + "; export LD_LIBRARY_PATH=" + dir + " ; "
+                    + "./magick  identify  -format  \"%T \" " + path + " ";
             os.write((cmd + "\n").getBytes());
             os.write("exit\n".getBytes());
             os.flush();
@@ -1034,14 +1045,14 @@ public class MainActivity extends AppCompatActivity {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder("sh");
             processBuilder.redirectErrorStream(true);
-            
+
             Process process = processBuilder.start();
-            
+
             OutputStream os = process.getOutputStream();
             if (command.startsWith("./magick")) {
-                 os.write(("cd " + dir + "; export LD_LIBRARY_PATH=" + dir + " ; " + command + "\n").getBytes());
+                os.write(("cd " + dir + "; export LD_LIBRARY_PATH=" + dir + " ; " + command + "\n").getBytes());
             } else {
-                 os.write((command + "\n").getBytes());
+                os.write((command + "\n").getBytes());
             }
             os.write("exit\n".getBytes());
             os.flush();
@@ -1052,7 +1063,7 @@ public class MainActivity extends AppCompatActivity {
                 con.append(result);
                 con.append('\n');
             }
-            
+
             process.waitFor();
 
         } catch (Exception e) {
@@ -1071,7 +1082,6 @@ public class MainActivity extends AppCompatActivity {
         String scaleMatcher = "([xX]\\d+|\\d+[xX])";
         String s = "", name = "";
         String[] splitedPath = path.split("[/\\\\]+");
-
 
         if (splitedPath.length > 1) {
             if (splitedPath[splitedPath.length - 1].matches(scaleMatcher + "\\..+")) {
@@ -1104,9 +1114,8 @@ public class MainActivity extends AppCompatActivity {
             name = type + "-" + name;
         }
 
-        return new String[]{name, "" + scale};
+        return new String[] { name, "" + scale };
     }
-
 
     // 主要的运行命令的方式
     public synchronized boolean run20(@NonNull String cmd, boolean bench_mark_mode, boolean sr) {
@@ -1123,8 +1132,7 @@ public class MainActivity extends AppCompatActivity {
                 || cmd.startsWith("./resize-ncnn")
                 || cmd.startsWith("./waifu2x-ncnn")
                 || cmd.startsWith("./magick input")
-                || cmd.startsWith("./Anime4k")
-        ) {
+                || cmd.startsWith("./Anime4k")) {
             if (cmd.contains(" input.png ") && cmd.contains(" output.png")) {
                 if (inputFile.isDirectory() && !inputIsGifAnimation) {
                     export_dir = true;
@@ -1160,9 +1168,11 @@ public class MainActivity extends AppCompatActivity {
                 if (cmd.contains(" -n "))
                     modelName += cmd.replaceFirst(".+\\s-n(\\s+)(\\S+)\\s.*", "-Noise$2");
             } else if (cmd.matches(".+\\s-m(\\s+)(bicubic|bilinear|nearest|avir|de-nearest).*")) {
-                modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest|lancir|avir|de-nearest).*", "Classical-$2");
+                modelName = cmd.replaceFirst(".+\\s-m(\\s+)(bicubic|bilinear|nearest|lancir|avir|de-nearest).*",
+                        "Classical-$2");
             } else if (cmd.matches(".*waifu2x.+models-(cugan|cunet|upconv).*")) {
-                modelName = cmd.replaceFirst(".*waifu2x.+models-(cugan|cunet|upconv_7_photo|upconv_7_anime).*", "Waifu2x-$1");
+                modelName = cmd.replaceFirst(".*waifu2x.+models-(cugan|cunet|upconv_7_photo|upconv_7_anime).*",
+                        "Waifu2x-$1");
             } else if (cmd.startsWith("./magick input")) {
                 if (cmd.contains("-filter"))
                     modelName = cmd.replaceFirst(".*-filter\\s+(\\w+).+", "Magick-$1");
@@ -1180,7 +1190,8 @@ public class MainActivity extends AppCompatActivity {
             modelName = "SR";
 
         final boolean run_ncnn = bench_mark_mode || !modelName.equals("SR");
-        boolean export_one_file = run_ncnn && (autoSave || (inputFile.isDirectory() && inputIsGifAnimation)) && cmd.contains("output.png");
+        boolean export_one_file = run_ncnn && (autoSave || (inputFile.isDirectory() && inputIsGifAnimation))
+                && cmd.contains("output.png");
         if (bench_mark_mode) {
             export_one_file = false;
             runOnUiThread(() -> {
@@ -1208,105 +1219,119 @@ public class MainActivity extends AppCompatActivity {
         final boolean final_export_dir = export_dir;
         final StringBuilder logBuilder = new StringBuilder();
 
-        imageProcessor.executeCommand(executionCmd, dir, new ImageProcessor.ProcessCallback() {
-            @Override
-            public void onProgress(String line) {
-                boolean p = run_ncnn && line.matches("\\s*\\d([0-9.]*)%(\\s.+)?");
-                String progressText = line.trim().split("\\s")[0];
+        if (isBound && processingService != null) {
+            processingService.startTask(executionCmd, dir, notify, new ImageProcessor.ProcessCallback() {
+                @Override
+                public void onProgress(String line) {
+                    boolean p = run_ncnn && line.matches("\\s*\\d([0-9.]*)%(\\s.+)?");
+                    String progressText = line.trim().split("\\s")[0];
 
-                if (!p) {
-                    logBuilder.append(line).append("\n");
-                }
-                
-                final String textToDisplay = logBuilder.toString() + (p ? line : "");
-
-                runOnUiThread(() -> {
-                    logTextView.setText(textToDisplay);
-                    if (p) {
-                        menuProgress.setTitle(progressText);
-                        sendNotification(MainActivity.this, line);
+                    if (!p) {
+                        logBuilder.append(line).append("\n");
                     }
-                });
-            }
 
-            @Override
-            public void onCompleted(String result, boolean success) {
-                String logResult;
-                if (!success)
-                    logResult = "\nfail, use " + (float) (System.currentTimeMillis() - timeStart) / 1000 + " second";
-                else
-                    logResult = "\nfinish, use " + (float) (System.currentTimeMillis() - timeStart) / 1000 + " second";
+                    final String textToDisplay = logBuilder.toString() + (p ? line : "");
 
-                if (bench_mark_mode) {
-                    logResult += String.format(", Benchmark run on %s\n%s", DeviceInfo.getConfigStr(useCPU, tileSize), DeviceInfo.getInfo(MainActivity.this));
-                } else if (run_ncnn) {
-                    logResult += ", " + modelName + "\n";
-                }
-
-                String finalLog = logBuilder.toString() + logResult;
-                log = finalLog;
-
-                runOnUiThread(() -> {
-                    logTextView.setText(finalLog);
-                    menuProgress.setTitle(DONE);
-                    sendNotification(MainActivity.this, DONE);
-
-                    if (save) {
-                        if (!outputFile.exists()) {
-                            Toast.makeText(getApplicationContext(), R.string.output_not_exits, Toast.LENGTH_SHORT).show();
-                        } else {
-                            checkSaveOutput();
+                    runOnUiThread(() -> {
+                        logTextView.setText(textToDisplay);
+                        if (p) {
+                            menuProgress.setTitle(progressText);
+                            // Notification is handled by Service now
                         }
-                    } else if (final_export_dir) {
-                        Toast.makeText(getApplicationContext(), R.string.save_succeed, Toast.LENGTH_SHORT).show();
+                    });
+                }
+
+                @Override
+                public void onCompleted(String result, boolean success) {
+                    String logResult;
+                    if (!success)
+                        logResult = "\nfail, use " + (float) (System.currentTimeMillis() - timeStart) / 1000
+                                + " second";
+                    else
+                        logResult = "\nfinish, use " + (float) (System.currentTimeMillis() - timeStart) / 1000
+                                + " second";
+
+                    if (bench_mark_mode) {
+                        logResult += String.format(", Benchmark run on %s\n%s",
+                                DeviceInfo.getConfigStr(useCPU, tileSize), DeviceInfo.getInfo(MainActivity.this));
+                    } else if (run_ncnn) {
+                        logResult += ", " + modelName + "\n";
                     }
 
-                    if (inputFile.isDirectory()) {
-                        if (inputIsGifAnimation)
-                            scanFiles(new String[]{outputSavePath});
-                        else {
-                            File[] files = inputFile.listFiles();
-                            if(files != null) {
-                                List<String> outputPaths = new ArrayList<>();
-                                for (File file : files) {
-                                    outputPaths.add(savePath + File.separator + file.getName());
+                    String finalLog = logBuilder.toString() + logResult;
+                    log = finalLog;
+
+                    runOnUiThread(() -> {
+                        logTextView.setText(finalLog);
+                        menuProgress.setTitle(DONE);
+                        sendNotification(MainActivity.this, DONE); // Result notification still handled here
+
+                        if (save) {
+                            if (!outputFile.exists()) {
+                                Toast.makeText(getApplicationContext(), R.string.output_not_exits, Toast.LENGTH_SHORT)
+                                        .show();
+                            } else {
+                                checkSaveOutput();
+                            }
+                        } else if (final_export_dir) {
+                            Toast.makeText(getApplicationContext(), R.string.save_succeed, Toast.LENGTH_SHORT).show();
+                        }
+
+                        if (inputFile.isDirectory()) {
+                            if (inputIsGifAnimation)
+                                scanFiles(new String[] { outputSavePath });
+                            else {
+                                File[] files = inputFile.listFiles();
+                                if (files != null) {
+                                    List<String> outputPaths = new ArrayList<>();
+                                    for (File file : files) {
+                                        outputPaths.add(savePath + File.separator + file.getName());
+                                    }
+                                    scanFiles(outputPaths.toArray(new String[0]));
                                 }
-                                scanFiles(outputPaths.toArray(new String[0]));
                             }
                         }
-                    }
 
-                    boolean showImgView = (effectivelyFinalCmd.contains("output.png"));
-                    if (showImgView) {
-                        if (outputFile.exists() && outputFile.isFile()) {
-                            updateImage(dir + "/output.png", String.format("%s\n%s", getString(R.string.hr), log), false);
-                        } else if (inputIsGifAnimation && outputFile.exists() && outputFile.isDirectory() && outputFile.listFiles().length > 1) {
-                            updateImage(outputFile.listFiles()[0].getPath(), String.format("%s\n%s", getString(R.string.hr), log), false);
-                        } else {
-                            updateImage(dir + "/input.png", String.format("%s\n%s", getString(R.string.lr), log), false);
+                        boolean showImgView = (effectivelyFinalCmd.contains("output.png"));
+                        if (showImgView) {
+                            if (outputFile.exists() && outputFile.isFile()) {
+                                updateImage(dir + "/output.png", String.format("%s\n%s", getString(R.string.hr), log),
+                                        false);
+                            } else if (inputIsGifAnimation && outputFile.exists() && outputFile.isDirectory()
+                                    && outputFile.listFiles().length > 1) {
+                                updateImage(outputFile.listFiles()[0].getPath(),
+                                        String.format("%s\n%s", getString(R.string.hr), log), false);
+                            } else {
+                                updateImage(dir + "/input.png", String.format("%s\n%s", getString(R.string.lr), log),
+                                        false);
+                            }
                         }
-                    }
-                    if (!showImgView)
-                        imageView.setVisibility(View.GONE);
-                });
-            }
+                        if (!showImgView)
+                            imageView.setVisibility(View.GONE);
+                    });
+                }
 
-            @Override
-            public void onError(String error) {
-                runOnUiThread(() -> {
-                    logTextView.append("\nError: " + error);
-                    sendNotification(MainActivity.this, ERR);
-                });
-            }
-        });
+                @Override
+                public void onError(String error) {
+                    runOnUiThread(() -> {
+                        logTextView.append("\nError: " + error);
+                        sendNotification(MainActivity.this, ERR);
+                    });
+                }
+            });
+        } else {
+            Toast.makeText(this, "Service not bound", Toast.LENGTH_SHORT).show();
+            return false;
+        }
 
         return true;
     }
 
     private void stopCommand() {
-        if (imageProcessor != null) {
-            imageProcessor.cancelCurrentTask();
-            if (menuProgress != null) menuProgress.setTitle("");
+        if (isBound && processingService != null) {
+            processingService.cancelTask();
+            if (menuProgress != null)
+                menuProgress.setTitle("");
         }
         newTask = true;
     }
@@ -1428,7 +1453,8 @@ public class MainActivity extends AppCompatActivity {
                     Log.i("saveInputImage", "finish, file");
                 }
 
-            } else Log.i("saveInputImage", "skip");
+            } else
+                Log.i("saveInputImage", "skip");
             if (keepScreen) {
                 logTextView.setKeepScreenOn(false);
             }
@@ -1437,8 +1463,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean run_fake_command(String q) {
-        if (q == null) return true;
-        if (q.isEmpty()) return true;
+        if (q == null)
+            return true;
+        if (q.isEmpty())
+            return true;
         if (q.equals("help")) {
             showImage(titleFile, getString(R.string.default_log));
         } else if (q.equals("in")) {
@@ -1459,7 +1487,8 @@ public class MainActivity extends AppCompatActivity {
         } else if (q.equals(CMD_RESET_CACHE)) {
             showImage(null, getString(R.string.menu_reset_cache) + "...");
             return false;
-        } else return false;
+        } else
+            return false;
         return true;
     }
 
@@ -1476,7 +1505,8 @@ public class MainActivity extends AppCompatActivity {
             File[] files = file.listFiles();
             if (files.length < 1) {
                 logTextView.setText(getString(R.string.image_not_exists));
-            } else logTextView.setText(getString(R.string.image_is_directory));
+            } else
+                logTextView.setText(getString(R.string.image_is_directory));
         } else {
             imageView.setVisibility(View.GONE);
             logTextView.setText(getString(R.string.image_not_exists));
@@ -1488,7 +1518,7 @@ public class MainActivity extends AppCompatActivity {
             return info;
 
         BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;  // 仅解码边界信息
+        options.inJustDecodeBounds = true; // 仅解码边界信息
         BitmapFactory.decodeFile(file.getAbsolutePath(), options);
         int width = options.outWidth;
         int height = options.outHeight;
@@ -1496,7 +1526,6 @@ public class MainActivity extends AppCompatActivity {
             return info + " " + width + "x" + height;
         return info;
     }
-
 
     /**
      * 通知android媒体库更新文件
@@ -1527,7 +1556,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    //    生成输出的图片的命令
+    // 生成输出的图片的命令
     private String saveOutputCmd() {
 
         SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");
@@ -1576,7 +1605,8 @@ public class MainActivity extends AppCompatActivity {
                 String q = formats[format].replaceAll("[a-zA-Z%\\s]+", "");
                 if (q.length() > 0) {
                     cmd = ("./magick output.png -quality " + q);
-                } else cmd = ("./magick output.png");
+                } else
+                    cmd = ("./magick output.png");
             }
         }
 
@@ -1584,5 +1614,3 @@ public class MainActivity extends AppCompatActivity {
     }
 
 }
-
-

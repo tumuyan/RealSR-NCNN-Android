@@ -200,9 +200,15 @@ Even if this feature is disabled, you can still select multiple images from othe
         <item>Portrait</item>
         <item>Landscape</item>
     </string-array>
+    <string name="notification_processing">Processing...</string>
+    <string name="notification_fail">Fail</string>
+    <string name="notification_channel_progress">Processing Progress</string>
+    <string name="notification_channel_result">Processing Result</string>
+    <string name="notification_channel_alive">Background Service</string>
     <string-array name="notify_item">
-        <item>No</item>
-        <item>Notify</item>
-        <item>Notify when finish</item>
+        <item>Silent (Background Only)</item>
+        <item>Result Only</item>
+        <item>Detailed (Progress + Result)</item>
+        <item>Detailed (Auto Dismiss)</item>
     </string-array>
 </resources>

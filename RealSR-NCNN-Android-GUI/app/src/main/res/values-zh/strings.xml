@@ -193,8 +193,14 @@
         <item>横屏</item>
     </string-array>
     <string-array name="notify_item">
-        <item>无</item>
-        <item>通知</item>
-        <item>结束时通知</item>
+        <item>静默 (仅后台保活)</item>
+        <item>仅通知结果</item>
+        <item>详细 (进度+结果)</item>
+        <item>详细 (完成后自动消失)</item>
     </string-array>
+    <string name="notification_processing">正在处理...</string>
+    <string name="notification_fail">失败</string>
+    <string name="notification_channel_progress">处理进度</string>
+    <string name="notification_channel_result">处理结果</string>
+    <string name="notification_channel_alive">后台服务</string>
 </resources>
