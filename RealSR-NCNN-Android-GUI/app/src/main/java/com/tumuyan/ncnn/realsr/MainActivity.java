@@ -151,10 +151,11 @@ public class MainActivity extends AppCompatActivity {
     private static final int NOTIFY_ID = 1;
     private static final String CHANNEL_ID_RESULT = "channel_result";
 
-    private void sendNotification(Context mContext, String text) {
+    private void sendNotification(Context mContext, String text, boolean force) {
         // New Logic: 0=Silent, 1=Result, 2=Detailed, 3=Detailed(AutoDismiss).
         // So if notify == 0 or 3, we don't show result notification.
-        if (notify == 0 || notify == 3)
+        // But if force is true, we show it anyway (e.g. for error in AutoDismiss mode).
+        if (!force && (notify == 0 || notify == 3))
             return;
 
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -1147,7 +1148,7 @@ public class MainActivity extends AppCompatActivity {
 
             runOnUiThread(() -> {
                 menuProgress.setTitle(BUSY);
-                sendNotification(this, BUSY);
+                sendNotification(this, BUSY, false);
             });
             modelName = "Real-ESRGAN-anime";
             if (cmd.matches(".+\\s-m(\\s+)\\S*models-.+")) {
@@ -1196,7 +1197,7 @@ public class MainActivity extends AppCompatActivity {
             export_one_file = false;
             runOnUiThread(() -> {
                 menuProgress.setTitle(BUSY);
-                sendNotification(this, BUSY);
+                sendNotification(this, BUSY, false);
             });
         }
         final boolean save = export_one_file;
@@ -1264,7 +1265,10 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         logTextView.setText(finalLog);
                         menuProgress.setTitle(DONE);
-                        sendNotification(MainActivity.this, DONE); // Result notification still handled here
+                        // Result notification still handled here
+                        // If failed (!success) and notify==3 (AutoDismiss), we force show notification.
+                        boolean forceShow = !success && notify == 3;
+                        sendNotification(MainActivity.this, success ? DONE : ERR, forceShow);
 
                         if (save) {
                             if (!outputFile.exists()) {
@@ -1315,7 +1319,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onError(String error) {
                     runOnUiThread(() -> {
                         logTextView.append("\nError: " + error);
-                        sendNotification(MainActivity.this, ERR);
+                        sendNotification(MainActivity.this, ERR, true);
                     });
                 }
             });
