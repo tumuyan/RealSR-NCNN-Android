@@ -4,6 +4,9 @@
 #define WAIFU2X_H
 
 #include <string>
+#include <chrono>
+
+using namespace std::chrono;
 
 // ncnn
 #include "net.h"

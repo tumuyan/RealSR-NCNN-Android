@@ -34,10 +34,18 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     endif()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
     message(STATUS "Configuring for Android Studio")
-    set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
-    set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3")
-    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -s")
+
+    # Common flags
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath=./")
+
+    # Debug flags
+    set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
+
+    # Release flags (and RelWithDebInfo for Gradle)
+    set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3")
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -s")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "$ENV{CXXFLAGS} -O3")
+    set(CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO} -s")
 
     set(TARGET_ARCH ${ANDROID_ABI})
 else()
