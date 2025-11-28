@@ -664,6 +664,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        if (BuildConfig.DEBUG) {
+            setTitle(getString(R.string.app_name) + " (Debug)");
+        }
+
         Intent serviceIntent = new Intent(this, ProcessingService.class);
         bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE);
 

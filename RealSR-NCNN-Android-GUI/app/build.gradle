@@ -10,8 +10,8 @@ android {
         minSdk 24
         //noinspection ExpiredTargetSdkVersion
         targetSdk 28
-        versionCode 48
-        versionName '1.11.4'
+        versionCode 49
+        versionName '1.12.0'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -55,9 +55,9 @@ android {
 dependencies {
     // Dependency 'androidx.appcompat:appcompat:1.4.1' requires API level 31
     implementation 'androidx.appcompat:appcompat:1.3.0'
-    implementation 'com.google.android.material:material:1.5.0-alpha01'
+    implementation 'com.google.android.material:material:1.13.0'
     testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+//    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
+//    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
     implementation 'com.davemorrissey.labs:subsampling-scale-image-view-androidx:3.10.0'
 }
