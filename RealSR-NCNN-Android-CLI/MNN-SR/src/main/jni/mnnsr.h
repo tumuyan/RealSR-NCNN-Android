@@ -12,6 +12,7 @@
 #include "MNN/Interpreter.hpp"
 #include "MNN/ImageProcess.hpp"
 #include "utils.hpp"
+#include "mnn_utils.hpp"
 #include "dcp.h"
 
 using namespace std::chrono;

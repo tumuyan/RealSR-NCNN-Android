@@ -45,6 +45,7 @@ using namespace cv;
 #include "avir.h"
 #include "lancir.h"
 #include <chrono>
+#include "utils.hpp"
 
 using namespace std::chrono;
 
@@ -1379,7 +1380,11 @@ int main(int argc, char **argv)
                         std::cerr << "Error: Image data not loaded." << std::endl;
                         success = false;
                     } else {
+#if _WIN32
+                        success = imwrite_unicode(outputpath, image);
+#else
                         success = imwrite(outputpath.c_str(), image);
+#endif
                         fprintf(stderr, "opencv save image success, c=%d, w=%d, h=%d\n", c, out_w, out_h);
                     }
                 }else

@@ -32,3 +32,5 @@ else()
         message(STATUS "    .lib is in: ${OpenCV_CORE_LIB_DIR}, OpenCV_CORE_LIB_PATH: ${OpenCV_CORE_LIB_PATH}")
     endif()
 endif()
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../../common)

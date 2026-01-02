@@ -5,6 +5,7 @@
 #include <queue>
 #include <vector>
 #include <clocale>
+#include "utils.hpp"
 
 #if _WIN32
 // image decoder and encoder with wic
@@ -437,7 +438,11 @@ void* save(void* args)
                 std::cerr << "Error: Image data not loaded." << std::endl;
                 success = false;
             } else {
+#if _WIN32
+                success = imwrite_unicode(v.outpath, image);
+#else
                 success = imwrite(v.outpath.c_str(), image);
+#endif
             }
         }else if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP"))
         {

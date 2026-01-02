@@ -99,6 +99,7 @@ static std::vector<int> parse_optarg_int_array(const char* optarg)
 #include "filesystem_utils.h"
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/hal/interface.h>
+#include "utils.hpp"
 using namespace cv;
 
 static void print_usage()
@@ -412,7 +413,11 @@ void* save(void* args)
                 std::cerr << "Error: Image data not loaded." << std::endl;
                 success = false;
             } else {
-                success = imwrite(v.outpath.c_str(), image);
+                #if _WIN32
+                    success = imwrite_unicode(v.outpath, image);
+                #else
+                    success = imwrite(v.outpath.c_str(), image);
+                #endif
             }
 
 

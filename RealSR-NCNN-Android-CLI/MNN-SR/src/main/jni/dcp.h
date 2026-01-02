@@ -16,6 +16,7 @@
 #include "MNN/Interpreter.hpp"
 #include "MNN/ImageProcess.hpp"
 #include "utils.hpp"
+#include "mnn_utils.hpp"
 
 #include <vector>
 #include <tuple>

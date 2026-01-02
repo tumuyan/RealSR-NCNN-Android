@@ -2,7 +2,6 @@
 // Created by Yazii on 2025/3/16.
 //
 #include "mnnsr.h"
-#include "utils.hpp"
 #include <thread>
 
 #include "MNN/ErrorCode.hpp"
