@@ -844,9 +844,7 @@ int main(int argc, char **argv)
 
     int prepadding = 0;
 
-    if (model.find(PATHSTR("models-DF2K")) != path_t::npos ||
-        model.find(PATHSTR("models-Real")) != path_t::npos ||
-        model.find(PATHSTR("models-ESRGAN")) != path_t::npos) {
+    if (model.find(PATHSTR("models")) != path_t::npos) {
         prepadding = 10;
     } else {
         fprintf(stderr, "unknown model dir type\n");
@@ -858,30 +856,56 @@ int main(int argc, char **argv)
     int scales[] = {4, 2, 1, 8};
     int sp = 0;
 
+    path_t modelfullpath;
+    FILE* mp = nullptr;
+
 #if _WIN32
-    wchar_t modelpath[256];
-    swprintf(modelpath, 256, L"%s/x%d.bin", model.c_str(), scale);
-    fprintf(stderr, "search model: %s\n", modelpath);
-
-    path_t modelfullpath = sanitize_filepath(modelpath);
-    FILE* mp = _wfopen(modelfullpath.c_str(), L"rb");
+    // First check: is model + ".bin" a direct bin file?
+    path_t direct_modelfullpath = model + PATHSTR(".bin");
+    mp = _wfopen(direct_modelfullpath.c_str(), L"rb");
+    
+    if (mp) {
+        // Found direct bin file
+        modelfullpath = direct_modelfullpath;
+        fprintf(stderr, "Direct model found: %ls\n", modelfullpath.c_str());
+    } else {
+        // Original directory search
+        wchar_t modelpath[256];
+        swprintf(modelpath, 256, L"%ls/x%d.bin", model.c_str(), scale);
+        fprintf(stderr, "search model: %ls\n", modelpath);
+        modelfullpath = sanitize_filepath(modelpath);
+        mp = _wfopen(modelfullpath.c_str(), L"rb");
+    }
 #else
-    char modelpath[256];
-    sprintf(modelpath, "%s/x%d.bin", model.c_str(), scale);
-    fprintf(stderr, "search model: %s\n", modelpath);
-
-    path_t modelfullpath = sanitize_filepath(modelpath);
-    FILE *mp = fopen(modelfullpath.c_str(), "rb");
+    // First check: is model + ".bin" a direct bin file?
+    path_t direct_modelfullpath = model + PATHSTR(".bin");
+    mp = fopen(direct_modelfullpath.c_str(), "rb");
+    
+    if (mp) {
+        // Found direct bin file
+        modelfullpath = direct_modelfullpath;
+        fprintf(stderr, "Direct model found: %s\n", modelfullpath.c_str());
+    } else {
+        // Original directory search
+        char modelpath[256];
+        sprintf(modelpath, "%s/x%d.bin", model.c_str(), scale);
+        fprintf(stderr, "search model: %s\n", modelpath);
+        modelfullpath = sanitize_filepath(modelpath);
+        mp = fopen(modelfullpath.c_str(), "rb");
+    }
 #endif
 
+    // If not found, try other scales (only for directory search)
     while (!mp && sp < 4) {
         int s = scales[sp];
 #if _WIN32
-        swprintf(modelpath, 256, L"%s/x%d.bin", model.c_str(), s);
+        wchar_t modelpath[256];
+        swprintf(modelpath, 256, L"%ls/x%d.bin", model.c_str(), s);
 
         modelfullpath = sanitize_filepath(modelpath);
         mp = _wfopen(modelfullpath.c_str(), L"rb");
 #else
+        char modelpath[256];
         sprintf(modelpath, "%s/x%d.bin", model.c_str(), s);
 
         modelfullpath = sanitize_filepath(modelpath);
@@ -902,14 +926,24 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    // Construct param file path from bin file path (replace extension)
+    path_t paramfullpath = modelfullpath;
+    size_t dot_pos = paramfullpath.find_last_of(PATHSTR("."));
+    if (dot_pos != path_t::npos) {
+        // Replace extension with param
+        paramfullpath.replace(dot_pos + 1, paramfullpath.length() - dot_pos - 1, PATHSTR("param"));
+    } else {
+        // No extension, add .param (unlikely)
+        paramfullpath += PATHSTR(".param");
+    }
+
 #if _WIN32
-    wchar_t parampath[256];
-    swprintf(parampath, 256, L"%s/x%d.param", model.c_str(), scale);
+    fprintf(stderr, "Using model: %ls\n", modelfullpath.c_str());
+    fprintf(stderr, "Using param: %ls\n", paramfullpath.c_str());
 #else
-    char parampath[256];
-    sprintf(parampath, "%s/x%d.param", model.c_str(), scale);
+    fprintf(stderr, "Using model: %s\n", modelfullpath.c_str());
+    fprintf(stderr, "Using param: %s\n", paramfullpath.c_str());
 #endif
-    path_t paramfullpath = sanitize_filepath(parampath);
 
 
 #if _WIN32
@@ -971,7 +1005,7 @@ int main(int argc, char **argv)
             // cpu only
             tilesize[i] = 200;
             if (verbose)
-                fprintf(stderr, "init cpu tilesize %d/%lu = %d\n", i, tilesize.size(), tilesize[i]);
+                fprintf(stderr, "init cpu tilesize %d/%lu = %lu\n", i, tilesize.size(), tilesize[i]);
             continue;
         }
 

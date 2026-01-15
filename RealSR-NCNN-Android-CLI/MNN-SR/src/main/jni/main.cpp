@@ -240,9 +240,7 @@ void *load(void *args) {
         // 读取图像
         Mat image;
         #if _WIN32
-            // 直接使用OpenCV的imread函数读取图像
-            // 对于中文路径，OpenCV 4.x应该已经支持UTF-8路径
-            image = imread(imagepath, IMREAD_UNCHANGED);
+            image = imread_unicode(imagepath, IMREAD_UNCHANGED);
         #else
            image = imread(imagepath, IMREAD_UNCHANGED);
         #endif

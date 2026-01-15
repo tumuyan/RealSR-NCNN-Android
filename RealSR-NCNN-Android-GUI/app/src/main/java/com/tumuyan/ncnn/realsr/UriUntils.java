@@ -41,7 +41,7 @@ public class UriUntils {
                 e.printStackTrace();
             }
         } else {
-            Log.w("path is real", "uri-" + uri + "-path-" + path);
+            Log.w("path is real", "uri-" + uri + "\npath-" + path);
             return new File(path).getName();
         }
         return null;

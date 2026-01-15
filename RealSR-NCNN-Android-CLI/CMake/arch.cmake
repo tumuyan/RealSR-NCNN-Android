@@ -5,7 +5,7 @@ endif()
 if (MSVC)  # Visual Studio
     message(STATUS "==Configuring for Visual Studio==")
     add_definitions(-DNOMINMAX)
-
+    set(TARGET_OS "Win")
     if ("${CMAKE_GENERATOR}" MATCHES "(Win64|IA64)")
         set(TARGET_ARCH "x64")
     elseif ("${CMAKE_GENERATOR_PLATFORM}" MATCHES "ARM64")
@@ -20,6 +20,7 @@ if (MSVC)  # Visual Studio
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     message(STATUS "==Configuring for Linux==")
     add_link_options(-Wl,--disable-new-dtags)
+    set(TARGET_OS "Linux")
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
         set(TARGET_ARCH "x64")
     elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
@@ -46,10 +47,17 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
     set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -s")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "$ENV{CXXFLAGS} -O3")
     set(CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO} -s")
-
+    
+    set(TARGET_OS "Android")
     set(TARGET_ARCH ${ANDROID_ABI})
 else()
     message(WARNING "Unknown system: ${CMAKE_SYSTEM_NAME}")
 endif ()
 
 message(STATUS "TARGET_ARCH: ${TARGET_ARCH}")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Android")
+    set(ASSETS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../RealSR-NCNN-Android-GUI/app/src/main/assets/realsr")
+else()
+    set(ASSETS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../3rdparty/${TARGET_OS}-${TARGET_ARCH}")
+endif()

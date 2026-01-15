@@ -564,9 +564,6 @@ int main(int argc, char **argv)
         case L's':
             scale = _wtoi(optarg);
             break;
-        case L't':
-            tilesize = parse_optarg_int_array(optarg);
-            break;
         case L'm':
             model = optarg;
             break;
@@ -987,7 +984,9 @@ int main(int argc, char **argv)
             }
 
             else if (model.find(PATHSTR("de-nearest")) != path_t::npos) {
-                double lost_y[h - 1], lost_x[w - 1];
+                // Use dynamic allocation instead of VLA (not supported by VS)
+                double *lost_y = new double[h - 1];
+                double *lost_x = new double[w - 1];
                 double avg_y = 0, avg_x = 0;
                 double scale_y = 1, scale_x = 1;
                 int line_size = w * c;
@@ -1069,10 +1068,14 @@ int main(int argc, char **argv)
                 scale_x = w / scale_x;
                 fprintf(stderr, " = %f; avg_lost_x=[%f]\n", scale_x, avg_x);
 
-                for (int i = 0; i < h - 1; i++) {
+                for (int i = 0; i < h; i++) {
                     delete[] lost_x0[i];
                 }
                 delete[] lost_x0;
+                
+                // Free dynamically allocated arrays
+                delete[] lost_y;
+                delete[] lost_x;
 
                 if (scale_x < 1.5 || scale_y < 1.5) {
                     fprintf(stderr, "image is not interpolated by nearest\n");
@@ -1357,58 +1360,35 @@ int main(int argc, char **argv)
 
                 path_t ext = get_file_extension(imagepath);
 
+				if (ext != PATHSTR("gif")) {
+					// 使用opencv保存图片，速度比默认的stb更快
+					cv::Mat image;
+					switch (c) {
+					case 1:
+						image = cv::Mat(out_h, out_w, CV_8UC1, buf); // 单通道图像
+						break;
+					case 3:
+						image = cv::Mat(out_h, out_w, CV_8UC3, buf); // 3通道图像
+						cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+						break;
+					case 4:
+						image = cv::Mat(out_h, out_w, CV_8UC4, buf); // 4通道图像
+						cv::cvtColor(image, image, cv::COLOR_RGBA2BGRA);
+						break;
+					}
+					if (image.empty()) {
+						std::cerr << "Error: Image data not loaded." << std::endl;
+						success = false;
+					}
+					else {
 #if _WIN32
-
+						success = imwrite_unicode(outputpath, image);
 #else
-                if (ext != PATHSTR("gif")) {
-                    // 使用opencv保存图片，速度比默认的stb更快
-                    cv::Mat image;
-                    switch (c) {
-                        case 1:
-                            image = cv::Mat( out_h, out_w, CV_8UC1, buf); // 单通道图像
-                            break;
-                        case 3:
-                            image = cv::Mat(out_h, out_w, CV_8UC3, buf); // 3通道图像
-                            cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
-                            break;
-                        case 4:
-                            image = cv::Mat(out_h, out_w, CV_8UC4, buf); // 4通道图像
-                            cv::cvtColor(image, image, cv::COLOR_RGBA2BGRA);
-                            break;
-                    }
-                    if (image.empty()) {
-                        std::cerr << "Error: Image data not loaded." << std::endl;
-                        success = false;
-                    } else {
-#if _WIN32
-                        success = imwrite_unicode(outputpath, image);
-#else
-                        success = imwrite(outputpath.c_str(), image);
+						success = imwrite(outputpath.c_str(), image);
 #endif
-                        fprintf(stderr, "opencv save image success, c=%d, w=%d, h=%d\n", c, out_w, out_h);
-                    }
-                }else
-#endif
-                if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP")) {
-                    success = webp_save(outputpath.c_str(), out_w, out_h, c, buf);
-
-                } else if (ext == PATHSTR("png") || ext == PATHSTR("PNG")) {
-#if _WIN32
-                    success = wic_encode_image(outputpath.c_str(), outimage.w, outimage.h, outimage.elempack, outimage.data);
-#else
-//                    success = stbi_write_png(outputpath.c_str(), out_w, out_h, c, buf, out_w * c);
-                    success = stbi_write_png(outputpath.c_str(), out_w, out_h, c, buf, 0);
-
-#endif
-                } else if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") ||
-                           ext == PATHSTR("jpeg") ||
-                           ext == PATHSTR("JPEG")) {
-#if _WIN32
-                    success = wic_encode_jpeg_image(outputpath.c_str(), outimage.w, outimage.h, outimage.elempack, outimage.data);
-#else
-                    success = stbi_write_jpg(outputpath.c_str(), out_w, out_h, c, buf, 100);
-#endif
-                }
+						fprintf(stderr, "opencv save image success, c=%d, w=%d, h=%d\n", c, out_w, out_h);
+					}
+				}
                 if (success) {
                     if (verbose) {
 #if _WIN32

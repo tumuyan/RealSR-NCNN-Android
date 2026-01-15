@@ -527,15 +527,6 @@ int MNNSR::process(const cv::Mat& inimage, cv::Mat& outimage, const cv::Mat& mas
 
 #include <opencv2/opencv.hpp>
 #include <vector>
-#include <string>
-#include <cmath>
-#include <algorithm>
-#include <vector>
-#include <cstdio> // For fprintf
-#include <numeric> // For std::accumulate
-#include <set> // For std::set to unique indices easily
-
-
 /**
  * @brief Detects and removes mosaic censorship from an image.
  *

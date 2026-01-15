@@ -22,6 +22,7 @@ android {
             applicationIdSuffix ".debug"
             debuggable true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            resValue "string", "app_name", "RealSR Debug"
 
         }
 
