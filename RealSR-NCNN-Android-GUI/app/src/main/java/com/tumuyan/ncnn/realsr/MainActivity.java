@@ -228,6 +228,12 @@ public class MainActivity extends AppCompatActivity {
             q = "./resize-ncnn -i input.png -o output.png  -m de-nearest";
         } else if (v == R.id.menu_de_nearest2) {
             q = "./resize-ncnn -i input.png -o output.png  -m de-nearest2";
+        } else if (v == R.id.menu_perfectpixel){
+            q = "./resize-ncnn -i input.png -o output.png  -m perfectpixel -s 0";
+        } else if (v == R.id.menu_perfectpixel1){
+            q = "./resize-ncnn -i input.png -o output.png  -m perfectpixel -s 1";
+        } else if (v == R.id.menu_perfectpixel2) {
+            q = "./resize-ncnn -i input.png -o output.png  -m perfectpixel -s 5";
         } else if (v == R.id.menu_magick2) {
             q = "./magick input.png -resize 50% output.png";
         } else if (v == R.id.menu_magick3) {

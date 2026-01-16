@@ -46,6 +46,7 @@ using namespace cv;
 #include "lancir.h"
 #include <chrono>
 #include "utils.hpp"
+#include "perfect_pixel.h"
 
 using namespace std::chrono;
 
@@ -154,7 +155,7 @@ static void print_usage() {
     fprintf(stderr, "  -i input-path        input image path (jpg/png/webp) or directory\n");
     fprintf(stderr, "  -o output-path       output image path (jpg/png/webp) or directory\n");
     fprintf(stderr, "  -s scale             upscale ratio (4, default=4)\n");
-    fprintf(stderr, "  -m mode        resize mode (bicubic/bilinear/nearest/avir/avir-lancir/de-nearest/de-nearest2/de-nearest3, default=nearest)\n");
+    fprintf(stderr, "  -m mode        resize mode (bicubic/bilinear/nearest/avir/avir-lancir/de-nearest/de-nearest2/de-nearest3/perfectpixel, default=nearest)\n");
     fprintf(stderr, "  -n not-use-ncnn        bicubic/bilinear not use ncnn\n");
     fprintf(stderr, "  -f format            output image format (jpg/png/webp, default=ext/png)\n");
 }
@@ -725,7 +726,8 @@ int main(int argc, char **argv)
     if (model.find(PATHSTR("bicubic")) != path_t::npos ||
         model.find(PATHSTR("bilinear")) != path_t::npos ||
         model.find(PATHSTR("nearest")) != path_t::npos ||
-        model.find(PATHSTR("avir")) != path_t::npos
+        model.find(PATHSTR("avir")) != path_t::npos ||
+        model.find(PATHSTR("perfectpixel")) != path_t::npos
             ) {
         prepadding = 10;
     } else {
@@ -1101,6 +1103,11 @@ int main(int argc, char **argv)
         if ( scale_d<1 ) {
             out_w = (int) (w * scale_d);
             out_h = (int) (h * scale_d);
+        } else if (model.find(PATHSTR("perfectpixel")) != path_t::npos && scale <= 0) {
+             // perfectpixel mode with scale <= 0 implies outputting original size
+             // We set a placeholder out_w/out_h to w/h for initial allocation (though it will be reallocated)
+             out_w = w;
+             out_h = h;
         } else {
             out_w = w * scale;
             out_h = h * scale;
@@ -1293,6 +1300,25 @@ int main(int argc, char **argv)
 
                 }
 
+            } else if (model.find(PATHSTR("perfectpixel")) != path_t::npos) {
+                // Perfect Pixel Mode
+                cv::Mat in_mat;
+                if (c == 3) in_mat = cv::Mat(h, w, CV_8UC3, pixeldata);
+                else if (c == 4) in_mat = cv::Mat(h, w, CV_8UC4, pixeldata);
+
+                if (!in_mat.empty()) {
+                    cv::Mat out_mat;
+                    if (process_perfect_pixel(in_mat, out_mat, scale) == 0) {
+                        if (buf) delete[] buf;
+                        out_w = out_mat.cols;
+                        out_h = out_mat.rows;
+                        out_line_size = out_w * c;
+                        buf = new unsigned char[out_mat.total() * out_mat.elemSize()];
+                        memcpy(buf, out_mat.data, out_mat.total() * out_mat.elemSize());
+                    } else {
+                        fprintf(stderr, "perfectpixel failed\n");
+                    }
+                }
             } else if (model.find(PATHSTR("lancir")) != path_t::npos) {
                 avir::CLancIR ImageResizer;
                 ImageResizer.resizeImage(pixeldata, w, h, 0, buf, out_w, out_h, 0, c);

@@ -205,6 +205,9 @@ Even if this feature is disabled, you can still select multiple images from othe
     <string name="notification_channel_progress">Processing Progress</string>
     <string name="notification_channel_result">Processing Result</string>
     <string name="notification_channel_alive">Background Service</string>
+    <string name="menu_perfectpixel">PerfectPixel Fix</string>
+    <string name="menu_perfectpixel1">PerfectPixel Reduce</string>
+    <string name="menu_perfectpixel2">PerfectPixel 5X</string>
     <string-array name="notify_item">
         <item>Silent (Background Only)</item>
         <item>Result Only</item>

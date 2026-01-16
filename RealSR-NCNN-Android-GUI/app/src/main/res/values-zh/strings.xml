@@ -203,4 +203,7 @@
     <string name="notification_channel_progress">处理进度</string>
     <string name="notification_channel_result">处理结果</string>
     <string name="notification_channel_alive">后台服务</string>
+    <string name="menu_perfectpixel">PerfectPixel修复</string>
+    <string name="menu_perfectpixel1">PerfectPixel 缩小</string>
+    <string name="menu_perfectpixel2">PerfectPixel 5X</string>
 </resources>

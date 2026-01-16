@@ -7,13 +7,9 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/opencv.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/ncnn.cmake)
 
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.cpp perfect_pixel.cpp)
 
-if (WIN32)
-    target_link_libraries(${PROJECT_NAME}  webp ${NCNN_LIB})
-else ()
-    target_link_libraries(${PROJECT_NAME}  webp ${NCNN_LIB} ${OpenCV_LIBS})
-endif ()
+target_link_libraries(${PROJECT_NAME}  webp ${NCNN_LIB} ${OpenCV_LIBS})
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../CMake/assets.cmake)
 

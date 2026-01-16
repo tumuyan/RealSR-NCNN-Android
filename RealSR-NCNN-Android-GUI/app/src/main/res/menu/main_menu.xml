@@ -37,6 +37,15 @@
         android:title="@string/menu_de_nearest2"
         app:showAsAction="never" />
     <item
+        android:id="@+id/menu_perfectpixel"
+        android:title="@string/menu_perfectpixel" />
+    <item
+        android:id="@+id/menu_perfectpixel1"
+        android:title="@string/menu_perfectpixel1" />
+    <item
+        android:id="@+id/menu_perfectpixel2"
+        android:title="@string/menu_perfectpixel2" />
+    <item
         android:id="@+id/menu_nearest4"
         android:title="@string/menu_nearest4"
         app:showAsAction="never" />
