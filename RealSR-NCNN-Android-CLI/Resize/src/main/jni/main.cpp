@@ -14,6 +14,7 @@
 #if _WIN32
 // image decoder and encoder with wic
 #include "wic_image.h"
+#include <objbase.h>
 #else // _WIN32
 // image decoder and encoder with stb
 #define STB_IMAGE_IMPLEMENTATION
@@ -744,6 +745,11 @@ int main(int argc, char **argv)
     else
         fprintf(stderr, "busy...\n");
 
+#if _WIN32
+    // 初始化 COM
+    if (FAILED(CoInitializeEx(NULL, COINIT_MULTITHREADED)))
+        return -1;
+#endif
     for (int i = 0; i < input_files.size(); i++) {
         const path_t &imagepath = input_files[i];
         path_t &outputpath = output_files[i];
