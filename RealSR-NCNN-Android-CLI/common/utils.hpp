@@ -95,8 +95,9 @@ static void imread(const path_t &imagepath, cv::Mat &inBGR, cv::Mat& inAlpha) {
             cv::split(image, channels);
             cv::Mat alphaChannel = channels[3];
 
-            // 判断 alpha 通道是否为单一颜色
-            if (cv::countNonZero(alphaChannel != alphaChannel.at<unsigned char>(0, 0)) == 0) {
+            // 方法2：检测是否全不透明（alpha == 255）
+            cv::Mat opaque_mask = alphaChannel == 255;
+            if (cv::countNonZero(opaque_mask) == alphaChannel.total()) {
                 #if _WIN32  
                            fwprintf(stderr, L"ignore alpha channel, %ls\n", imagepath.c_str());  
                 #else  
@@ -234,6 +235,37 @@ static std::string float2str(float v, int unit = 0)
     }
 
     return oss.str();
+}
+
+static cv::Mat resize_alpha_bicubic(const cv::Mat& alpha, int scale) {
+    if (alpha.empty()) return cv::Mat();
+    
+    int new_width = alpha.cols * scale;
+    int new_height = alpha.rows * scale;
+    
+    cv::Mat scaled_alpha;
+    cv::resize(alpha, scaled_alpha, cv::Size(new_width, new_height), 0, 0, cv::INTER_CUBIC);
+    
+    return scaled_alpha;
+}
+
+static void merge_rgb_alpha(const cv::Mat& rgb, const cv::Mat& alpha, cv::Mat& out) {
+    if (alpha.empty()) {
+        out = rgb.clone();
+        return;
+    }
+    
+    cv::Mat alpha_scaled;
+    if (alpha.cols != rgb.cols || alpha.rows != rgb.rows) {
+        cv::resize(alpha, alpha_scaled, cv::Size(rgb.cols, rgb.rows), 0, 0, cv::INTER_CUBIC);
+    } else {
+        alpha_scaled = alpha;
+    }
+    
+    std::vector<cv::Mat> channels;
+    cv::split(rgb, channels);
+    channels.push_back(alpha_scaled);
+    cv::merge(channels, out);
 }
 
 #endif // REALSR_NCNN_ANDROID_CLI_UTILS_HPP

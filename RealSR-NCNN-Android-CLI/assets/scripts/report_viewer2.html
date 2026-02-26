@@ -835,26 +835,36 @@
             btns.forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
 
-            let bg = '#e0e0e0'; // 灰色更暗一点
+            let bg = '#e0e0e0';
             let textColor = '#333333';
-            let tableHeaderBg = '#6c757d'; // 优化表头颜色
+            let tableHeaderBg = '#6c757d';
             let tableRowHoverBg = '#f8f9fa';
+            let detailsPanelBg = '#ffffff';
             
             if (color === 'white') {
                 bg = '#ffffff';
                 textColor = '#333333';
-                tableHeaderBg = '#6c757d'; // 优化表头颜色
+                tableHeaderBg = '#6c757d';
                 tableRowHoverBg = '#f8f9fa';
+                detailsPanelBg = '#f5f5f5';
             } else if (color === 'black') {
                 bg = '#000000';
                 textColor = '#f0f0f0';
                 tableHeaderBg = '#333333';
                 tableRowHoverBg = '#444444';
+                detailsPanelBg = '#1a1a1a';
             } else if (color === 'gray') {
-                bg = '#e0e0e0'; // 灰色更暗一点
+                bg = '#e0e0e0';
                 textColor = '#333333';
-                tableHeaderBg = '#6c757d'; // 优化表头颜色
+                tableHeaderBg = '#6c757d';
                 tableRowHoverBg = '#f8f9fa';
+                detailsPanelBg = '#ffffff';
+            } else if (color === 'checkerboard') {
+                bg = '#e0e0e0';
+                textColor = '#333333';
+                tableHeaderBg = '#5a5a5a';
+                tableRowHoverBg = '#e8e8e8';
+                detailsPanelBg = 'rgba(255, 255, 255, 0.95)';
             }
             
             // 更新模态框背景
@@ -867,33 +877,32 @@
                 body.style.backgroundImage = 'none';
             }
             
-            // 更新详情面板和表格样式
             if (imgDetails) {
-                if (color === 'white' || color === 'gray') {
-                    imgDetails.style.background = '#ffffff';
-                } else if (color === 'black') {
-                    imgDetails.style.background = '#2a2a2a';
+                if (color === 'black') {
+                    imgDetails.style.background = detailsPanelBg;
+                } else {
+                    imgDetails.style.background = detailsPanelBg;
                 }
             }
             
             if (jsonTable) {
-                // 更新表格文本颜色
                 const tableCells = jsonTable.querySelectorAll('td');
                 tableCells.forEach(cell => {
                     cell.style.color = textColor;
+                    if (color === 'checkerboard') {
+                        cell.style.borderBottom = '1px solid #ccc';
+                    } else if (color === 'black') {
+                        cell.style.borderBottom = '1px solid #444';
+                    } else {
+                        cell.style.borderBottom = '1px solid #dee2e6';
+                    }
                 });
                 
-                // 更新表头样式
                 if (jsonTableHeader) {
                     jsonTableHeader.style.background = tableHeaderBg;
                     const headerCells = jsonTableHeader.querySelectorAll('th');
                     headerCells.forEach(cell => {
-                        // 在白色和灰色背景下，表头文本设为白色，提高可读性
-                        if (color === 'white' || color === 'gray') {
-                            cell.style.color = 'white';
-                        } else if (color === 'black') {
-                            cell.style.color = 'white';
-                        }
+                        cell.style.color = 'white';
                     });
                 }
                 
