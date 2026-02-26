@@ -123,13 +123,14 @@ class Task
 {
 public:
     int id;
-    int webp;
 
     path_t inpath;
     path_t outpath;
 
     ncnn::Mat inimage;
     ncnn::Mat outimage;
+    ncnn::Mat inalpha;  
+    int has_alpha;
 };
 
 class TaskQueue
@@ -203,86 +204,34 @@ void* load(void* args)
     {
         const path_t& imagepath = ltp->input_files[i];
 
-        int webp = 0;
-
-        unsigned char* pixeldata = 0;
-        int w;
-        int h;
-        int c;
-
-#if _WIN32
-        FILE* fp = _wfopen(imagepath.c_str(), L"rb");
-#else
-        FILE* fp = fopen(imagepath.c_str(), "rb");
-#endif
-        if (fp)
+        cv::Mat inBGR, inAlpha;
+        imread(imagepath, inBGR, inAlpha);
+        
+        if (inBGR.empty())
         {
-            // read whole file
-            unsigned char* filedata = 0;
-            int length = 0;
-            {
-                fseek(fp, 0, SEEK_END);
-                length = ftell(fp);
-                rewind(fp);
-                filedata = (unsigned char*)malloc(length);
-                if (filedata)
-                {
-                    fread(filedata, 1, length, fp);
-                }
-                fclose(fp);
-            }
-
-            if (filedata)
-            {
-                pixeldata = webp_load(filedata, length, &w, &h, &c);
-                if (pixeldata)
-                {
-                    webp = 1;
-                }
-                else
-                {
-                    // not webp, try jpg png etc.
-#if _WIN32
-                    pixeldata = wic_decode_image(imagepath.c_str(), &w, &h, &c);
-#else // _WIN32
-                    pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 0);
-                    if (pixeldata)
-                    {
-                        // stb_image auto channel
-                        if (c == 1)
-                        {
-                            // grayscale -> rgb
-                            stbi_image_free(pixeldata);
-                            pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 3);
-                            c = 3;
-                        }
-                        else if (c == 2)
-                        {
-                            // grayscale + alpha -> rgba
-                            stbi_image_free(pixeldata);
-                            pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 4);
-                            c = 4;
-                        }
-                    }
-#endif // _WIN32
-                }
-
-                free(filedata);
-            }
+            continue;
         }
-        if (pixeldata)
+        
+        Task v;
+        v.id = i;
+        v.inpath = imagepath;
+        v.outpath = ltp->output_files[i];
+        v.has_alpha = 0;
+
+        int w = inBGR.cols;
+        int h = inBGR.rows;
+        int c = inBGR.channels();
+
+        if (!inAlpha.empty())
         {
-            Task v;
-            v.id = i;
-            v.webp = webp;
-            v.inpath = imagepath;
-            v.outpath = ltp->output_files[i];
-
-            v.inimage = ncnn::Mat(w, h, (void*)pixeldata, (size_t)c, c);
-            v.outimage = ncnn::Mat(w * scale, h * scale, (size_t)c, c);
-
+            v.has_alpha = 1;
+            
+            unsigned char* alphadata = (unsigned char*)malloc(w * h);
+            memcpy(alphadata, inAlpha.data, w * h);
+            v.inalpha = ncnn::Mat(w, h, (void*)alphadata, (size_t)1, 1);
+            
             path_t ext = get_file_extension(v.outpath);
-            if (c == 4 && (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG")))
+            if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG"))
             {
                 path_t output_filename2 = ltp->output_files[i] + PATHSTR(".png");
                 v.outpath = output_filename2;
@@ -292,17 +241,15 @@ void* load(void* args)
                 fprintf(stderr, "image %s has alpha channel ! %s will output %s\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
 #endif // _WIN32
             }
+        }
 
-            toproc.put(v);
-        }
-        else
-        {
-#if _WIN32
-            fwprintf(stderr, L"decode image %ls failed\n", imagepath.c_str());
-#else // _WIN32
-            fprintf(stderr, "decode image %s failed\n", imagepath.c_str());
-#endif // _WIN32
-        }
+        unsigned char* pixeldata = (unsigned char*)malloc(w * h * c);
+        memcpy(pixeldata, inBGR.data, w * h * c);
+        
+        v.inimage = ncnn::Mat(w, h, (void*)pixeldata, (size_t)c, c);
+        v.outimage = ncnn::Mat(w * scale, h * scale, (size_t)c, c);
+
+        toproc.put(v);
     }
 
     return 0;
@@ -356,47 +303,32 @@ void* save(void* args)
         if (v.id == -233)
             break;
 
-        // free input pixel data
-        {
-            unsigned char* pixeldata = (unsigned char*)v.inimage.data;
-            if (v.webp == 1)
-            {
-                free(pixeldata);
-            }
-            else
-            {
-#if _WIN32
-                free(pixeldata);
-#else
-                stbi_image_free(pixeldata);
-#endif
-            }
-        }
-
         int success = 0;
 
         path_t ext = get_file_extension(v.outpath);
 
-        if (ext != PATHSTR("gif")) {
-            // 使用opencv保存图片，速度比默认的stb更快
+        // if (ext != PATHSTR("gif")) 
+        {
             cv::Mat image;
-            switch (v.outimage.elempack) {
-                case 1:
-                    image = cv::Mat( v.outimage.h, v.outimage.w, CV_8UC1, v.outimage.data); // 单通道图像
-                    break;
-                case 3:
-                    image = cv::Mat(v.outimage.h, v.outimage.w, CV_8UC3, v.outimage.data); // 3通道图像
-#ifndef _WIN32
-                    cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
-#endif
-                    break;
-                case 4:
-                    image = cv::Mat(v.outimage.h, v.outimage.w, CV_8UC4, v.outimage.data); // 4通道图像
-#ifndef _WIN32
-                    cv::cvtColor(image, image, cv::COLOR_RGBA2BGRA);
-#endif
-                    break;
+            
+            // outimage.elempack 永远为3
+            if (v.has_alpha)
+            {
+                cv::Mat rgb_image(v.outimage.h, v.outimage.w, CV_8UC3, v.outimage.data);
+                cv::Mat alpha_image(v.inalpha.h, v.inalpha.w, CV_8UC1, v.inalpha.data);
+                cv::Mat scaled_alpha;
+                cv::resize(alpha_image, scaled_alpha, cv::Size(rgb_image.cols, rgb_image.rows), 0, 0, cv::INTER_CUBIC);
+                
+                std::vector<cv::Mat> channels;
+                cv::split(rgb_image, channels);
+                channels.push_back(scaled_alpha);
+                cv::merge(channels, image);
             }
+            else
+            {
+                image = cv::Mat(v.outimage.h, v.outimage.w, CV_8UC3, v.outimage.data);
+            }
+            
             if (image.empty()) {
                 std::cerr << "Error: Image data not loaded." << std::endl;
                 success = false;
@@ -408,6 +340,20 @@ void* save(void* args)
                 #endif
             }
         }
+        
+        // free input pixel data after processing
+        {
+            if (v.inimage.data)
+            {
+                free(v.inimage.data);
+            }
+            
+            if (v.has_alpha && v.inalpha.data)
+            {
+                free(v.inalpha.data);
+            }
+        }
+        
         if (success)
         {
             if (verbose)
