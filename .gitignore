@@ -19,6 +19,7 @@ RealSR-NCNN-Android-GUI/.idea/easycode/codebase-v2.xml
 /RealSR-NCNN-Android-CLI/*/release
 3rdparty/*.mnn
 3rdparty/*
+!3rdparty/setup.sh
 RealSR-NCNN-Android-CLI/MNN-SR/src/main/jni/build/*
 RealSR-NCNN-Android-CLI/MNN-SR/src/main/jni/my_app/*
 /RealSR-NCNN-Android-CLI/build
@@ -27,3 +28,4 @@ RealSR-NCNN-Android-CLI/*/src/main/jni/CMakeSettings.json
 /RealSR-NCNN-Android-CLI/assets/Win-x64
 /RealSR-NCNN-Android-CLI/assets/output
 /RealSR-NCNN-Android-CLI/assets/report
+RealSR-NCNN-Android-CLI/assets/Linux-x64/

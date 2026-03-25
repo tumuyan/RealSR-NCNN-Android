@@ -16,6 +16,10 @@
 #include <dirent.h>
 #endif // _WIN32
 
+#if __APPLE__
+#include <mach-o/dyld.h>
+#endif
+
 #if _WIN32
 typedef std::wstring path_t;
 #define PATHSTR(X) L##X
@@ -112,9 +116,9 @@ static path_t get_file_extension(const path_t& path)
 
 static path_t get_lowcase_extension(const path_t& path)
 {
-	path_t ext = get_file_extension(path);
-	std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-	return ext;
+    path_t ext = get_file_extension(path);
+    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    return ext;
 }
 
 #if _WIN32
@@ -128,7 +132,21 @@ static path_t get_executable_directory()
 
     return path_t(filepath);
 }
-#else // _WIN32
+#elif __APPLE__
+static path_t get_executable_directory()
+{
+    char filepath[256];
+    uint32_t size = sizeof(filepath);
+    _NSGetExecutablePath(filepath, &size);
+
+    char* slash = strrchr(filepath, '/');
+    if (slash) {
+        slash[1] = '\0';
+    }
+
+    return path_t(filepath);
+}
+#else // Linux
 static path_t get_executable_directory()
 {
     char filepath[256];
@@ -138,9 +156,14 @@ static path_t get_executable_directory()
     }
     filepath[ret] = '\0';
 
+    char* last_slash = strrchr(filepath, '/');
+    if (last_slash) {
+        last_slash[1] = '\0';
+    }
+
     return path_t(filepath);
 }
-#endif // _WIN32
+#endif
 
 static bool filepath_is_readable(const path_t& path)
 {
