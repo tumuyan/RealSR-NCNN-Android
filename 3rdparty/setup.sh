@@ -1,6 +1,6 @@
 #!/bin/bash
 # Setup script for NCNN, MNN, and libwebp libraries
-# Designed for Ubuntu 22.04
+# Designed for Ubuntu 22.04 (also supports other Linux distros with source build)
 #
 # CMake expected paths (from RealSR-NCNN-Android-CLI/CMake/):
 #   MNN:     3rdparty/MNN/libs/libMNN.so  +  3rdparty/MNN/include/
@@ -26,9 +26,16 @@ fi
 
 . /etc/os-release
 
-if [[ "$ID" != "ubuntu" ]] && [[ "$VERSION_ID" != "22.04" ]]; then
-    echo "Warning: This script is designed for Ubuntu 22.04. Current system: $PRETTY_NAME"
-    echo "Continuing anyway..."
+if [[ "$ID" == "ubuntu" ]]; then
+    if [[ "$VERSION_ID" != "22.04" ]]; then
+        echo "Warning: This script is designed for Ubuntu 22.04. Current: Ubuntu $VERSION_ID"
+        echo "Continuing anyway..."
+    fi
+    IS_UBUNTU=1
+else
+    echo "Detected non-Ubuntu system: $PRETTY_NAME"
+    echo "NCNN will be built from source instead of downloading prebuilt binaries."
+    IS_UBUNTU=0
 fi
 
 # ======================== Install build dependencies ========================
@@ -121,24 +128,58 @@ echo "  MNN location: $SCRIPT_DIR/$MNN_DIR"
 echo ""
 echo "=== Setting up NCNN ${NCNN_VERSION} ==="
 
-NCNN_EXTRACT_DIR="ncnn-${NCNN_VERSION}-ubuntu-2404-shared"
 NCNN_DIR="ncnn-ubuntu-vulkan-shared"
-NCNN_ZIP="ncnn-${NCNN_VERSION}-ubuntu-2404-shared.zip"
 
 if [[ -d "$NCNN_DIR" ]]; then
-    echo "NCNN directory '$NCNN_DIR' already exists, skipping download."
+    echo "NCNN directory '$NCNN_DIR' already exists, skipping."
 else
-    # Remove leftover extraction dir if exists
-    rm -rf "$NCNN_EXTRACT_DIR"
+    if [[ "$IS_UBUNTU" -eq 1 ]]; then
+        # ---- Ubuntu: download prebuilt release package ----
+        NCNN_EXTRACT_DIR="ncnn-${NCNN_VERSION}-ubuntu-2404-shared"
+        NCNN_ZIP="ncnn-${NCNN_VERSION}-ubuntu-2404-shared.zip"
 
-    echo "Downloading NCNN ${NCNN_VERSION} for Ubuntu 24.04..."
-    wget -nv "https://github.com/Tencent/ncnn/releases/download/${NCNN_VERSION}/${NCNN_ZIP}" -O "${NCNN_ZIP}"
+        rm -rf "$NCNN_EXTRACT_DIR"
 
-    echo "Extracting NCNN..."
-    unzip -q "${NCNN_ZIP}"
+        echo "Downloading NCNN ${NCNN_VERSION} prebuilt for Ubuntu..."
+        wget -nv "https://github.com/Tencent/ncnn/releases/download/${NCNN_VERSION}/${NCNN_ZIP}" -O "${NCNN_ZIP}"
 
-    # Rename to expected CMake path: 3rdparty/ncnn-ubuntu-vulkan-shared/
-    mv "$NCNN_EXTRACT_DIR" "$NCNN_DIR"
+        echo "Extracting NCNN..."
+        unzip -q "${NCNN_ZIP}"
+
+        mv "$NCNN_EXTRACT_DIR" "$NCNN_DIR"
+        rm -f "${NCNN_ZIP}"
+    else
+        # ---- Non-Ubuntu: build from source ----
+        NCNN_SRC_DIR="ncnn-src"
+        rm -rf "$NCNN_SRC_DIR"
+
+        echo "Cloning NCNN source (tag: ${NCNN_VERSION})..."
+        git clone --recursive --depth 1 --branch "$NCNN_VERSION" \
+            https://github.com/Tencent/ncnn.git "$NCNN_SRC_DIR"
+
+        echo "Building NCNN from source (Release, Vulkan, shared lib)..."
+        mkdir -p "$NCNN_SRC_DIR/build"
+        cd "$NCNN_SRC_DIR/build"
+        cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=install \
+            -DNCNN_VULKAN=ON \
+            -DNCNN_SHARED_LIB=ON \
+            -DNCNN_BUILD_EXAMPLES=OFF \
+            -DNCNN_BUILD_TOOLS=OFF \
+            -DNCNN_BUILD_BENCHMARK=OFF
+        cmake --build . -j"$(nproc)"
+        cmake --build . --target install/strip
+        cd "$SCRIPT_DIR"
+
+        echo "Copying build results to $NCNN_DIR/..."
+        mkdir -p "$NCNN_DIR"
+        cp -a "$NCNN_SRC_DIR/build/install/lib" "$NCNN_DIR/lib"
+        cp -a "$NCNN_SRC_DIR/build/install/include" "$NCNN_DIR/include"
+
+        echo "Cleaning up source directory..."
+        rm -rf "$NCNN_SRC_DIR"
+    fi
 
     # Verify: CMake expects lib/libncnn.so and include/ncnn/
     if [[ -f "$NCNN_DIR/lib/libncnn.so" ]]; then
@@ -154,8 +195,6 @@ else
         echo "  Error: ncnn headers not found in $NCNN_DIR/include/ncnn/"
         exit 1
     fi
-
-    rm -f "${NCNN_ZIP}"
 fi
 
 echo "  NCNN location: $SCRIPT_DIR/$NCNN_DIR"
@@ -173,6 +212,43 @@ fi
 
 echo "  libwebp location: $SCRIPT_DIR/libwebp"
 
+# ======================== Setup Models ========================
+echo ""
+echo "=== Setting up models ==="
+
+MODELS_REPO="https://cnb.cool/ai-zoomer/realsr/models.git"
+MODELS_TARGET_DIR="$SCRIPT_DIR/../RealSR-NCNN-Android-CLI/assets/Linux-x64"
+MODELS_TMP_DIR="$SCRIPT_DIR/models-tmp"
+
+mkdir -p "$MODELS_TARGET_DIR"
+
+if ls "$MODELS_TARGET_DIR"/models-* 1>/dev/null 2>&1; then
+    echo "Model directories already exist in $MODELS_TARGET_DIR, skipping."
+else
+    rm -rf "$MODELS_TMP_DIR"
+
+    echo "Cloning models repository..."
+    git clone --depth 1 "$MODELS_REPO" "$MODELS_TMP_DIR"
+
+    echo "Copying model directories to $MODELS_TARGET_DIR..."
+    cp -r "$MODELS_TMP_DIR"/models-* "$MODELS_TARGET_DIR/"
+
+    echo "Cleaning up temporary clone..."
+    rm -rf "$MODELS_TMP_DIR"
+
+    # Verify
+    MODEL_COUNT=$(ls -d "$MODELS_TARGET_DIR"/models-* 2>/dev/null | wc -l)
+    if [[ "$MODEL_COUNT" -gt 0 ]]; then
+        echo "  $MODEL_COUNT model directories copied:"
+        ls -d "$MODELS_TARGET_DIR"/models-*
+    else
+        echo "  Error: No model directories found after copy."
+        exit 1
+    fi
+fi
+
+echo "  Models location: $MODELS_TARGET_DIR"
+
 # ======================== Summary ========================
 echo ""
 echo "========================================"
@@ -184,8 +260,14 @@ echo "  MNN:      $SCRIPT_DIR/$MNN_DIR"
 echo "            libs:    $MNN_DIR/libs/"
 echo "            include: $MNN_DIR/include/"
 echo "  NCNN:     $SCRIPT_DIR/$NCNN_DIR"
+if [[ "$IS_UBUNTU" -eq 1 ]]; then
+    echo "            source:   prebuilt release (${NCNN_VERSION})"
+else
+    echo "            source:   built from source (${NCNN_VERSION})"
+fi
 echo "            lib:     $NCNN_DIR/lib/"
 echo "            include: $NCNN_DIR/include/ncnn/"
 echo "  libwebp:  $SCRIPT_DIR/libwebp (source)"
 echo "  OpenCV:   system (libopencv-dev)"
+echo "  Models:   $MODELS_TARGET_DIR"
 echo ""
