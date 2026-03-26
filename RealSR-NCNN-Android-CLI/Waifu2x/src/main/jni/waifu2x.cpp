@@ -175,13 +175,19 @@ int Waifu2x::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
     opt.staging_vkallocator = staging_vkallocator;
 
     // each tile 400x400
-    const int xtiles = (w + TILE_SIZE_X - 1) / TILE_SIZE_X;
-    const int ytiles = (h + TILE_SIZE_Y - 1) / TILE_SIZE_Y;
+    int xtiles = (w + TILE_SIZE_X - 1) / TILE_SIZE_X;
+    int ytiles = (h + TILE_SIZE_Y - 1) / TILE_SIZE_Y;
+
+    // avoid very small edge tiles that the model cannot process
+    while (xtiles > 1 && (w - (xtiles - 1) * TILE_SIZE_X) < prepadding * 2 + 1)
+        xtiles--;
+    while (ytiles > 1 && (h - (ytiles - 1) * TILE_SIZE_Y) < prepadding * 2 + 1)
+        ytiles--;
 
     const size_t in_out_tile_elemsize = opt.use_fp16_storage ? 2u : 4u;
 
     high_resolution_clock::time_point begin = high_resolution_clock::now();
-    high_resolution_clock::time_point time_print_progress;
+    high_resolution_clock::time_point time_print_progress = begin;
 
     //#pragma omp parallel for num_threads(2)
     for (int yi = 0; yi < ytiles; yi++)
@@ -560,11 +566,17 @@ int Waifu2x::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
     ncnn::Option opt = net.opt;
 
     // each tile 400x400
-    const int xtiles = (w + TILE_SIZE_X - 1) / TILE_SIZE_X;
-    const int ytiles = (h + TILE_SIZE_Y - 1) / TILE_SIZE_Y;
+    int xtiles = (w + TILE_SIZE_X - 1) / TILE_SIZE_X;
+    int ytiles = (h + TILE_SIZE_Y - 1) / TILE_SIZE_Y;
+
+    // avoid very small edge tiles that the model cannot process
+    while (xtiles > 1 && (w - (xtiles - 1) * TILE_SIZE_X) < prepadding * 2 + 1)
+        xtiles--;
+    while (ytiles > 1 && (h - (ytiles - 1) * TILE_SIZE_Y) < prepadding * 2 + 1)
+        ytiles--;
 
     high_resolution_clock::time_point begin = high_resolution_clock::now();
-    high_resolution_clock::time_point time_print_progress;
+    high_resolution_clock::time_point time_print_progress = begin;
 
     for (int yi = 0; yi < ytiles; yi++)
     {
@@ -739,17 +751,17 @@ int Waifu2x::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
 
                         for (int i = 0; i < out.h; i++)
                         {
-                            const float* ptr0 = out_tile_0.row(i + pad_top * scale) + pad_left * scale;
-                            const float* ptr1 = out_tile_1.row(out_tile[0].h - 1 - i - pad_top * scale) + pad_left * scale;
-                            const float* ptr2 = out_tile_2.row(i + pad_top * scale) + out_tile[0].w - 1 - pad_left * scale;
-                            const float* ptr3 = out_tile_3.row(out_tile[0].h - 1 - i - pad_top * scale) + out_tile[0].w - 1 - pad_left * scale;
+                            const float* ptr0 = out_tile_0.row(i);
+                            const float* ptr1 = out_tile_1.row(out_tile[0].h - 1 - i);
+                            const float* ptr2 = out_tile_2.row(i) + out_tile[0].w - 1;
+                            const float* ptr3 = out_tile_3.row(out_tile[0].h - 1 - i) + out_tile[0].w - 1;
 
                             for (int j = 0; j < out.w; j++)
                             {
-                                const float* ptr4 = out_tile_4.row(j + pad_left * scale) + i + pad_top * scale;
-                                const float* ptr5 = out_tile_5.row(out_tile[0].w - 1 - j - pad_left * scale) + i + pad_top * scale;
-                                const float* ptr6 = out_tile_6.row(j + pad_left * scale) + out_tile[0].h - 1 - i - pad_top * scale;
-                                const float* ptr7 = out_tile_7.row(out_tile[0].w - 1 - j - pad_left * scale) + out_tile[0].h - 1 - i - pad_top * scale;
+                                const float* ptr4 = out_tile_4.row(j) + i;
+                                const float* ptr5 = out_tile_5.row(out_tile[0].w - 1 - j) + i;
+                                const float* ptr6 = out_tile_6.row(j) + out_tile[0].h - 1 - i;
+                                const float* ptr7 = out_tile_7.row(out_tile[0].w - 1 - j) + out_tile[0].h - 1 - i;
 
                                 float v = (*ptr0++ + *ptr1++ + *ptr2-- + *ptr3-- + *ptr4 + *ptr5 + *ptr6 + *ptr7) / 8;
 
@@ -763,18 +775,6 @@ int Waifu2x::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                         memcpy(out.channel_range(3, 1), out_alpha_tile, out_alpha_tile.total() * sizeof(float));
                     }
                 }
-            }
-
-            high_resolution_clock::time_point end = high_resolution_clock::now();
-            float time_span_print_progress = duration_cast<duration<double>>(
-                    end - time_print_progress).count();
-            float progress_tile = (float) (yi * xtiles + xi + 1);
-            if (time_span_print_progress > 0.5 || (yi + 1 == ytiles && xi + 3 > xtiles)) {
-                double progress = progress_tile / (ytiles * xtiles);
-                double time_span = duration_cast<duration<double>>(end - begin).count();
-                fprintf(stderr, "%5.2f%%\t[%5.2fs /%5.2f ETA]\n", progress * 100, time_span,
-                        time_span / progress - time_span);
-                time_print_progress = end;
             }
             else
             {
@@ -823,6 +823,9 @@ int Waifu2x::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                     ex.extract("Eltwise4", out_tile);
                 }
 
+                if (out_tile.empty())
+                    continue;
+
                 ncnn::Mat out_alpha_tile;
                 if (channels == 4)
                 {
@@ -845,7 +848,7 @@ int Waifu2x::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
 
                         for (int i = 0; i < out.h; i++)
                         {
-                            const float* ptr = out_tile.channel(q).row(i + pad_top * scale) + pad_left * scale;
+                            const float* ptr = out_tile.channel(q).row(i);
 
                             for (int j = 0; j < out.w; j++)
                             {
@@ -859,6 +862,18 @@ int Waifu2x::process_cpu(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
                         memcpy(out.channel_range(3, 1), out_alpha_tile, out_alpha_tile.total() * sizeof(float));
                     }
                 }
+            }
+
+            high_resolution_clock::time_point end = high_resolution_clock::now();
+            float time_span_print_progress = duration_cast<duration<double>>(
+                    end - time_print_progress).count();
+            float progress_tile = (float) (yi * xtiles + xi + 1);
+            if (time_span_print_progress > 0.5 || (yi + 1 == ytiles && xi + 3 > xtiles)) {
+                double progress = progress_tile / (ytiles * xtiles);
+                double time_span = duration_cast<duration<double>>(end - begin).count();
+                fprintf(stderr, "%5.2f%%\t[%5.2fs /%5.2f ETA]\n", progress * 100, time_span,
+                        time_span / progress - time_span);
+                time_print_progress = end;
             }
 
             {

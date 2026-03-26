@@ -136,6 +136,8 @@ class Task {
 public:
     int id;
     int webp;
+    int has_alpha;
+    int scale;
 //    bool check;
 
     path_t inpath;
@@ -143,6 +145,7 @@ public:
 
     ncnn::Mat inimage;
     ncnn::Mat outimage;
+    ncnn::Mat inalpha;
     ncnn::Mat in;
 };
 
@@ -290,7 +293,48 @@ void *load(void *args) {
             v.id = i;
             v.inpath = imagepath;
             v.outpath = ltp->output_files[i];
+            v.has_alpha = 0;
+            v.scale = scale;
 
+            path_t ext = get_file_extension(v.outpath);
+            if (c == 4)
+            {
+                // separate alpha channel from RGBA
+                v.has_alpha = 1;
+
+                // extract alpha
+                unsigned char* alphadata = (unsigned char*)malloc(w * h);
+                for (int j = 0; j < w * h; j++)
+                {
+                    alphadata[j] = pixeldata[j * 4 + 3];
+                }
+                v.inalpha = ncnn::Mat(w, h, (void*)alphadata, (size_t)1, 1);
+
+                // convert RGBA to RGB (remove alpha, keep RGB)
+                unsigned char* rgbdata = (unsigned char*)malloc(w * h * 3);
+                for (int j = 0; j < w * h; j++)
+                {
+                    rgbdata[j * 3 + 0] = pixeldata[j * 4 + 0];
+                    rgbdata[j * 3 + 1] = pixeldata[j * 4 + 1];
+                    rgbdata[j * 3 + 2] = pixeldata[j * 4 + 2];
+                }
+                free(pixeldata);
+                pixeldata = rgbdata;
+                c = 3;
+                v.webp = 0;
+
+                if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") ||
+                    ext == PATHSTR("JPEG")) {
+                    path_t output_filename2 = ltp->output_files[i] + PATHSTR(".png");
+                    v.outpath = output_filename2;
+#if _WIN32
+                    fwprintf(stderr, L"image %ls has alpha channel ! %ls will output %ls\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
+#else // _WIN32
+                    fprintf(stderr, "image %s has alpha channel ! %s will output %s\n",
+                            imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
+#endif // _WIN32
+                }
+            }
 
             v.inimage = ncnn::Mat(w, h, (void *) pixeldata, (size_t) c, c);
             v.outimage = ncnn::Mat(w * scale, h * scale, (size_t) c, c);
@@ -306,20 +350,6 @@ void *load(void *args) {
                     v.inimage.w, v.inimage.h, v.inimage.c,
                     v.outimage.w, v.outimage.h, v.outimage.c
             );
-
-            path_t ext = get_file_extension(v.outpath);
-            if (c == 4 &&
-                (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") ||
-                 ext == PATHSTR("JPEG"))) {
-                path_t output_filename2 = ltp->output_files[i] + PATHSTR(".png");
-                v.outpath = output_filename2;
-#if _WIN32
-                fwprintf(stderr, L"image %ls has alpha channel ! %ls will output %ls\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
-#else // _WIN32
-                fprintf(stderr, "image %s has alpha channel ! %s will output %s\n",
-                        imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
-#endif // _WIN32
-            }
 
             toproc.put(v);
         } else {
@@ -474,6 +504,9 @@ void *save(void *args) {
 
             if (v.webp == 1) {
                 free(pixeldata);
+            } else if (v.has_alpha) {
+                // alpha-separated RGB data was allocated with malloc
+                free(pixeldata);
             } else {
 #if _WIN32
                 free(pixeldata);
@@ -488,24 +521,47 @@ void *save(void *args) {
         path_t ext = get_file_extension(v.outpath);
 
         if (ext != PATHSTR("gif")) {
-            // 使用opencv保存图片，速度比默认的stb更快
             cv::Mat image;
-            switch (v.outimage.elempack) {
-                case 1:
-                    image = cv::Mat( v.outimage.h, v.outimage.w, CV_8UC1, v.outimage.data); // 单通道图像
-                    break;
-                case 3:
-                    image = cv::Mat(v.outimage.h, v.outimage.w, CV_8UC3, v.outimage.data); // 3通道图像
+            if (v.has_alpha)
+            {
+                // get RGB from realsr output (3 channels)
+                cv::Mat rgb_image(v.outimage.h, v.outimage.w, CV_8UC3, v.outimage.data);
+#ifndef _WIN32
+                cv::cvtColor(rgb_image, rgb_image, cv::COLOR_RGB2BGR);
+#endif
+
+                // upscale original alpha with bicubic interpolation
+                cv::Mat alpha_image(v.inalpha.h, v.inalpha.w, CV_8UC1, (unsigned char*)v.inalpha.data);
+                cv::Mat scaled_alpha = resize_alpha_bicubic(alpha_image, v.scale);
+
+                // free alpha data after use
+                if (v.inalpha.data)
+                {
+                    free(v.inalpha.data);
+                }
+
+                // merge RGB and alpha
+                merge_rgb_alpha(rgb_image, scaled_alpha, image);
+            }
+            else
+            {
+                switch (v.outimage.elempack) {
+                    case 1:
+                        image = cv::Mat( v.outimage.h, v.outimage.w, CV_8UC1, v.outimage.data);
+                        break;
+                    case 3:
+                        image = cv::Mat(v.outimage.h, v.outimage.w, CV_8UC3, v.outimage.data);
 #ifndef  _WIN32
-                    cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
-#endif // _WIN32
-                    break;
-                case 4:
-                    image = cv::Mat(v.outimage.h, v.outimage.w, CV_8UC4, v.outimage.data); // 4通道图像
+                        cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+#endif
+                        break;
+                    case 4:
+                        image = cv::Mat(v.outimage.h, v.outimage.w, CV_8UC4, v.outimage.data);
 #ifndef  _WIN32
-                    cv::cvtColor(image, image, cv::COLOR_RGBA2BGRA);
-#endif // _WIN32
-                    break;
+                        cv::cvtColor(image, image, cv::COLOR_RGBA2BGRA);
+#endif
+                        break;
+                }
             }
             if (image.empty()) {
                 std::cerr << "Error: Image data not loaded." << std::endl;

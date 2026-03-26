@@ -194,11 +194,11 @@ block_realcugan() {
         return
     fi
     echo "Testing program: $prog"
-    run_test "$prog" "-m models-nose -s 2 -n 0" 1
-    run_test "$prog" "-m models-se -s 2 -n -1" 2
-    run_test "$prog" "-m models-se -s 2 -n 0" 3
-    run_test "$prog" "-m models-pro -s 2 -n -1" 4
-    run_test "$prog" "-m models-pro -s 2 -n 0" 5
+    run_test "$prog" "-g -1 -m models-nose -s 2 -n 0" 1
+    run_test "$prog" "-g -1 -m models-se -s 2 -n -1" 2
+    run_test "$prog" "-g -1 -m models-se -s 2 -n 0" 3
+    run_test "$prog" "-g -1 -m models-pro -s 2 -n -1" 4
+    run_test "$prog" "-g -1 -m models-pro -s 2 -n 0" 5
     echo ""
 }
 

@@ -126,12 +126,14 @@ public:
     int id;
     int webp;
     int scale;
+    int has_alpha;
 
     path_t inpath;
     path_t outpath;
 
     ncnn::Mat inimage;
     ncnn::Mat outimage;
+    ncnn::Mat inalpha;
 };
 
 class TaskQueue
@@ -280,20 +282,48 @@ void* load(void* args)
             v.scale = scale;
             v.inpath = imagepath;
             v.outpath = ltp->output_files[i];
-
-            v.inimage = ncnn::Mat(w, h, (void*)pixeldata, (size_t)c, c);
+            v.has_alpha = 0;
 
             path_t ext = get_file_extension(v.outpath);
-            if (c == 4 && (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG")))
+            if (c == 4)
             {
-                path_t output_filename2 = ltp->output_files[i] + PATHSTR(".png");
-                v.outpath = output_filename2;
+                // separate alpha channel from RGBA
+                v.has_alpha = 1;
+
+                // extract alpha
+                unsigned char* alphadata = (unsigned char*)malloc(w * h);
+                for (int j = 0; j < w * h; j++)
+                {
+                    alphadata[j] = pixeldata[j * 4 + 3];
+                }
+                v.inalpha = ncnn::Mat(w, h, (void*)alphadata, (size_t)1, 1);
+
+                // convert RGBA to RGB (remove alpha, keep RGB)
+                unsigned char* rgbdata = (unsigned char*)malloc(w * h * 3);
+                for (int j = 0; j < w * h; j++)
+                {
+                    rgbdata[j * 3 + 0] = pixeldata[j * 4 + 0];
+                    rgbdata[j * 3 + 1] = pixeldata[j * 4 + 1];
+                    rgbdata[j * 3 + 2] = pixeldata[j * 4 + 2];
+                }
+                free(pixeldata);
+                pixeldata = rgbdata;
+                c = 3;
+                webp = 0;
+
+                if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG"))
+                {
+                    path_t output_filename2 = ltp->output_files[i] + PATHSTR(".png");
+                    v.outpath = output_filename2;
 #if _WIN32
-                fwprintf(stderr, L"image %ls has alpha channel ! %ls will output %ls\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
+                    fwprintf(stderr, L"image %ls has alpha channel ! %ls will output %ls\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
 #else // _WIN32
-                fprintf(stderr, "image %s has alpha channel ! %s will output %s\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
+                    fprintf(stderr, "image %s has alpha channel ! %s will output %s\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
 #endif // _WIN32
+                }
             }
+
+            v.inimage = ncnn::Mat(w, h, (void*)pixeldata, (size_t)c, c);
 
             toproc.put(v);
         }
@@ -379,6 +409,11 @@ void* save(void* args)
             {
                 free(pixeldata);
             }
+            else if (v.has_alpha)
+            {
+                // alpha-separated RGB data was allocated with malloc, not stbi
+                free(pixeldata);
+            }
             else
             {
 #if _WIN32
@@ -394,24 +429,47 @@ void* save(void* args)
         path_t ext = get_file_extension(v.outpath);
 
         if (ext != PATHSTR("gif")) {
-            // 使用opencv保存图片，速度比默认的stb更快
             cv::Mat image;
-            switch (v.outimage.elempack) {
-                case 1:
-                    image = cv::Mat( v.outimage.h, v.outimage.w, CV_8UC1, v.outimage.data); // 单通道图像
-                    break;
-                case 3:
-                    image = cv::Mat(v.outimage.h, v.outimage.w, CV_8UC3, v.outimage.data); // 3通道图像
+            if (v.has_alpha)
+            {
+                // get RGB from realcugan output (3 channels)
+                cv::Mat rgb_image(v.outimage.h, v.outimage.w, CV_8UC3, v.outimage.data);
+#ifndef _WIN32
+                cv::cvtColor(rgb_image, rgb_image, cv::COLOR_RGB2BGR);
+#endif
+
+                // upscale original alpha with bicubic interpolation
+                cv::Mat alpha_image(v.inalpha.h, v.inalpha.w, CV_8UC1, (unsigned char*)v.inalpha.data);
+                cv::Mat scaled_alpha = resize_alpha_bicubic(alpha_image, v.scale);
+
+                // free alpha data after use
+                if (v.inalpha.data)
+                {
+                    free(v.inalpha.data);
+                }
+
+                // merge RGB and alpha
+                merge_rgb_alpha(rgb_image, scaled_alpha, image);
+            }
+            else
+            {
+                switch (v.outimage.elempack) {
+                    case 1:
+                        image = cv::Mat(v.outimage.h, v.outimage.w, CV_8UC1, v.outimage.data);
+                        break;
+                    case 3:
+                        image = cv::Mat(v.outimage.h, v.outimage.w, CV_8UC3, v.outimage.data);
 #ifndef  _WIN32
-                    cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
-#endif // _WIN32
-                    break;
-                case 4:
-                    image = cv::Mat(v.outimage.h, v.outimage.w, CV_8UC4, v.outimage.data); // 4通道图像
+                        cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+#endif
+                        break;
+                    case 4:
+                        image = cv::Mat(v.outimage.h, v.outimage.w, CV_8UC4, v.outimage.data);
 #ifndef  _WIN32
-                    cv::cvtColor(image, image, cv::COLOR_RGBA2BGRA);
-#endif // _WIN32
-                    break;
+                        cv::cvtColor(image, image, cv::COLOR_RGBA2BGRA);
+#endif
+                        break;
+                }
             }
             if (image.empty()) {
                 std::cerr << "Error: Image data not loaded." << std::endl;
@@ -798,11 +856,39 @@ int main(int argc, char** argv)
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
 #endif
 
-    ncnn::create_gpu_instance();
-
+    // only create gpu instance when gpu is requested
+    bool use_gpu = false;
     if (gpuid.empty())
     {
-        gpuid.push_back(ncnn::get_default_gpu_index());
+        // auto-detect: try to create gpu instance, use gpu if available
+        ncnn::create_gpu_instance();
+        int default_gpu = ncnn::get_default_gpu_index();
+        if (default_gpu != -1)
+        {
+            gpuid.push_back(default_gpu);
+            use_gpu = true;
+        }
+        else
+        {
+            ncnn::destroy_gpu_instance();
+            gpuid.push_back(-1);
+        }
+    }
+    else
+    {
+        // check if any gpu is requested (not -1)
+        for (size_t i = 0; i < gpuid.size(); i++)
+        {
+            if (gpuid[i] != -1)
+            {
+                use_gpu = true;
+                break;
+            }
+        }
+        if (use_gpu)
+        {
+            ncnn::create_gpu_instance();
+        }
     }
 
     const int use_gpu_count = (int)gpuid.size();
@@ -821,15 +907,21 @@ int main(int argc, char** argv)
     jobs_load = std::min(jobs_load, cpu_count);
     jobs_save = std::min(jobs_save, cpu_count);
 
-    int gpu_count = ncnn::get_gpu_count();
-    for (int i=0; i<use_gpu_count; i++)
+    // validate gpu device only when gpu is actually used
+    if (use_gpu)
     {
-        if (gpuid[i] < -1 || gpuid[i] >= gpu_count)
+        int gpu_count = ncnn::get_gpu_count();
+        for (int i = 0; i < use_gpu_count; i++)
         {
-            fprintf(stderr, "invalid gpu device\n");
+            if (gpuid[i] == -1) continue;
 
-            ncnn::destroy_gpu_instance();
-            return -1;
+            if (gpuid[i] < 0 || gpuid[i] >= gpu_count)
+            {
+                fprintf(stderr, "invalid gpu device\n");
+
+                ncnn::destroy_gpu_instance();
+                return -1;
+            }
         }
     }
 
@@ -1015,7 +1107,10 @@ int main(int argc, char** argv)
         realcugan.clear();
     }
 
-    ncnn::destroy_gpu_instance();
+    if (use_gpu)
+    {
+        ncnn::destroy_gpu_instance();
+    }
 
     return 0;
 }
