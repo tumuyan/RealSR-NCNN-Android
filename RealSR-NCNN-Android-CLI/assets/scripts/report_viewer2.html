@@ -390,6 +390,8 @@
                         <th onclick="sortTable(9)">Alpha异常分</th>
                         <th onclick="sortTable(10)">SSIM</th>
                         <th onclick="sortTable(11)">PSNR</th>
+                        <th onclick="sortTable(12)">边缘RGB</th>
+                        <th onclick="sortTable(13)">边缘Alpha</th>
                         <th onclick="sortTable(14)">综合得分</th>
                         <th onclick="sortTable(15)">严重程度</th>
                     </tr>
@@ -597,6 +599,8 @@
                     <td>${formatNum(r.alpha_anomalies?.alpha_anomaly_score)}</td>
                     <td>${formatNum(r.rgb_anomalies?.ssim_score)}</td>
                     <td>${formatNum(r.rgb_anomalies?.psnr)}</td>
+                    <td>${formatNum(r.edge_anomalies?.edge_rgb_mae)}</td>
+                    <td>${formatNum(r.edge_anomalies?.edge_alpha_mae)}</td>
                     <td>${formatNum(r.overall?.overall_score)}</td>
                     <td class="severity-${r.overall?.severity}">${getSeveritySymbol(r.overall?.severity)}</td>
                 `;
@@ -705,6 +709,8 @@
                 'Alpha异常分',
                 'SSIM',
                 'PSNR',
+                '边缘RGB',
+                '边缘Alpha',
                 '综合得分',
                 '严重程度'
             ];

@@ -200,6 +200,71 @@ class ImageAnomalyDetector:
         
         return anomalies
     
+    def detect_edge_anomalies(self, input_rgb, output_rgb, input_alpha, output_alpha):
+        h, w = output_rgb.shape[:2]
+        input_rgb_resized = self.resize_image(input_rgb, (h, w))
+        input_alpha_resized = self.resize_image(input_alpha, (h, w))
+        
+        anomalies = {}
+        border = 4
+        
+        # Create edge mask: 4px border on all sides
+        edge_mask = np.zeros((h, w), dtype=bool)
+        edge_mask[:border, :] = True
+        edge_mask[-border:, :] = True
+        edge_mask[:, :border] = True
+        edge_mask[:, -border:] = True
+        
+        # Extract edge pixels for RGB using mask
+        input_edge_rgb = input_rgb_resized[edge_mask].astype(np.float32)  # (N, 3)
+        output_edge_rgb = output_rgb[edge_mask].astype(np.float32)
+        
+        # Edge RGB metrics
+        edge_rgb_mae = np.mean(np.abs(input_edge_rgb - output_edge_rgb))
+        edge_rgb_mse = np.mean((input_edge_rgb - output_edge_rgb) ** 2)
+        anomalies['edge_rgb_mae'] = edge_rgb_mae
+        anomalies['edge_rgb_mse'] = edge_rgb_mse
+        
+        # Per-channel edge MAE
+        for i, channel in enumerate(['R', 'G', 'B']):
+            anomalies[f'edge_{channel.lower()}_mae'] = np.mean(np.abs(input_edge_rgb[:, i] - output_edge_rgb[:, i]))
+        
+        # Extract edge pixels for Alpha using mask
+        input_edge_alpha = input_alpha_resized[edge_mask].astype(np.float32)  # (N,)
+        output_edge_alpha = output_alpha[edge_mask].astype(np.float32)
+        
+        # Edge Alpha metrics
+        edge_alpha_mae = np.mean(np.abs(input_edge_alpha - output_edge_alpha))
+        edge_alpha_mse = np.mean((input_edge_alpha - output_edge_alpha) ** 2)
+        anomalies['edge_alpha_mae'] = edge_alpha_mae
+        anomalies['edge_alpha_mse'] = edge_alpha_mse
+        
+        # Edge RGB severity and score
+        edge_rgb_score = min(edge_rgb_mae * 2, 100)
+        if edge_rgb_score > 30:
+            anomalies['edge_rgb_severity'] = 'severe'
+        elif edge_rgb_score > 15:
+            anomalies['edge_rgb_severity'] = 'moderate'
+        elif edge_rgb_score > 5:
+            anomalies['edge_rgb_severity'] = 'mild'
+        else:
+            anomalies['edge_rgb_severity'] = 'normal'
+        anomalies['edge_rgb_score'] = edge_rgb_score
+        
+        # Edge Alpha severity and score
+        edge_alpha_score = min(edge_alpha_mae * 200, 100)
+        if edge_alpha_score > 30:
+            anomalies['edge_alpha_severity'] = 'severe'
+        elif edge_alpha_score > 15:
+            anomalies['edge_alpha_severity'] = 'moderate'
+        elif edge_alpha_score > 5:
+            anomalies['edge_alpha_severity'] = 'mild'
+        else:
+            anomalies['edge_alpha_severity'] = 'normal'
+        anomalies['edge_alpha_score'] = edge_alpha_score
+        
+        return anomalies
+    
     def calculate_overall_score(self, alpha_anomalies, rgb_anomalies):
         alpha_score = alpha_anomalies.get('alpha_anomaly_score', 0)
         rgb_score = rgb_anomalies.get('rgb_anomaly_score', 0)
@@ -288,6 +353,7 @@ class ImageAnomalyDetector:
                                 
                                 alpha_anomalies = self.detect_alpha_anomalies(input_alpha, output_alpha)
                                 rgb_anomalies = self.detect_rgb_anomalies(input_rgb, output_rgb, input_alpha, output_alpha)
+                                edge_anomalies = self.detect_edge_anomalies(input_rgb, output_rgb, input_alpha, output_alpha)
                                 overall = self.calculate_overall_score(alpha_anomalies, rgb_anomalies)
                                 
                                 result = {
@@ -300,6 +366,7 @@ class ImageAnomalyDetector:
                                     'input_size': input_rgb.shape[:2],
                                     'alpha_anomalies': alpha_anomalies,
                                     'rgb_anomalies': rgb_anomalies,
+                                    'edge_anomalies': edge_anomalies,
                                     'overall': overall,
                                     'has_output': True
                                 }
@@ -322,6 +389,7 @@ class ImageAnomalyDetector:
                             'input_size': None,
                             'alpha_anomalies': None,
                             'rgb_anomalies': None,
+                            'edge_anomalies': None,
                             'overall': {
                                 'overall_score': 0,
                                 'severity': 'none'
@@ -344,6 +412,7 @@ class ImageAnomalyDetector:
                     
                     alpha_anomalies = self.detect_alpha_anomalies(input_alpha, output_alpha)
                     rgb_anomalies = self.detect_rgb_anomalies(input_rgb, output_rgb, input_alpha, output_alpha)
+                    edge_anomalies = self.detect_edge_anomalies(input_rgb, output_rgb, input_alpha, output_alpha)
                     overall = self.calculate_overall_score(alpha_anomalies, rgb_anomalies)
                     
                     result = {
@@ -356,6 +425,7 @@ class ImageAnomalyDetector:
                         'input_size': input_rgb.shape[:2],
                         'alpha_anomalies': alpha_anomalies,
                         'rgb_anomalies': rgb_anomalies,
+                        'edge_anomalies': edge_anomalies,
                         'overall': overall,
                         'has_output': True
                     }
