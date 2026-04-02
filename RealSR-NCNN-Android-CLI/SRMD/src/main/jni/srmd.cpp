@@ -235,7 +235,15 @@ int SRMD::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
         ncnn::Mat in;
         if (opt.use_fp16_storage && opt.use_int8_storage)
         {
-            in = ncnn::Mat(w, (in_tile_y1 - in_tile_y0), (unsigned char*)pixeldata + in_tile_y0 * w * channels, (size_t)channels, 1);
+            const int safe_tile_h = in_tile_y1 - in_tile_y0;
+            const bool is_standard_size = (safe_tile_h == TILE_SIZE_Y + 2 * prepadding);
+            if (is_standard_size) {
+                in = ncnn::Mat(w, safe_tile_h, (unsigned char*)pixeldata + in_tile_y0 * w * channels, (size_t)channels, 1);
+            } else {
+                in.create(w, safe_tile_h, (size_t)channels, 1);
+                const unsigned char* src = (unsigned char*)pixeldata + in_tile_y0 * w * channels;
+                memcpy(in.data, src, (size_t)w * safe_tile_h * channels);
+            }
         }
         else
         {
