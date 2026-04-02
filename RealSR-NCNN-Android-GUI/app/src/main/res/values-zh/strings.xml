@@ -142,6 +142,18 @@
         即使关闭此功能，仍然可以在其他应用如相册中选择多个图片并分享到本应用。</string>
     <string name="mnn_backend">MNN推理后端类型 (CPU=0,AUTO=4,OPENCL=3,VULKAN=7,默认3)</string>
     <string name="show_final_command">使用列表中的模型时，在命令输入框内显示最终调用的命令</string>
+    <string name="label_editor_title">模型备注</string>
+    <string name="label_editor_desc">自定义命令列表的显示名称</string>
+    <string name="use_custom_label">在命令列表中使用自定义备注</string>
+    <string name="edit_labels">编辑备注</string>
+    <string name="label_copy_all">复制全部</string>
+    <string name="label_paste_all">粘贴全部</string>
+    <string name="label_clear_all">清除全部</string>
+    <string name="label_custom_hint">自定义备注</string>
+    <string name="label_copied">已复制到剪贴板</string>
+    <string name="label_imported">已导入 %d 条</string>
+    <string name="label_clipboard_empty">剪贴板为空</string>
+    <string name="label_cleared">已清除所有自定义备注</string>
     <!--
         <string-array name="style_array">
             <item>real-esrgan-4倍动漫模型</item>

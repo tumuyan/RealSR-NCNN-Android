@@ -3,12 +3,14 @@ package com.tumuyan.ncnn.realsr;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.ToggleButton;
@@ -36,7 +38,9 @@ public class SettingActivity extends AppCompatActivity {
     ToggleButton toggleAutoSave;
     ToggleButton toggleSearchView;
     ToggleButton toggleFinalCommand;
+    ToggleButton toggleCustomLabel;
     Spinner spinnerFormat, spinnerName, spinnerName2, spinnerOrientation, spinnerNotify;
+    Spinner spinner;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
             + File.separator + "RealSR";
@@ -66,6 +70,7 @@ public class SettingActivity extends AppCompatActivity {
         boolean autoSave = mySharePerferences.getBoolean("autoSave", false);
         boolean showSearchView = mySharePerferences.getBoolean("showSearchView", false);
         boolean showFinalCommand = mySharePerferences.getBoolean("showFinalCommand", false);
+        boolean useCustomLabel = mySharePerferences.getBoolean("useCustomLabel", false);
         int format = mySharePerferences.getInt("format", 0);
         int name = mySharePerferences.getInt("name", 0);
         int name2 = mySharePerferences.getInt("name2", 0);
@@ -109,6 +114,8 @@ public class SettingActivity extends AppCompatActivity {
         toggleSearchView.setChecked(showSearchView);
         toggleFinalCommand = findViewById(R.id.toggle_final_command);
         toggleFinalCommand.setChecked(showFinalCommand);
+        toggleCustomLabel = findViewById(R.id.toggle_custom_label);
+        toggleCustomLabel.setChecked(useCustomLabel);
 
         spinnerFormat = findViewById(R.id.spinner_format);
         spinnerFormat.setSelection(format);
@@ -122,7 +129,16 @@ public class SettingActivity extends AppCompatActivity {
         spinnerNotify = findViewById(R.id.spinner_notify);
         spinnerNotify.setSelection(notify);
 
-        Spinner spinner = findViewById(R.id.spinner);
+        // 构建 CommandListManager 来设置 Spinner
+        String[] presetLabels = getResources().getStringArray(R.array.style_array);
+        CommandListManager clm = new CommandListManager(presetLabels, extraPath, extraCommand,
+                classicalFilters.split("\\s+"), magickFilters.split("\\s+"));
+        clm.loadCustomLabels(mySharePerferences.getString("customLabels", ""));
+        String[] displayLabels = clm.getDisplayLabels(useCustomLabel);
+
+        spinner = findViewById(R.id.spinner);
+        spinner.setAdapter(new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, displayLabels));
         spinner.setSelection(selectCommand);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -134,6 +150,12 @@ public class SettingActivity extends AppCompatActivity {
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
             }
+        });
+
+        // 编辑备注按钮
+        findViewById(R.id.btn_edit_labels).setOnClickListener(view -> {
+            Intent intent = new Intent(this, LabelEditorActivity.class);
+            startActivity(intent);
         });
 
 /*
@@ -158,6 +180,7 @@ public class SettingActivity extends AppCompatActivity {
             toggleAutoSave.setChecked(false);
             toggleSearchView.setChecked(false);
             toggleFinalCommand.setChecked(false);
+            toggleCustomLabel.setChecked(false);
             editSavePath.setText("");
             editTile.setText("0");
             editThread.setText("");
@@ -178,6 +201,7 @@ public class SettingActivity extends AppCompatActivity {
             toggleAutoSave.setChecked(false);
             toggleSearchView.setChecked(false);
             toggleFinalCommand.setChecked(false);
+            toggleCustomLabel.setChecked(false);
             editSavePath.setText("");
             editTile.setText("32");
             editThread.setText("1:1:1");
@@ -255,6 +279,7 @@ public class SettingActivity extends AppCompatActivity {
         editor.putBoolean("autoSave", toggleAutoSave.isChecked());
         editor.putBoolean("showSearchView", toggleSearchView.isChecked());
         editor.putBoolean("showFinalCommand", toggleFinalCommand.isChecked());
+        editor.putBoolean("useCustomLabel", toggleCustomLabel.isChecked());
         editor.putInt("format", (int) spinnerFormat.getSelectedItemId());
         editor.putInt("name", (int) spinnerName.getSelectedItemId());
         editor.putInt("name2", (int) spinnerName2.getSelectedItemId());
@@ -279,4 +304,3 @@ public class SettingActivity extends AppCompatActivity {
         return false;
     }
 }
-

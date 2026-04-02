@@ -62,7 +62,6 @@
         android:layout_marginLeft="10dp"
         android:layout_marginTop="7dp"
         android:layout_marginRight="10dp"
-        android:entries="@array/style_array"
         android:textAlignment="center" />
 
     <SearchView

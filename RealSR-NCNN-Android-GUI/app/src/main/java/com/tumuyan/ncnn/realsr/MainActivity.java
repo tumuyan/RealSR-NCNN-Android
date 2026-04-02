@@ -54,12 +54,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1, SELECT_MULTI_IMAGE = 2;
@@ -91,51 +87,11 @@ public class MainActivity extends AppCompatActivity {
 
     private String[] command = null;
     private String log = "";
+    private CommandListManager commandListManager;
 
     private final String[] bench_mark_commands = new String[] {
             "./realsr-ncnn -c 46 -i img/PM5544.jpeg -o input.png  -m models-Real-ESRGAN",
             "./realsr-ncnn -c 46 -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 4"
-    };
-
-    private final String[] command_0 = new String[] {
-            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-anime",
-            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN",
-            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-general -s 4",
-            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 2",
-            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 3",
-            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv3-anime -s 4",
-            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime -s 2",
-            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGANv2-anime -s 4",
-            "./mnnsr-ncnn -i input.png -o output.png  -m models-MNN/ESRGAN-MoeSR-jp_Illustration-x4.mnn -s 4",
-            "./mnnsr-ncnn -i input.png -o output.png  -m models-MNN/ESRGAN-MoeSR-jp_Illustration-x4.mnn -d 0 -s 4",
-            "./realsr-ncnn -i input.png -o output.png  -m models-ESRGAN-Nomos8kSC -s 4",
-            "./mnnsr-ncnn -i input.png -o output.png  -m models-MNN/ESRGAN-Nomos8kSC-x4.mnn -s 4",
-            "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-SourceBook -s 2",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-nose -s 2  -n 0",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 2  -n -1",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 2  -n 0",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 2  -n 1",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 2  -n 2",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 2  -n 3",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n -1",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n 0",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-se -s 4  -n 3",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 2  -n -1",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 2  -n 0",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 2  -n 3",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 3  -n -1",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 3  -n 0",
-            "./realcugan-ncnn -i input.png -o output.png  -m models-pro -s 3  -n 3",
-            "./Anime4k -i input.png -o output.png -z 2 -A",
-            "./Anime4k -i input.png -o output.png -z 2 -A -a -e 48",
-            "./Anime4k -i input.png -o output.png -z 2 -A -b -r 48",
-            "./Anime4k -i input.png -o output.png -z 2 -A -w",
-            "./Anime4k -i input.png -o output.png -z 2 -A -w -H",
-            "./Anime4k -i input.png -o output.png -z 4 -A ",
-            "./Anime4k -i input.png -o output.png -z 4 -A -a -e 40",
-            "./Anime4k -i input.png -o output.png -z 4 -A -b -r 40",
-            "./Anime4k -i input.png -o output.png -z 4 -A -w",
-            "./Anime4k -i input.png -o output.png -z 4 -A -w -H",
     };
     private int tileSize;
     private boolean useCPU;
@@ -416,20 +372,24 @@ public class MainActivity extends AppCompatActivity {
         format = mySharePerferences.getInt("format", 0);
         name = mySharePerferences.getInt("name", 0);
         name2 = mySharePerferences.getInt("name2", 0);
-        List<String> extraCmd = getExtraCommands(
+
+        // 构建命令列表（使用 CommandListManager）
+        String[] presetLabels = getResources().getStringArray(R.array.style_array);
+        boolean useCustomLabel = mySharePerferences.getBoolean("useCustomLabel", false);
+        commandListManager = new CommandListManager(presetLabels,
                 mySharePerferences.getString("extraPath", "").trim(),
                 mySharePerferences.getString("extraCommand", "").trim(),
                 mySharePerferences.getString("classicalFilters", getString(R.string.default_classical_filters))
                         .split("\\s+"),
                 mySharePerferences.getString("magickFilters", getString(R.string.default_magick_filters))
                         .split("\\s+"));
+        commandListManager.loadCustomLabels(mySharePerferences.getString("customLabels", ""));
 
-        if (!extraCmd.isEmpty()) {
-            String[] presetCommand = getResources().getStringArray(R.array.style_array);
-            extraCmd.addAll(0, Arrays.asList(presetCommand));
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, extraCmd);
-            spinner.setAdapter(adapter);
-        }
+        command = commandListManager.commandList;
+        String[] displayLabels = commandListManager.getDisplayLabels(useCustomLabel);
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, displayLabels);
+        spinner.setAdapter(adapter);
 
         spinner.setSelection(selectCommand);
 
@@ -481,171 +441,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return false;
-    }
-
-    /**
-     * 生成用户自定义命令. 自定义模型路径的命令与App预设命令有一样的外观和特性
-     *
-     * @param extraPath        自定义模型路径
-     * @param extraCommand     用户预设命令
-     * @param classicalFilters 经典插值算法列表（resize-ncnn）
-     * @param magickFilters    Magick算法列表
-     * @return 命令列表
-     */
-    private List<String> getExtraCommands(String extraPath, String extraCommand, String[] classicalFilters,
-            String[] magickFilters) {
-
-        // 解析结果，包含模型目录、用户自定义命令（命令列表）
-        List<String> cmdList = new ArrayList<>();
-
-        // 解析模型目录的结果（下拉列表中的label）
-        List<String> cmdLabel = new ArrayList<>();
-
-        String[] classicalResize = { "2", "4", "10" };
-
-        for (String f : classicalFilters) {
-            for (String s : classicalResize) {
-                cmdList.add("./resize-ncnn -i input.png -o output.png  -m " + f + " -s " + s);
-                cmdLabel.add("Classical-" + f + "-x" + s);
-            }
-        }
-
-        String[] magickResize = { "200%", "400%", "1000%" };
-
-        for (String f : magickFilters) {
-            for (String s : magickResize) {
-                cmdList.add("./magick input.png -filter " + f + " -resize " + s + " output.png ");
-                cmdLabel.add("Magick-" + f + "-x" + s.replaceFirst("(\\d+)00%", "$1"));
-            }
-        }
-
-        if (!extraPath.isEmpty()) {
-            File[] folders = new File(extraPath).listFiles();
-            if (folders == null)
-                Log.e("getExtraCommands", "extraPath folders is null");
-            else {
-                Arrays.sort(folders, Comparator.comparing(File::getName));
-                for (File folder : folders) {
-                    String name = folder.getName();
-                    if (name.endsWith(".mnn") || name.startsWith("models-MNN")) {
-                        if (folder.isDirectory()) {
-                            File[] files = folder.listFiles();
-                            if (files != null && files.length > 0) {
-                                Arrays.sort(files, Comparator.comparing(File::getName));
-                                for (File file : files) {
-                                    if (file.getName().endsWith(".mnn")) {
-                                        String[] v = getNameFromModelPath(file.getAbsolutePath(), "MNNSR");
-                                        cmdList.add("./mnnsr-ncnn -i input.png -o output.png  -m "
-                                                + file.getAbsolutePath() + " -s " + v[1]);
-                                        cmdLabel.add(v[0]);
-                                    }
-                                }
-                            }
-                        } else {
-                            String[] v = getNameFromModelPath(folder.getAbsolutePath(), "MNNSR");
-                            cmdList.add("./mnnsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath()
-                                    + " -s " + v[1]);
-                            cmdLabel.add(v[0]);
-                        }
-                    } else if (folder.isDirectory() && name.startsWith("models")) {
-                        // 默认匹配realsr/real-esrgan模型目录
-                        String model = name.replace("models-", "");
-                        String scaleMatcher = ".*x(\\d+).*";
-                        String noiseMatcher = "";
-                        String command = "./realsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath()
-                                + " -s ";
-
-                        if (name.matches("models-(cugan|cunet|upconv).*")) {
-                            // 匹配waifu2x模型目录
-                            model = name.replace("models-", "Waifu2x-");
-                            scaleMatcher = ".*scale(\\d+).*";
-                            command = "./waifu2x-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath()
-                                    + " -s ";
-                            noiseMatcher = "noise(\\d+).*";
-                        } else if (name.matches("models-srmd.*")) {
-                            // 匹配srmd模型目录
-                            if (name.equals("models-srmd"))
-                                model = "SRMD";
-                            else
-                                model = name.replace("models-srmd", "SRMD-");
-                            command = "./srmd-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
-                        } else if (name.startsWith("models-DF2K")) {
-                            // 匹配realsr模型目录
-                            model = name.replace("models-", "RealSR-");
-                        } else if (name.startsWith("models-mnn")) {
-                            // 匹配mnn模型目录
-                        }
-
-                        List<String> suffix = genCmdFromModel(folder, scaleMatcher, noiseMatcher);
-                        for (String s : suffix) {
-                            cmdList.add(command + s);
-                            cmdLabel.add(model + "-x" + s.replace(" -n ", "-noise"));
-                        }
-                    }
-                }
-            }
-        }
-
-        // 模型目录显示label
-        int l = command_0.length;
-        command = new String[cmdList.size() + l];
-
-        System.arraycopy(command_0, 0, command, 0, l);
-        for (int i = 0; i < cmdList.size(); i++)
-            command[l + i] = cmdList.get(i);
-
-        // 预设命令显示命令
-        if (!extraCommand.isEmpty()) {
-            String[] cmds = extraCommand.split("\n");
-            cmdLabel.addAll(Arrays.asList(cmds));
-        }
-
-        return cmdLabel;
-    }
-
-    /**
-     * 从用户自定义模型路径加载文件，自动列出可用命令
-     *
-     * @param folder       自定义模型目录
-     * @param scaleMatcher 缩放倍率抓取规则
-     * @param noiseMatcher 降噪系数抓取规则
-     * @return 模型名称的列表
-     */
-    private static List<String> genCmdFromModel(File folder, String scaleMatcher, String noiseMatcher) {
-        List<String> list = new ArrayList<>();
-        File[] files = folder.listFiles();
-
-        List<String> names = new ArrayList<>();
-        if (files != null) {
-            for (File f : files) {
-                String name = f.getName().toLowerCase(Locale.ROOT);
-                if (name.endsWith("bin"))
-                    names.add(name);
-            }
-        }
-        String[] fileNames = names.toArray(new String[0]);
-
-        Arrays.sort(fileNames);
-
-        for (String name : fileNames) {
-            // 只解析整数倍缩放
-            String s;
-            if (name.matches(scaleMatcher))
-                s = (name.replaceFirst(scaleMatcher, "$1"));
-            else
-                s = "1";
-
-            if (!noiseMatcher.isEmpty()) {
-                String noise = name.replaceFirst(noiseMatcher, "$1");
-                if (noise.matches("\\d+")) {
-                    int n = Integer.parseInt(noise);
-                    s = s + " -n " + n;
-                }
-            }
-            if (!list.contains(s))
-                list.add(s);
-        }
-        return list;
     }
 
     private ProcessingService processingService;
@@ -1089,45 +884,6 @@ public class MainActivity extends AppCompatActivity {
 
     private String progressText = "";
 
-    private static String[] getNameFromModelPath(String path, String type) {
-        String scaleMatcher = "([xX]\\d+|\\d+[xX])";
-        String s = "", name = "";
-        String[] splitedPath = path.split("[/\\\\]+");
-
-        if (splitedPath.length > 1) {
-            if (splitedPath[splitedPath.length - 1].matches(scaleMatcher + "\\..+")) {
-                s = splitedPath[splitedPath.length - 1].replaceFirst(scaleMatcher, "$1");
-                name = splitedPath[splitedPath.length - 2];
-            } else {
-                String m = "[-_.\s]+";
-                name = splitedPath[splitedPath.length - 1].replaceFirst("\\.(.{1,4})$", "");
-                if (name.matches("(\\d+)[xX].+"))
-                    s = name.replaceFirst("(\\d+[xX]).+", "$1");
-                else {
-                    String[] fileTags = name.split(m);
-                    for (String tag : fileTags) {
-                        if (tag.matches(scaleMatcher)) {
-                            s = tag;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        int scale = s.isEmpty() ? 1 : Integer.parseInt((s.replaceFirst("[xX]", "")));
-        if (scale < 1)
-            scale = 1;
-        if (!name.contains(s)) {
-            name = name + "-x" + scale;
-        }
-        name = name.replaceFirst("(models-|model-)", "");
-        if (!type.isEmpty()) {
-            name = type + "-" + name;
-        }
-
-        return new String[] { name, "" + scale };
-    }
-
     // 主要的运行命令的方式
     public synchronized boolean run20(@NonNull String cmd, boolean bench_mark_mode, boolean sr) {
         newTask = false;
@@ -1193,7 +949,7 @@ public class MainActivity extends AppCompatActivity {
                 if (cmd.matches(".+\\s-d\\s+\\d+\\s.*")) {
                     modelName = "MNNSR-Decensor" + cmd.replaceFirst(".+\\s-d\\s+(\\d+)\\s.*", "$1");
                 } else {
-                    String[] v = getNameFromModelPath(cmd.replaceFirst(".+\\s-m(\\s+)(\\S+)\\s.*", "$2"), "MNNSR");
+                    String[] v = CommandListManager.getNameFromModelPath(cmd.replaceFirst(".+\\s-m(\\s+)(\\S+)\\s.*", "$2"), "MNNSR");
                     modelName = v[0];
                 }
             }

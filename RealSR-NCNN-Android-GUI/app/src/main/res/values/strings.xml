@@ -127,6 +127,18 @@ Even if this feature is disabled, you can still select multiple images from othe
 </string>
     <string name="mnn_backend">MNN forward backend type(CPU=0,AUTO=4,OPENCL=3,VULKAN=7,default=3)</string>
     <string name="show_final_command">Show the final command in the command input area.</string>
+    <string name="label_editor_title">Model Labels</string>
+    <string name="label_editor_desc">Edit custom display names for command list</string>
+    <string name="use_custom_label">Use custom labels in command list</string>
+    <string name="edit_labels">Edit labels</string>
+    <string name="label_copy_all">Copy All</string>
+    <string name="label_paste_all">Paste All</string>
+    <string name="label_clear_all">Clear All</string>
+    <string name="label_custom_hint">Custom label</string>
+    <string name="label_copied">Copied to clipboard</string>
+    <string name="label_imported">Imported %d items</string>
+    <string name="label_clipboard_empty">Clipboard is empty</string>
+    <string name="label_cleared">All custom labels cleared</string>
     <string-array name="format">
         <item>PNG</item>
         <item>WebP</item>
