@@ -247,7 +247,15 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
         ncnn::Mat in;
         if ((opt.use_fp16_storage || opt.use_fp16_packed) && opt.use_int8_storage)
         {
-            in = ncnn::Mat(w, (in_tile_y1 - in_tile_y0), (unsigned char*)pixeldata + in_tile_y0 * w * channels, (size_t)channels, 1);
+            const int safe_tile_h = in_tile_y1 - in_tile_y0;
+            const bool is_standard_size = (safe_tile_h == TILE_SIZE_Y + 2 * prepadding);
+            if (is_standard_size) {
+                in = ncnn::Mat(w, safe_tile_h, (unsigned char*)pixeldata + in_tile_y0 * w * channels, (size_t)channels, 1);
+            } else {
+                in.create(w, safe_tile_h, (size_t)channels, 1);
+                const unsigned char* src = (unsigned char*)pixeldata + in_tile_y0 * w * channels;
+                memcpy(in.data, src, (size_t)w * safe_tile_h * channels);
+            }
         }
         else
         {
@@ -578,7 +586,9 @@ int RealSR::process(const ncnn::Mat& inimage, ncnn::Mat& outimage) const
 
             if ((opt.use_fp16_storage || opt.use_fp16_packed) && opt.use_int8_storage)
             {
-                out = ncnn::Mat(out_gpu.w, out_gpu.h, (unsigned char*)outimage.data + yi * scale * TILE_SIZE_Y * w * scale * channels, (size_t)channels, 1, opt.blob_allocator);
+                int out_tile_y0 = std::max(yi * TILE_SIZE_Y, 0);
+                size_t offset = out_tile_y0 * scale * w * scale * channels;
+                out = ncnn::Mat(out_gpu.w, out_gpu.h, (unsigned char*)outimage.data + offset, (size_t)channels, 1, opt.blob_allocator);
             }
 
             cmd.record_clone(out_gpu, out, opt);
