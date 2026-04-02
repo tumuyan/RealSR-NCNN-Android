@@ -56,6 +56,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1, SELECT_MULTI_IMAGE = 2;

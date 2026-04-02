@@ -13,35 +13,27 @@
         android:maxLines="2"
         android:singleLine="false"
         android:textColor="#888888"
-        android:textSize="11sp" />
+        android:textSize="16sp" />
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/tv_label_default"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingTop="2dp">
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:textSize="16sp" />
 
-        <TextView
-            android:id="@+id/tv_label_default"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:textSize="14sp" />
+    <EditText
+        android:id="@+id/edit_label_custom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/round_corner_bg"
+        android:hint="@string/label_custom_hint"
+        android:inputType="text"
+        android:maxLines="1"
+        android:padding="3dp"
+        android:singleLine="false"
+        android:textSize="16sp" />
 
-        <EditText
-            android:id="@+id/edit_label_custom"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/round_corner_bg"
-            android:hint="@string/label_custom_hint"
-            android:inputType="text"
-            android:maxLines="1"
-            android:padding="3dp"
-            android:singleLine="true"
-            android:textSize="14sp" />
-    </LinearLayout>
 </LinearLayout>
