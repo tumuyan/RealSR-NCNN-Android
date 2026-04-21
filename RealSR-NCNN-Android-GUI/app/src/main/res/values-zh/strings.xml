@@ -117,6 +117,7 @@
     <string name="show_serarch_view">显示命令输入框</string>
     <string name="save_name">导出单图使用的文件名</string>
     <string name="save_name2">导出多图使用的文件名</string>
+    <string name="save_name3">目录处理使用的目录名（共用单图选项）</string>
     <string name="save_path">导出图片的路径</string>
     <string name="download_models">下载模型</string>
     <string name="start">开始</string>
@@ -198,6 +199,12 @@
         <item>选择文件时间-序号</item>
         <item>选择文件时间-原文件名</item>
     </string-array>
+    <string-array name="name3">
+        <item>原目录名</item>
+        <item>原目录名-算法</item>
+        <item>原目录名-算法-时间</item>
+        <item>原目录名-时间</item>
+    </string-array>
     <string-array name="oriental_item">
         <item>默认</item>
         <item>自动</item>
@@ -234,7 +241,8 @@
     <string name="dir_output_path_error">请指定输出目录</string>
     <string name="dir_input_hint">输入目录路径或使用浏览按钮选择</string>
     <string name="dir_output_hint">输出目录路径或使用浏览按钮选择</string>
-    <string name="dir_auto_output_label">自动（输出到：保存路径/输入目录名）</string>
+    <string name="dir_auto_output_label">自动</string>
+    <string name="dir_auto_output_format">自动（%1$s）</string>
     <string name="dir_menu_entry">目录批处理</string>
     <string name="notification_processing">正在处理...</string>
     <string name="notification_fail">失败</string>

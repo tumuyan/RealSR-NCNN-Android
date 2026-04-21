@@ -36,9 +36,11 @@
         android:ems="10"
         android:hint="@string/dir_input_hint"
         android:textSize="14sp"
-        android:singleLine="true"
-        android:inputType="text"
-        android:imeOptions="actionNext"
+        android:singleLine="false"
+        android:inputType="textMultiLine"
+        android:minLines="1"
+        android:maxLines="4"
+        android:scrollbars="vertical"
         android:padding="5dp" />
 
     <TextView
@@ -80,9 +82,11 @@
         android:ems="10"
         android:hint="@string/dir_output_hint"
         android:textSize="14sp"
-        android:singleLine="true"
-        android:inputType="text"
-        android:imeOptions="actionDone"
+        android:singleLine="false"
+        android:inputType="textMultiLine"
+        android:minLines="1"
+        android:maxLines="4"
+        android:scrollbars="vertical"
         android:padding="5dp" />
 
     <CheckBox

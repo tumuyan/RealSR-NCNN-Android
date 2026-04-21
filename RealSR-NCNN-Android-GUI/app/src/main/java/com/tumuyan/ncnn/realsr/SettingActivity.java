@@ -39,7 +39,7 @@ public class SettingActivity extends AppCompatActivity {
     ToggleButton toggleSearchView;
     ToggleButton toggleFinalCommand;
     ToggleButton toggleCustomLabel;
-    Spinner spinnerFormat, spinnerName, spinnerName2, spinnerOrientation, spinnerNotify;
+    Spinner spinnerFormat, spinnerName, spinnerName2, spinnerName3, spinnerOrientation, spinnerNotify;
     Spinner spinner;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
@@ -124,6 +124,9 @@ public class SettingActivity extends AppCompatActivity {
         spinnerName.setSelection(name);
         spinnerName2 = findViewById(R.id.spinner_name2);
         spinnerName2.setSelection(name2);
+        spinnerName3 = findViewById(R.id.spinner_name3);
+        int name3 = mySharePerferences.getInt("name3", 0);
+        spinnerName3.setSelection(name3);
         spinnerOrientation = findViewById(R.id.spinner_orientation);
         spinnerOrientation.setSelection(orientation);
         spinnerNotify = findViewById(R.id.spinner_notify);
@@ -283,6 +286,7 @@ public class SettingActivity extends AppCompatActivity {
         editor.putInt("format", (int) spinnerFormat.getSelectedItemId());
         editor.putInt("name", (int) spinnerName.getSelectedItemId());
         editor.putInt("name2", (int) spinnerName2.getSelectedItemId());
+        editor.putInt("name3", (int) spinnerName3.getSelectedItemId());
         editor.putInt("ORIENTATION", (int) spinnerOrientation.getSelectedItemId());
         editor.putInt("notify", (int) spinnerNotify.getSelectedItemId());
         editor.putInt("mnnBackend", Integer.parseInt(editMNNBackend.getText().toString()));

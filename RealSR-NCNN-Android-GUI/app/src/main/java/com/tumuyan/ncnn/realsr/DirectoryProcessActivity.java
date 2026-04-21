@@ -28,7 +28,9 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -63,6 +65,7 @@ public class DirectoryProcessActivity extends AppCompatActivity {
     private String savePath;
     private boolean isUpdatingOutputPath = false;
     private boolean isProcessing = false;
+    private int dirNameFormat = 0;
 
     private ServiceConnection connection = new ServiceConnection() {
         @Override
@@ -111,6 +114,7 @@ public class DirectoryProcessActivity extends AppCompatActivity {
 
         spinnerModel = findViewById(R.id.spinner_model);
         cbAutoOutput = findViewById(R.id.cb_auto_output);
+        cbAutoOutput.setText(R.string.dir_auto_output_label);
 
         setTitle(R.string.dir_process_title);
     }
@@ -128,6 +132,8 @@ public class DirectoryProcessActivity extends AppCompatActivity {
         savePath = sp.getString("savePath", "");
         if (savePath.isEmpty())
             savePath = galleryPath;
+
+        dirNameFormat = sp.getInt("name3", 0);
 
         String[] presetLabels = getResources().getStringArray(R.array.style_array);
         boolean useCustomLabel = sp.getBoolean("useCustomLabel", false);
@@ -159,6 +165,13 @@ public class DirectoryProcessActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
                 updateStartButtonState();
+                // 当模型改变时，如果自动勾选则更新输出路径
+                if (cbAutoOutput.isChecked()) {
+                    String inputPath = etInputDirPath.getText().toString().trim();
+                    if (!inputPath.isEmpty()) {
+                        updateAutoOutputPath(inputPath);
+                    }
+                }
             }
 
             @Override
@@ -222,10 +235,51 @@ public class DirectoryProcessActivity extends AppCompatActivity {
             if (dirName.isEmpty()) {
                 dirName = "output";
             }
+
+            // 根据设置生成目录名（独立目录名选项）
+            int modelIndex = spinnerModel.getSelectedItemPosition();
+            String commandName = "";
+            if (modelIndex >= 0 && modelIndex < commandList.length) {
+                String cmd = commandList[modelIndex];
+                commandName = extractModelName(cmd);
+            }
+
+            String timeStr = new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(new Date());
+
+            switch (dirNameFormat) {
+                case 0: // Input Directory Name → 目录名
+                    break;
+                case 1: // Input Directory Name-Command → 目录名-命令
+                    dirName = dirName + "-" + commandName;
+                    break;
+                case 2: // Input Directory Name-Command-Time → 目录名-命令-时间
+                    dirName = dirName + "-" + commandName + "-" + timeStr;
+                    break;
+                case 3: // Input Directory Name-Time → 目录名-时间
+                    dirName = dirName + "-" + timeStr;
+                    break;
+                default:
+                    break;
+            }
+
             String autoOutputPath = savePath + File.separator + dirName;
             isUpdatingOutputPath = true;
             etOutputDirPath.setText(autoOutputPath);
             isUpdatingOutputPath = false;
+            
+            // 更新复选框文本显示选项值
+            updateCheckboxText();
+        }
+    }
+
+    private void updateCheckboxText() {
+        // 获取当前选中的目录名格式选项
+        String[] nameOptions = getResources().getStringArray(R.array.name3);
+        if (dirNameFormat >= 0 && dirNameFormat < nameOptions.length) {
+            String optionName = nameOptions[dirNameFormat];
+            cbAutoOutput.setText(getString(R.string.dir_auto_output_format, optionName));
+        } else {
+            cbAutoOutput.setText(R.string.dir_auto_output_label);
         }
     }
 
@@ -541,6 +595,13 @@ public class DirectoryProcessActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 刷新复选框文本显示当前选项值
+        updateCheckboxText();
     }
 
     @Override

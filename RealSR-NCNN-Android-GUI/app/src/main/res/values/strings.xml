@@ -99,6 +99,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="show_serarch_view">Show command input area</string>
     <string name="save_name">File name for output one image</string>
     <string name="save_name2">File name for output images</string>
+    <string name="save_name3">Directory name for output directory (shared with single image option)</string>
     <string name="save_path">Path for save images</string>
     <string name="download_models">Download models</string>
     <string name="start">Start</string>
@@ -165,6 +166,12 @@ Even if this feature is disabled, you can still select multiple images from othe
         <item>Input File Name-Index</item>
         <item>Input Time-Index</item>
         <item>Input Time-Input File Name</item>
+    </string-array>
+    <string-array name="name3">
+        <item>Input Directory Name</item>
+        <item>Input Directory Name-Command</item>
+        <item>Input Directory Name-Command-Time</item>
+        <item>Input Directory Name-Time</item>
     </string-array>
     <string-array name="style_array">
         <item>real-esrgan-anime-x4</item>
@@ -250,6 +257,7 @@ Even if this feature is disabled, you can still select multiple images from othe
     <string name="dir_output_path_error">Please specify output directory</string>
     <string name="dir_input_hint">Enter input directory path or use Browse button</string>
     <string name="dir_output_hint">Enter output directory path or use Browse button</string>
-    <string name="dir_auto_output_label">Auto (Output to: SavePath/InputDirName)</string>
+    <string name="dir_auto_output_label">Auto</string>
+    <string name="dir_auto_output_format">Auto (%1$s)</string>
     <string name="dir_menu_entry">Batch Dir</string>
 </resources>
