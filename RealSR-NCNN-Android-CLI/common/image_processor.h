@@ -296,8 +296,37 @@ static int collect_input_output_files(const path_t& inputpath,
             return -1;
         }
 
+        path_t final_output = outputpath;
+        bool output_is_dir = path_is_directory(outputpath);
+
+        if (output_is_dir)
+        {
+            path_t input_name = inputpath;
+            size_t last_sep = inputpath.find_last_of(PATHSTR("/\\"));
+            if (last_sep != path_t::npos)
+                input_name = inputpath.substr(last_sep + 1);
+
+            path_t name_noext = get_file_name_without_extension(input_name);
+            path_t out_ext = format.empty() ? input_ext : format;
+
+#if _WIN32
+            final_output = outputpath + PATHSTR('\\') + name_noext + PATHSTR('.') + out_ext;
+#else
+            final_output = outputpath + PATHSTR('/') + name_noext + PATHSTR('.') + out_ext;
+#endif
+        }
+        else
+        {
+            path_t out_ext = get_file_extension(outputpath);
+            if (out_ext.empty())
+            {
+                path_t effective_format = format.empty() ? input_ext : format;
+                final_output = outputpath + PATHSTR('.') + effective_format;
+            }
+        }
+
         input_files.push_back(inputpath);
-        output_files.push_back(outputpath);
+        output_files.push_back(final_output);
     }
 
     return 0;

@@ -705,7 +705,7 @@ int main(int argc, char** argv)
     if (!path_is_directory(outputpath))
     {
         path_t ext = get_file_extension(outputpath);
-        if (!ext.empty())
+        if (!ext.empty() && format.empty())
         {
             if (ext == PATHSTR("png") || ext == PATHSTR("PNG"))
                 format = PATHSTR("png");
@@ -718,7 +718,7 @@ int main(int argc, char** argv)
         }
         if (!format.empty() && !is_supported_encode_format(format))
         {
-            fprintf(stderr, "invalid outputpath extension type\n");
+            fprintf(stderr, "invalid output format\n");
             return -1;
         }
     }
