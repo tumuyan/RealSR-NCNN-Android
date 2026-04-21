@@ -94,6 +94,7 @@
     <string name="custom_command">自定义命令</string>
     <string name="use_cpu">NCNN尝试使用CPU推理 (CPU和GPU哪个更稳定是不确定的，但是CPU运算一定更慢)</string>
     <string name="save_format">导出时使用的格式</string>
+    <string name="dir_output_format">处理目录和多图时使用的输出格式</string>
     <string name="general">通用</string>
     <string name="output_not_exits">错误：没有待导出的文件</string>
     <string name="image_not_exists">图片不存在</string>
@@ -117,7 +118,7 @@
     <string name="show_serarch_view">显示命令输入框</string>
     <string name="save_name">导出单图使用的文件名</string>
     <string name="save_name2">导出多图使用的文件名</string>
-    <string name="save_name3">目录处理使用的目录名（共用单图选项）</string>
+    <string name="save_name3">处理目录使用的目录名</string>
     <string name="save_path">导出图片的路径</string>
     <string name="download_models">下载模型</string>
     <string name="start">开始</string>
@@ -217,6 +218,15 @@
         <item>详细 (进度+结果)</item>
         <item>详细 (完成后自动消失)</item>
     </string-array>
+    <string-array name="dir_output_format">
+        <item>原格式</item>
+        <item>jpg</item>
+        <item>png</item>
+        <item>bmp</item>
+        <item>webp</item>
+        <item>tiff</item>
+        <item>avif</item>
+    </string-array>
 
     <!-- 目录批处理页面 -->
     <string name="dir_process_title">处理目录</string>
@@ -236,6 +246,7 @@
     <string name="dir_log_starting">正在处理 %d 张图片，来源：%s</string>
     <string name="dir_log_output_to">输出目录：%s</string>
     <string name="dir_log_complete">批量处理完成！</string>
+    <string name="dir_no_supported_commands">没有支持目录批量处理的命令，请使用主界面的单图或多图处理功能。</string>
     <string name="dir_input_path_error">无法获取输入目录路径，请选择有效目录</string>
     <string name="dir_input_invalid">输入路径不是有效的目录</string>
     <string name="dir_output_path_error">请指定输出目录</string>

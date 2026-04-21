@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
     private MenuItem menuProgress;
     private Spinner spinner;
     private boolean newTask;
-    private int format, name, name2, notify;
+    private int format, name, name2, notify, dirOutputFormat;
     private String BUSY, ERR, DONE;
     private String outputSavePath = "";
     private String inputFileName = "";
@@ -376,6 +376,7 @@ public class MainActivity extends AppCompatActivity {
         notify = mySharePerferences.getInt("notify", 0);
 
         format = mySharePerferences.getInt("format", 0);
+        dirOutputFormat = mySharePerferences.getInt("dirOutputFormat", 0);
         name = mySharePerferences.getInt("name", 0);
         name2 = mySharePerferences.getInt("name2", 0);
 
@@ -910,6 +911,11 @@ public class MainActivity extends AppCompatActivity {
                 if (inputFile.isDirectory() && !inputIsGifAnimation) {
                     export_dir = true;
                     finalCmd = cmd.replace(" output.png ", " '" + savePath + "' ");
+                    String[] dirFormats = getResources().getStringArray(R.array.dir_output_format);
+                    if (dirOutputFormat > 0 && dirOutputFormat < dirFormats.length
+                            && !finalCmd.contains(" -f ") && finalCmd.matches("./(realsr|srmd|waifu2x|realcugan|mnnsr)-ncnn.*")) {
+                        finalCmd += " -f " + dirFormats[dirOutputFormat];
+                    }
                 }
 
                 if (cmd.startsWith("./magick input.png") || cmd.startsWith("./resize-ncnn -i input.png")) {

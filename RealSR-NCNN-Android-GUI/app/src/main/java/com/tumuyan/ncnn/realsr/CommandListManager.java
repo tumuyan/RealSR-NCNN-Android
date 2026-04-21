@@ -113,6 +113,50 @@ public class CommandListManager {
     }
 
     /**
+     * 判断命令是否支持目录批量处理模式。
+     * 支持：realsr-ncnn, srmd-ncnn, waifu2x-ncnn, realcugan-ncnn, mnnsr-ncnn, resize-ncnn
+     * 不支持：Anime4k, magick（这些程序只能处理单文件）
+     */
+    public static boolean supportsDirectoryMode(String command) {
+        if (command == null || command.isEmpty()) return false;
+        String cmd = command.trim().toLowerCase();
+        return cmd.startsWith("./realsr-ncnn") ||
+               cmd.startsWith("./srmd-ncnn") ||
+               cmd.startsWith("./waifu2x-ncnn") ||
+               cmd.startsWith("./realcugan-ncnn") ||
+               cmd.startsWith("./mnnsr-ncnn") ||
+               cmd.startsWith("./resize-ncnn");
+    }
+
+    /**
+     * 获取支持目录批量处理的命令列表。
+     */
+    public String[] getDirectorySupportedCommands() {
+        List<String> supported = new ArrayList<>();
+        for (String cmd : commandList) {
+            if (supportsDirectoryMode(cmd)) {
+                supported.add(cmd);
+            }
+        }
+        return supported.toArray(new String[0]);
+    }
+
+    /**
+     * 获取支持目录批量处理的标签列表。
+     * @param useCustomLabel 是否使用自定义标签
+     */
+    public String[] getDirectorySupportedLabels(boolean useCustomLabel) {
+        String[] allLabels = getDisplayLabels(useCustomLabel);
+        List<String> supported = new ArrayList<>();
+        for (int i = 0; i < commandList.length; i++) {
+            if (supportsDirectoryMode(commandList[i])) {
+                supported.add(allLabels[i]);
+            }
+        }
+        return supported.toArray(new String[0]);
+    }
+
+    /**
      * 获取显示用的标签列表。
      * 如果 useCustomLabel 为 true，则用自定义标签替换默认标签。
      */

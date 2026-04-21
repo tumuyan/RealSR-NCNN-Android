@@ -75,6 +75,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="custom_command">Custom command</string>
     <string name="use_cpu">NCNN use CPU forward backend</string>
     <string name="save_format">Save format</string>
+    <string name="dir_output_format">Output format for directory or multi-file processing</string>
     <string name="general">General</string>
     <string name="output_not_exits">Error: there is no file to export</string>
     <string name="image_not_exists">Image not exists</string>
@@ -99,7 +100,7 @@ https://upscale.wiki/wiki/Model_Database There are many models here, download th
     <string name="show_serarch_view">Show command input area</string>
     <string name="save_name">File name for output one image</string>
     <string name="save_name2">File name for output images</string>
-    <string name="save_name3">Directory name for output directory (shared with single image option)</string>
+    <string name="save_name3">Directory name for directory processing</string>
     <string name="save_path">Path for save images</string>
     <string name="download_models">Download models</string>
     <string name="start">Start</string>
@@ -153,6 +154,15 @@ Even if this feature is disabled, you can still select multiple images from othe
         <item>JPEG 80%</item>
         <item>JPEG 75%</item>
         <item>JPEG 60%</item>
+    </string-array>
+    <string-array name="dir_output_format">
+        <item>Original</item>
+        <item>jpg</item>
+        <item>png</item>
+        <item>bmp</item>
+        <item>webp</item>
+        <item>tiff</item>
+        <item>avif</item>
     </string-array>
     <string-array name="name">
         <item>Command-Time</item>
@@ -252,6 +262,7 @@ Even if this feature is disabled, you can still select multiple images from othe
     <string name="dir_log_starting">Processing %d images from: %s</string>
     <string name="dir_log_output_to">Output directory: %s</string>
     <string name="dir_log_complete">Batch processing completed successfully!</string>
+    <string name="dir_no_supported_commands">No commands support directory batch processing. Please use the main interface for single file or multi-file processing.</string>
     <string name="dir_input_path_error">Cannot get input directory path. Please select a valid directory.</string>
     <string name="dir_input_invalid">Input path is not a valid directory</string>
     <string name="dir_output_path_error">Please specify output directory</string>

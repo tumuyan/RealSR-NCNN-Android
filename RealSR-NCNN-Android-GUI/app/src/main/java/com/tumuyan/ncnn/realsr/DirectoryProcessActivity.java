@@ -12,6 +12,7 @@ import android.os.IBinder;
 import android.provider.DocumentsContract;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -66,6 +67,7 @@ public class DirectoryProcessActivity extends AppCompatActivity {
     private boolean isUpdatingOutputPath = false;
     private boolean isProcessing = false;
     private int dirNameFormat = 0;
+    private int dirOutputFormat = 0;
 
     private ServiceConnection connection = new ServiceConnection() {
         @Override
@@ -134,6 +136,7 @@ public class DirectoryProcessActivity extends AppCompatActivity {
             savePath = galleryPath;
 
         dirNameFormat = sp.getInt("name3", 0);
+        dirOutputFormat = sp.getInt("dirOutputFormat", 0);
 
         String[] presetLabels = getResources().getStringArray(R.array.style_array);
         boolean useCustomLabel = sp.getBoolean("useCustomLabel", false);
@@ -143,15 +146,27 @@ public class DirectoryProcessActivity extends AppCompatActivity {
                 sp.getString("classicalFilters", getString(R.string.default_classical_filters)).split("\\s+"),
                 sp.getString("magickFilters", getString(R.string.default_magick_filters)).split("\\s+"));
         commandListManager.loadCustomLabels(sp.getString("customLabels", ""));
-        commandList = commandListManager.commandList;
+        
+        // 只使用支持目录批量处理的命令
+        int totalCommands = commandListManager.getCommandCount();
+        commandList = commandListManager.getDirectorySupportedCommands();
+        String[] displayLabels = commandListManager.getDirectorySupportedLabels(useCustomLabel);
 
-        String[] displayLabels = commandListManager.getDisplayLabels(useCustomLabel);
+        // 记录过滤信息到日志
+        Log.i("DirectoryProcess", "Total commands: " + totalCommands + 
+              ", Directory supported: " + commandList.length +
+              ", Filtered out: " + (totalCommands - commandList.length));
+
+        if (commandList.length == 0) {
+            Toast.makeText(this, R.string.dir_no_supported_commands, Toast.LENGTH_LONG).show();
+        }
+
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, displayLabels);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerModel.setAdapter(adapter);
 
-        spinnerModel.setSelection(sp.getInt("selectCommand", 2));
+        spinnerModel.setSelection(0);
     }
 
     private void setupListeners() {
@@ -496,6 +511,10 @@ public class DirectoryProcessActivity extends AppCompatActivity {
                 cmdBuilder.append(" -g -1");
             if (baseCommand.startsWith("./mnnsr") && !baseCommand.contains(" -b ")) {
                 cmdBuilder.append(" -b ").append(mnnBackend);
+            }
+            String[] dirFormats = getResources().getStringArray(R.array.dir_output_format);
+            if (dirOutputFormat > 0 && dirOutputFormat < dirFormats.length && !baseCommand.contains(" -f ")) {
+                cmdBuilder.append(" -f ").append(dirFormats[dirOutputFormat]);
             }
         }
 

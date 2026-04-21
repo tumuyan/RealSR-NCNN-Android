@@ -39,7 +39,7 @@ public class SettingActivity extends AppCompatActivity {
     ToggleButton toggleSearchView;
     ToggleButton toggleFinalCommand;
     ToggleButton toggleCustomLabel;
-    Spinner spinnerFormat, spinnerName, spinnerName2, spinnerName3, spinnerOrientation, spinnerNotify;
+    Spinner spinnerFormat, spinnerName, spinnerName2, spinnerName3, spinnerOrientation, spinnerNotify, spinnerDirFormat;
     Spinner spinner;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
@@ -72,6 +72,7 @@ public class SettingActivity extends AppCompatActivity {
         boolean showFinalCommand = mySharePerferences.getBoolean("showFinalCommand", false);
         boolean useCustomLabel = mySharePerferences.getBoolean("useCustomLabel", false);
         int format = mySharePerferences.getInt("format", 0);
+        int dirOutputFormat = mySharePerferences.getInt("dirOutputFormat", 0);
         int name = mySharePerferences.getInt("name", 0);
         int name2 = mySharePerferences.getInt("name2", 0);
         int orientation = mySharePerferences.getInt("ORIENTATION", 0);
@@ -119,6 +120,9 @@ public class SettingActivity extends AppCompatActivity {
 
         spinnerFormat = findViewById(R.id.spinner_format);
         spinnerFormat.setSelection(format);
+
+        spinnerDirFormat = findViewById(R.id.spinner_dir_format);
+        spinnerDirFormat.setSelection(dirOutputFormat);
 
         spinnerName = findViewById(R.id.spinner_name);
         spinnerName.setSelection(name);
@@ -177,6 +181,7 @@ public class SettingActivity extends AppCompatActivity {
         findViewById(R.id.btn_reset).setOnClickListener(v -> {
             spinner.setSelection(2);
             spinnerFormat.setSelection(0);
+            spinnerDirFormat.setSelection(0);
             spinnerName.setSelection(0);
             spinnerName2.setSelection(0);
             toggleCPU.setChecked(false);
@@ -198,6 +203,7 @@ public class SettingActivity extends AppCompatActivity {
         findViewById(R.id.btn_reset_low).setOnClickListener(v -> {
             spinner.setSelection(9);
             spinnerFormat.setSelection(0);
+            spinnerDirFormat.setSelection(0);
             spinnerName.setSelection(0);
             spinnerName2.setSelection(0);
             toggleCPU.setChecked(false);
@@ -284,6 +290,7 @@ public class SettingActivity extends AppCompatActivity {
         editor.putBoolean("showFinalCommand", toggleFinalCommand.isChecked());
         editor.putBoolean("useCustomLabel", toggleCustomLabel.isChecked());
         editor.putInt("format", (int) spinnerFormat.getSelectedItemId());
+        editor.putInt("dirOutputFormat", (int) spinnerDirFormat.getSelectedItemId());
         editor.putInt("name", (int) spinnerName.getSelectedItemId());
         editor.putInt("name2", (int) spinnerName2.getSelectedItemId());
         editor.putInt("name3", (int) spinnerName3.getSelectedItemId());
