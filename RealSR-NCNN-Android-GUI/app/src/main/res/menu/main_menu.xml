@@ -5,12 +5,16 @@
     <item
         android:id="@+id/progress"
         android:title="@string/busy"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
     <item
         android:id="@+id/menu_out2in"
         android:title="@string/menu_out2in"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/menu_dir_batch"
+        android:title="@string/dir_process_title"
+        app:showAsAction="never" />
     <item
         android:id="@+id/menu_avir2"
         android:title="@string/menu_avir2"

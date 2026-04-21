@@ -226,4 +226,30 @@ Even if this feature is disabled, you can still select multiple images from othe
         <item>Detailed (Progress + Result)</item>
         <item>Detailed (Auto Dismiss)</item>
     </string-array>
+
+    <!-- Directory Process Activity -->
+    <string name="dir_process_title">Process Directory</string>
+    <string name="dir_input_label">Input Directory:</string>
+    <string name="dir_output_label">Output Directory:</string>
+    <string name="dir_model_label">Select Model:</string>
+    <string name="dir_select_btn">Browse</string>
+    <string name="dir_start_btn">Start Batch Processing</string>
+    <string name="dir_stop_btn">Stop</string>
+    <string name="dir_no_selected">No directory selected</string>
+    <string name="dir_file_count">Found %d image files</string>
+    <string name="dir_select_input_prompt">Select input directory containing images</string>
+    <string name="dir_select_output_prompt">Select output directory for processed images</string>
+    <string name="dir_service_error">Service not connected, please retry</string>
+    <string name="dir_model_error">Invalid model selection</string>
+    <string name="dir_log_hint">Log output will appear here...</string>
+    <string name="dir_log_starting">Processing %d images from: %s</string>
+    <string name="dir_log_output_to">Output directory: %s</string>
+    <string name="dir_log_complete">Batch processing completed successfully!</string>
+    <string name="dir_input_path_error">Cannot get input directory path. Please select a valid directory.</string>
+    <string name="dir_input_invalid">Input path is not a valid directory</string>
+    <string name="dir_output_path_error">Please specify output directory</string>
+    <string name="dir_input_hint">Enter input directory path or use Browse button</string>
+    <string name="dir_output_hint">Enter output directory path or use Browse button</string>
+    <string name="dir_auto_output_label">Auto (Output to: SavePath/InputDirName)</string>
+    <string name="dir_menu_entry">Batch Dir</string>
 </resources>

@@ -210,6 +210,32 @@
         <item>详细 (进度+结果)</item>
         <item>详细 (完成后自动消失)</item>
     </string-array>
+
+    <!-- 目录批处理页面 -->
+    <string name="dir_process_title">处理目录</string>
+    <string name="dir_input_label">输入目录：</string>
+    <string name="dir_output_label">输出目录：</string>
+    <string name="dir_model_label">选择模型：</string>
+    <string name="dir_select_btn">浏览</string>
+    <string name="dir_start_btn">开始批量处理</string>
+    <string name="dir_stop_btn">停止</string>
+    <string name="dir_no_selected">未选择目录</string>
+    <string name="dir_file_count">发现 %d 张图片</string>
+    <string name="dir_select_input_prompt">选择包含图片的输入目录</string>
+    <string name="dir_select_output_prompt">选择处理后图片的输出目录</string>
+    <string name="dir_service_error">服务未连接，请重试</string>
+    <string name="dir_model_error">无效的模型选择</string>
+    <string name="dir_log_hint">日志将显示在这里…</string>
+    <string name="dir_log_starting">正在处理 %d 张图片，来源：%s</string>
+    <string name="dir_log_output_to">输出目录：%s</string>
+    <string name="dir_log_complete">批量处理完成！</string>
+    <string name="dir_input_path_error">无法获取输入目录路径，请选择有效目录</string>
+    <string name="dir_input_invalid">输入路径不是有效的目录</string>
+    <string name="dir_output_path_error">请指定输出目录</string>
+    <string name="dir_input_hint">输入目录路径或使用浏览按钮选择</string>
+    <string name="dir_output_hint">输出目录路径或使用浏览按钮选择</string>
+    <string name="dir_auto_output_label">自动（输出到：保存路径/输入目录名）</string>
+    <string name="dir_menu_entry">目录批处理</string>
     <string name="notification_processing">正在处理...</string>
     <string name="notification_fail">失败</string>
     <string name="notification_channel_progress">处理进度</string>

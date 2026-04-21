@@ -28,6 +28,10 @@
             android:parentActivityName=".SettingActivity"
             android:exported="false" />
         <activity
+            android:name=".DirectoryProcessActivity"
+            android:parentActivityName=".MainActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"
             android:exported="true">

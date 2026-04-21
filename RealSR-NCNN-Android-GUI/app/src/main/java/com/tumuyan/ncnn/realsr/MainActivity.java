@@ -89,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
     private String[] command = null;
     private String log = "";
     private CommandListManager commandListManager;
+    private ProgressLogHelper progressLogHelper;
 
     private final String[] bench_mark_commands = new String[] {
             "./realsr-ncnn -c 46 -i img/PM5544.jpeg -o input.png  -m models-Real-ESRGAN",
@@ -231,6 +232,10 @@ public class MainActivity extends AppCompatActivity {
             if (keepScreen) {
                 logTextView.setKeepScreenOn(true);
             }
+        } else if (v == R.id.menu_dir_batch) {
+            Intent intent = new Intent(this, DirectoryProcessActivity.class);
+            startActivity(intent);
+            return true;
         } else
             q = "";
 
@@ -985,48 +990,35 @@ public class MainActivity extends AppCompatActivity {
         final String executionCmd = builder.build();
         final String effectivelyFinalCmd = finalCmd;
         final boolean final_export_dir = export_dir;
-        final StringBuilder logBuilder = new StringBuilder();
+
+        progressLogHelper = new ProgressLogHelper();
 
         if (isBound && processingService != null) {
+            progressLogHelper.reset();
             processingService.startTask(executionCmd, dir, notify, new ImageProcessor.ProcessCallback() {
                 @Override
                 public void onProgress(String line) {
-                    boolean p = run_ncnn && line.matches("\\s*\\d([0-9.]*)%(\\s.+)?");
-                    String progressText = line.trim().split("\\s")[0];
-
-                    if (!p) {
-                        logBuilder.append(line).append("\n");
-                    }
-
-                    final String textToDisplay = logBuilder.toString() + (p ? line : "");
+                    progressLogHelper.appendLine(line);
 
                     runOnUiThread(() -> {
-                        logTextView.setText(textToDisplay);
-                        if (p) {
-                            menuProgress.setTitle(progressText);
-                            // Notification is handled by Service now
+                        logTextView.setText(progressLogHelper.getDisplayText());
+                        if (progressLogHelper.hasProgress()) {
+                            menuProgress.setTitle(progressLogHelper.getProgressText());
                         }
                     });
                 }
 
                 @Override
                 public void onCompleted(String result, boolean success) {
-                    String logResult;
-                    if (!success)
-                        logResult = "\nfail, use " + (float) (System.currentTimeMillis() - timeStart) / 1000
-                                + " second";
-                    else
-                        logResult = "\nfinish, use " + (float) (System.currentTimeMillis() - timeStart) / 1000
-                                + " second";
+                    String logResult = progressLogHelper.getCompletionSummary(success, modelName, run_ncnn);
 
                     if (bench_mark_mode) {
-                        logResult += String.format(", Benchmark run on %s\n%s",
-                                DeviceInfo.getConfigStr(useCPU, tileSize), DeviceInfo.getInfo(MainActivity.this));
-                    } else if (run_ncnn) {
-                        logResult += ", " + modelName + "\n";
+                        logResult = logResult.replace("\n", String.format(", Benchmark run on %s\n%s",
+                                DeviceInfo.getConfigStr(useCPU, tileSize), DeviceInfo.getInfo(MainActivity.this)));
                     }
 
-                    String finalLog = logBuilder.toString() + logResult;
+                    progressLogHelper.appendLine(logResult);
+                    String finalLog = progressLogHelper.getFullLog();
                     log = finalLog;
 
                     runOnUiThread(() -> {

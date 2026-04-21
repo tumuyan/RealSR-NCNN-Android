@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".DirectoryProcessActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/dir_input_label"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/btn_select_input_dir"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/dir_select_btn" />
+    </LinearLayout>
+
+    <EditText
+        android:id="@+id/et_input_dir_path"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/round_corner_bg"
+        android:ems="10"
+        android:hint="@string/dir_input_hint"
+        android:textSize="14sp"
+        android:singleLine="true"
+        android:inputType="text"
+        android:imeOptions="actionNext"
+        android:padding="5dp" />
+
+    <TextView
+        android:id="@+id/tv_input_file_count"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="4dp"
+        android:paddingBottom="12dp"
+        android:text=""
+        android:textSize="13sp"
+        android:textColor="@android:color/darker_gray" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/dir_output_label"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/btn_select_output_dir"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/dir_select_btn" />
+    </LinearLayout>
+
+    <EditText
+        android:id="@+id/et_output_dir_path"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/round_corner_bg"
+        android:ems="10"
+        android:hint="@string/dir_output_hint"
+        android:textSize="14sp"
+        android:singleLine="true"
+        android:inputType="text"
+        android:imeOptions="actionDone"
+        android:padding="5dp" />
+
+    <CheckBox
+        android:id="@+id/cb_auto_output"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/dir_auto_output_label"
+        android:checked="true"
+        android:paddingTop="4dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/dir_model_label"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <Spinner
+        android:id="@+id/spinner_model"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="8dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/darker_gray"
+        android:layout_marginVertical="12dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btn_start_process"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="@string/dir_start_btn"
+            android:textSize="18sp"
+            android:enabled="false" />
+
+        <Button
+            android:id="@+id/btn_stop_process"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="@string/dir_stop_btn"
+            android:textSize="18sp"
+            android:enabled="false" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="16dp">
+
+        <TextView
+            android:id="@+id/tv_log"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/black"
+            android:padding="10dp"
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            android:fontFamily="monospace"
+            android:text="@string/dir_log_hint" />
+    </ScrollView>
+
+</LinearLayout>
