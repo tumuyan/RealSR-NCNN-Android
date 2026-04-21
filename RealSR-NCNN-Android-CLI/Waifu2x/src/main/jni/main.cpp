@@ -124,7 +124,6 @@ class Task
 {
 public:
     int id;
-    int webp;
     int scale;
     int has_alpha;
 
@@ -207,110 +206,21 @@ void* load(void* args)
     {
         const path_t& imagepath = ltp->input_files[i];
 
-        int webp = 0;
+        cv::Mat inBGR, inAlpha;
+        imread(imagepath, inBGR, inAlpha);
 
-        unsigned char* pixeldata = 0;
-        int w;
-        int h;
-        int c;
-
-#if _WIN32
-        FILE* fp = _wfopen(imagepath.c_str(), L"rb");
-#else
-        FILE* fp = fopen(imagepath.c_str(), "rb");
-#endif
-        if (fp)
-        {
-            // read whole file
-            unsigned char* filedata = 0;
-            int length = 0;
-            {
-                fseek(fp, 0, SEEK_END);
-                length = ftell(fp);
-                rewind(fp);
-                filedata = (unsigned char*)malloc(length);
-                if (filedata)
-                {
-                    fread(filedata, 1, length, fp);
-                }
-                fclose(fp);
-            }
-
-            if (filedata)
-            {
-                pixeldata = webp_load(filedata, length, &w, &h, &c);
-                if (pixeldata)
-                {
-                    webp = 1;
-                }
-                else
-                {
-                    // not webp, try jpg png etc.
-#if _WIN32
-                    pixeldata = wic_decode_image(imagepath.c_str(), &w, &h, &c);
-#else // _WIN32
-                    pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 0);
-                    if (pixeldata)
-                    {
-                        // stb_image auto channel
-                        if (c == 1)
-                        {
-                            // grayscale -> rgb
-                            stbi_image_free(pixeldata);
-                            pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 3);
-                            c = 3;
-                        }
-                        else if (c == 2)
-                        {
-                            // grayscale + alpha -> rgba
-                            stbi_image_free(pixeldata);
-                            pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 4);
-                            c = 4;
-                        }
-                    }
-#endif // _WIN32
-                }
-
-                free(filedata);
-            }
-        }
-        if (pixeldata)
+        if (!inBGR.empty())
         {
             Task v;
             v.id = i;
-            v.webp = webp;
             v.scale = scale;
             v.inpath = imagepath;
             v.outpath = ltp->output_files[i];
-            v.has_alpha = 0;
+            v.has_alpha = !inAlpha.empty();
 
             path_t ext = get_file_extension(v.outpath);
-            if (c == 4)
+            if (v.has_alpha)
             {
-                // separate alpha channel from RGBA
-                v.has_alpha = 1;
-
-                // extract alpha
-                unsigned char* alphadata = (unsigned char*)malloc(w * h);
-                for (int j = 0; j < w * h; j++)
-                {
-                    alphadata[j] = pixeldata[j * 4 + 3];
-                }
-                v.inalpha = ncnn::Mat(w, h, (void*)alphadata, (size_t)1, 1);
-
-                // convert RGBA to RGB (remove alpha, keep RGB)
-                unsigned char* rgbdata = (unsigned char*)malloc(w * h * 3);
-                for (int j = 0; j < w * h; j++)
-                {
-                    rgbdata[j * 3 + 0] = pixeldata[j * 4 + 0];
-                    rgbdata[j * 3 + 1] = pixeldata[j * 4 + 1];
-                    rgbdata[j * 3 + 2] = pixeldata[j * 4 + 2];
-                }
-                free(pixeldata);
-                pixeldata = rgbdata;
-                c = 3;
-                webp = 0;
-
                 if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG"))
                 {
                     path_t output_filename2 = ltp->output_files[i] + PATHSTR(".png");
@@ -321,7 +231,30 @@ void* load(void* args)
                     fprintf(stderr, "image %s has alpha channel ! %s will output %s\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
 #endif // _WIN32
                 }
+
+                int w = inBGR.cols;
+                int h = inBGR.rows;
+
+                v.inalpha = ncnn::Mat(w, h, (size_t)1, 1);
+                if (inAlpha.data)
+                {
+                    memcpy(v.inalpha.data, inAlpha.data, w * h);
+                }
             }
+
+            int w = inBGR.cols;
+            int h = inBGR.rows;
+            int c = inBGR.channels();
+
+            unsigned char* pixeldata = (unsigned char*)malloc(w * h * c);
+            memcpy(pixeldata, inBGR.data, w * h * c);
+
+#ifndef _WIN32
+            for (int j = 0; j < w * h * c; j += c)
+            {
+                std::swap(pixeldata[j], pixeldata[j + 2]);
+            }
+#endif
 
             v.inimage = ncnn::Mat(w, h, (void*)pixeldata, (size_t)c, c);
 
@@ -431,21 +364,8 @@ void* save(void* args)
         // free input pixel data
         {
             unsigned char* pixeldata = (unsigned char*)v.inimage.data;
-            if (v.webp == 1)
-            {
-                free(pixeldata);
-            }
-            else
-            {
-#if _WIN32
-                free(pixeldata);
-#else
-                if (v.has_alpha)
-                    free(pixeldata);   // alpha分离后的RGB数据，由malloc分配
-                else
-                    stbi_image_free(pixeldata);
-#endif
-            }
+
+            free(pixeldata);
         }
 
         int success = 0;

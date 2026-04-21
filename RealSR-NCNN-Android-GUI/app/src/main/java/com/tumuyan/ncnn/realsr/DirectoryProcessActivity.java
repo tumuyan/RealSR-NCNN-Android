@@ -516,6 +516,11 @@ public class DirectoryProcessActivity extends AppCompatActivity {
             if (dirOutputFormat > 0 && dirOutputFormat < dirFormats.length && !baseCommand.contains(" -f ")) {
                 cmdBuilder.append(" -f ").append(dirFormats[dirOutputFormat]);
             }
+        } else if (baseCommand.startsWith("./Anime4k")) {
+            String[] dirFormats = getResources().getStringArray(R.array.dir_output_format);
+            if (dirOutputFormat > 0 && dirOutputFormat < dirFormats.length && !baseCommand.contains(" -E ")) {
+                cmdBuilder.append(" -E .").append(dirFormats[dirOutputFormat]);
+            }
         }
 
         String finalCmd = cmdBuilder.toString();

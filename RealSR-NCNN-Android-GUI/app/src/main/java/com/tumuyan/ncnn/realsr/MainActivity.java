@@ -912,9 +912,12 @@ public class MainActivity extends AppCompatActivity {
                     export_dir = true;
                     finalCmd = cmd.replace(" output.png ", " '" + savePath + "' ");
                     String[] dirFormats = getResources().getStringArray(R.array.dir_output_format);
-                    if (dirOutputFormat > 0 && dirOutputFormat < dirFormats.length
-                            && !finalCmd.contains(" -f ") && finalCmd.matches("./(realsr|srmd|waifu2x|realcugan|mnnsr)-ncnn.*")) {
-                        finalCmd += " -f " + dirFormats[dirOutputFormat];
+                    if (dirOutputFormat > 0 && dirOutputFormat < dirFormats.length) {
+                        if (!finalCmd.contains(" -f ") && finalCmd.matches("./(realsr|srmd|waifu2x|realcugan|mnnsr)-ncnn.*")) {
+                            finalCmd += " -f " + dirFormats[dirOutputFormat];
+                        } else if (!finalCmd.contains(" -E ") && finalCmd.startsWith("./Anime4k")) {
+                            finalCmd += " -E ." + dirFormats[dirOutputFormat];
+                        }
                     }
                 }
 

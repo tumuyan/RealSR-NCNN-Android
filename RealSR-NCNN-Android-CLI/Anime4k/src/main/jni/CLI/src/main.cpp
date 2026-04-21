@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cctype>
+#include <set>
 
 #ifdef USE_BOOST_FILESYSTEM
 #include <boost/filesystem.hpp>
@@ -243,6 +244,32 @@ static void string2LowerInPlace(std::string& s)
     std::transform(s.begin(), s.end(), s.begin(),
         [](unsigned char c) {return std::tolower(c); }
     );
+}
+
+static const std::set<std::string> SUPPORTED_IMAGE_EXTENSIONS = {
+    ".jpg", ".jpeg",
+    ".png",
+    ".bmp",
+    ".webp",
+    ".tif", ".tiff"
+};
+
+static const std::set<std::string> SUPPORTED_VIDEO_EXTENSIONS = {
+    ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".gif"
+};
+
+static bool isSupportedImageFormat(const std::string& ext)
+{
+    std::string lowerExt = ext;
+    string2LowerInPlace(lowerExt);
+    return SUPPORTED_IMAGE_EXTENSIONS.find(lowerExt) != SUPPORTED_IMAGE_EXTENSIONS.end();
+}
+
+static bool isSupportedVideoFormat(const std::string& ext)
+{
+    std::string lowerExt = ext;
+    string2LowerInPlace(lowerExt);
+    return SUPPORTED_VIDEO_EXTENSIONS.find(lowerExt) != SUPPORTED_VIDEO_EXTENSIONS.end();
 }
 
 class SafeLoger
@@ -692,6 +719,9 @@ int main(int argc, char* argv[])
                 {
                     if (filesystem::is_directory(file.path()))
                         continue;
+                    std::string fileExtension = file.path().extension().string();
+                    if (!isSupportedImageFormat(fileExtension))
+                        continue;
                     auto tmpOutputPath = outputPath / file.path().lexically_relative(inputPath);
                     filesystem::create_directories(tmpOutputPath.parent_path());
                     std::string currInputPath = file.path().string();
@@ -927,9 +957,10 @@ int main(int argc, char* argv[])
                     {
                         if (filesystem::is_directory(file.path()))
                             continue;
-                        //Check GIF
                         std::string inputSuffix = file.path().extension().string();
                         string2LowerInPlace(inputSuffix);
+                        if (!isSupportedVideoFormat(inputSuffix))
+                            continue;
                         gif = (inputSuffix == ".gif");
 
                         auto tmpOutputPath = outputPath / file.path().lexically_relative(inputPath);

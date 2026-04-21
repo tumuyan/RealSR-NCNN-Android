@@ -114,8 +114,8 @@ public class CommandListManager {
 
     /**
      * 判断命令是否支持目录批量处理模式。
-     * 支持：realsr-ncnn, srmd-ncnn, waifu2x-ncnn, realcugan-ncnn, mnnsr-ncnn, resize-ncnn
-     * 不支持：Anime4k, magick（这些程序只能处理单文件）
+     * 支持：realsr-ncnn, srmd-ncnn, waifu2x-ncnn, realcugan-ncnn, mnnsr-ncnn, resize-ncnn, Anime4k
+     * 不支持：magick（只能处理单文件）
      */
     public static boolean supportsDirectoryMode(String command) {
         if (command == null || command.isEmpty()) return false;
@@ -125,7 +125,8 @@ public class CommandListManager {
                cmd.startsWith("./waifu2x-ncnn") ||
                cmd.startsWith("./realcugan-ncnn") ||
                cmd.startsWith("./mnnsr-ncnn") ||
-               cmd.startsWith("./resize-ncnn");
+               cmd.startsWith("./resize-ncnn") ||
+               cmd.startsWith("./anime4k");
     }
 
     /**

@@ -151,17 +151,18 @@ static std::vector<int> parse_optarg_int_array(const char *optarg) {
 #include "platform.h"
 
 #include "filesystem_utils.h"
+#include "image_processor.h"
 
 static void print_usage() {
     fprintf(stderr, "Usage: resize-ncnn -i infile -o outfile [options]...\n\n");
     fprintf(stderr, "  -h                   show this help\n");
     fprintf(stderr, "  -v                   verbose output\n");
-    fprintf(stderr, "  -i input-path        input image path (jpg/png/webp) or directory\n");
-    fprintf(stderr, "  -o output-path       output image path (jpg/png/webp) or directory\n");
+    fprintf(stderr, "  -i input-path        input image path (jpg/png/webp/bmp) or directory (recursive)\n");
+    fprintf(stderr, "  -o output-path       output image path (jpg/png/webp/bmp) or directory\n");
     fprintf(stderr, "  -s scale             upscale ratio (4, default=4)\n");
     fprintf(stderr, "  -m mode        resize mode (bicubic/bilinear/nearest/avir/avir-lancir/de-nearest/de-nearest2/de-nearest3/perfectpixel, default=nearest)\n");
     fprintf(stderr, "  -n not-use-ncnn        bicubic/bilinear not use ncnn\n");
-    fprintf(stderr, "  -f format            output image format (jpg/png/webp, default=ext/png)\n");
+    fprintf(stderr, "  -f format            output image format (jpg/png/webp/bmp, default=input extension)\n");
 }
 
 #if _WIN32
@@ -199,7 +200,7 @@ int main(int argc, char **argv)
 #endif
     int verbose = 0;
     bool not_use_ncnn = false;
-    path_t format = PATHSTR("png");
+    path_t format;
 
 #if _WIN32
     setlocale(LC_ALL, "");
@@ -304,76 +305,33 @@ int main(int argc, char **argv)
     }
 
 
-    if (!path_is_directory(outputpath)) {
-        // guess format from outputpath no matter what format argument specified
+    if (!path_is_directory(outputpath))
+    {
         path_t ext = get_file_extension(outputpath);
-
-        if (ext == PATHSTR("png") || ext == PATHSTR("PNG")) {
-            format = PATHSTR("png");
-        } else if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP")) {
-            format = PATHSTR("webp");
-        } else if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") ||
-                   ext == PATHSTR("JPEG")) {
-            format = PATHSTR("jpg");
-        } else {
-            fprintf(stderr, "invalid outputpath extension type\n");
+        if (!ext.empty() && format.empty())
+        {
+            if (ext == PATHSTR("png") || ext == PATHSTR("PNG"))
+                format = PATHSTR("png");
+            else if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP"))
+                format = PATHSTR("webp");
+            else if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG"))
+                format = PATHSTR("jpg");
+            else if (ext == PATHSTR("bmp") || ext == PATHSTR("BMP"))
+                format = PATHSTR("bmp");
+        }
+        if (!format.empty() && !is_supported_encode_format(format))
+        {
+            fprintf(stderr, "invalid output format\n");
             return -1;
         }
     }
 
-    if (format != PATHSTR("png") && format != PATHSTR("webp") && format != PATHSTR("jpg")) {
-        fprintf(stderr, "invalid format argument\n");
-        return -1;
-    }
-
-    // collect input and output filepath
     std::vector<path_t> input_files;
     std::vector<path_t> output_files;
     {
-        if (path_is_directory(inputpath) && path_is_directory(outputpath)) {
-            std::vector<path_t> filenames;
-            int lr = list_directory(inputpath, filenames);
-            if (lr != 0)
-                return -1;
-
-            const int count = filenames.size();
-            input_files.resize(count);
-            output_files.resize(count);
-
-            path_t last_filename;
-            path_t last_filename_noext;
-            for (int i = 0; i < count; i++) {
-                path_t filename = filenames[i];
-                path_t filename_noext = get_file_name_without_extension(filename);
-                path_t output_filename = filename_noext + PATHSTR('.') + format;
-
-                // filename list is sorted, check if output image path conflicts
-                if (filename_noext == last_filename_noext) {
-                    path_t output_filename2 = filename + PATHSTR('.') + format;
-#if _WIN32
-                    fwprintf(stderr, L"both %ls and %ls output %ls ! %ls will output %ls\n", filename.c_str(), last_filename.c_str(), output_filename.c_str(), filename.c_str(), output_filename2.c_str());
-#else
-                    fprintf(stderr, "both %s and %s output %s ! %s will output %s\n",
-                            filename.c_str(), last_filename.c_str(), output_filename.c_str(),
-                            filename.c_str(), output_filename2.c_str());
-#endif
-                    output_filename = output_filename2;
-                } else {
-                    last_filename = filename;
-                    last_filename_noext = filename_noext;
-                }
-
-                input_files[i] = inputpath + PATHSTR('/') + filename;
-                output_files[i] = outputpath + PATHSTR('/') + output_filename;
-            }
-        } else if (!path_is_directory(inputpath) && !path_is_directory(outputpath)) {
-            input_files.push_back(inputpath);
-            output_files.push_back(outputpath);
-        } else {
-            fprintf(stderr,
-                    "inputpath and outputpath must be either file or directory at the same time\n");
+        int ret = collect_input_output_files(inputpath, outputpath, format, input_files, output_files);
+        if (ret != 0)
             return -1;
-        }
     }
 
     int prepadding = 0;

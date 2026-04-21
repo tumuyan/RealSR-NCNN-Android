@@ -97,6 +97,7 @@ static std::vector<int> parse_optarg_int_array(const char* optarg)
 #include "realcugan.h"
 
 #include "filesystem_utils.h"
+#include "image_processor.h"
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/hal/interface.h>
 #include "utils.hpp"
@@ -107,8 +108,8 @@ static void print_usage()
     fprintf(stdout, "Usage: realcugan-ncnn -i infile -o outfile [options]...\n\n");
     fprintf(stdout, "  -h                   show this help\n");
     fprintf(stdout, "  -v                   verbose output\n");
-    fprintf(stdout, "  -i input-path        input image path (jpg/png/webp) or directory\n");
-    fprintf(stdout, "  -o output-path       output image path (jpg/png/webp) or directory\n");
+    fprintf(stdout, "  -i input-path        input image path (jpg/png/webp/bmp) or directory (recursive)\n");
+    fprintf(stdout, "  -o output-path       output image path (jpg/png/webp/bmp) or directory\n");
     fprintf(stdout, "  -n noise-level       denoise level (-1/0/1/2/3, default=-1)\n");
     fprintf(stdout, "  -s scale             upscale ratio (1/2/3/4, default=2)\n");
     fprintf(stdout, "  -t tile-size         tile size (>=32/0=auto, default=0) can be 0,0,0 for multi-gpu\n");
@@ -117,14 +118,13 @@ static void print_usage()
     fprintf(stdout, "  -g gpu-id            gpu device to use (-1=cpu, default=auto) can be 0,1,2 for multi-gpu\n");
     fprintf(stdout, "  -j load:proc:save    thread count for load/proc/save (default=1:2:2) can be 1:2,2,2:2 for multi-gpu\n");
     fprintf(stdout, "  -x                   enable tta mode\n");
-    fprintf(stdout, "  -f format            output image format (jpg/png/webp, default=ext/png)\n");
+    fprintf(stdout, "  -f format            output image format (jpg/png/webp/bmp, default=input extension)\n");
 }
 
 class Task
 {
 public:
     int id;
-    int webp;
     int scale;
     int has_alpha;
 
@@ -207,110 +207,21 @@ void* load(void* args)
     {
         const path_t& imagepath = ltp->input_files[i];
 
-        int webp = 0;
+        cv::Mat inBGR, inAlpha;
+        imread(imagepath, inBGR, inAlpha);
 
-        unsigned char* pixeldata = 0;
-        int w;
-        int h;
-        int c;
-
-#if _WIN32
-        FILE* fp = _wfopen(imagepath.c_str(), L"rb");
-#else
-        FILE* fp = fopen(imagepath.c_str(), "rb");
-#endif
-        if (fp)
-        {
-            // read whole file
-            unsigned char* filedata = 0;
-            int length = 0;
-            {
-                fseek(fp, 0, SEEK_END);
-                length = ftell(fp);
-                rewind(fp);
-                filedata = (unsigned char*)malloc(length);
-                if (filedata)
-                {
-                    fread(filedata, 1, length, fp);
-                }
-                fclose(fp);
-            }
-
-            if (filedata)
-            {
-                pixeldata = webp_load(filedata, length, &w, &h, &c);
-                if (pixeldata)
-                {
-                    webp = 1;
-                }
-                else
-                {
-                    // not webp, try jpg png etc.
-#if _WIN32
-                    pixeldata = wic_decode_image(imagepath.c_str(), &w, &h, &c);
-#else // _WIN32
-                    pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 0);
-                    if (pixeldata)
-                    {
-                        // stb_image auto channel
-                        if (c == 1)
-                        {
-                            // grayscale -> rgb
-                            stbi_image_free(pixeldata);
-                            pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 3);
-                            c = 3;
-                        }
-                        else if (c == 2)
-                        {
-                            // grayscale + alpha -> rgba
-                            stbi_image_free(pixeldata);
-                            pixeldata = stbi_load_from_memory(filedata, length, &w, &h, &c, 4);
-                            c = 4;
-                        }
-                    }
-#endif // _WIN32
-                }
-
-                free(filedata);
-            }
-        }
-        if (pixeldata)
+        if (!inBGR.empty())
         {
             Task v;
             v.id = i;
-            v.webp = webp;
             v.scale = scale;
             v.inpath = imagepath;
             v.outpath = ltp->output_files[i];
-            v.has_alpha = 0;
+            v.has_alpha = !inAlpha.empty();
 
             path_t ext = get_file_extension(v.outpath);
-            if (c == 4)
+            if (v.has_alpha)
             {
-                // separate alpha channel from RGBA
-                v.has_alpha = 1;
-
-                // extract alpha
-                unsigned char* alphadata = (unsigned char*)malloc(w * h);
-                for (int j = 0; j < w * h; j++)
-                {
-                    alphadata[j] = pixeldata[j * 4 + 3];
-                }
-                v.inalpha = ncnn::Mat(w, h, (void*)alphadata, (size_t)1, 1);
-
-                // convert RGBA to RGB (remove alpha, keep RGB)
-                unsigned char* rgbdata = (unsigned char*)malloc(w * h * 3);
-                for (int j = 0; j < w * h; j++)
-                {
-                    rgbdata[j * 3 + 0] = pixeldata[j * 4 + 0];
-                    rgbdata[j * 3 + 1] = pixeldata[j * 4 + 1];
-                    rgbdata[j * 3 + 2] = pixeldata[j * 4 + 2];
-                }
-                free(pixeldata);
-                pixeldata = rgbdata;
-                c = 3;
-                webp = 0;
-
                 if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG"))
                 {
                     path_t output_filename2 = ltp->output_files[i] + PATHSTR(".png");
@@ -321,7 +232,30 @@ void* load(void* args)
                     fprintf(stderr, "image %s has alpha channel ! %s will output %s\n", imagepath.c_str(), imagepath.c_str(), output_filename2.c_str());
 #endif // _WIN32
                 }
+
+                int w = inBGR.cols;
+                int h = inBGR.rows;
+
+                v.inalpha = ncnn::Mat(w, h, (size_t)1, 1);
+                if (inAlpha.data)
+                {
+                    memcpy(v.inalpha.data, inAlpha.data, w * h);
+                }
             }
+
+            int w = inBGR.cols;
+            int h = inBGR.rows;
+            int c = inBGR.channels();
+
+            unsigned char* pixeldata = (unsigned char*)malloc(w * h * c);
+            memcpy(pixeldata, inBGR.data, w * h * c);
+
+#ifndef _WIN32
+            for (int j = 0; j < w * h * c; j += c)
+            {
+                std::swap(pixeldata[j], pixeldata[j + 2]);
+            }
+#endif
 
             v.inimage = ncnn::Mat(w, h, (void*)pixeldata, (size_t)c, c);
 
@@ -405,23 +339,8 @@ void* save(void* args)
         // free input pixel data
         {
             unsigned char* pixeldata = (unsigned char*)v.inimage.data;
-            if (v.webp == 1)
-            {
-                free(pixeldata);
-            }
-            else if (v.has_alpha)
-            {
-                // alpha-separated RGB data was allocated with malloc, not stbi
-                free(pixeldata);
-            }
-            else
-            {
-#if _WIN32
-                free(pixeldata);
-#else
-                stbi_image_free(pixeldata);
-#endif
-            }
+
+            free(pixeldata);
         }
 
         int success = 0;
@@ -531,7 +450,7 @@ int main(int argc, char** argv)
     int verbose = 0;
     int syncgap = 3;
     int tta_mode = 0;
-    path_t format = PATHSTR("png");
+    path_t format;
 
 #if _WIN32
     setlocale(LC_ALL, "");
@@ -696,88 +615,31 @@ int main(int argc, char** argv)
 
     if (!path_is_directory(outputpath))
     {
-        // guess format from outputpath no matter what format argument specified
         path_t ext = get_file_extension(outputpath);
-
-        if (ext == PATHSTR("png") || ext == PATHSTR("PNG"))
+        if (!ext.empty() && format.empty())
         {
-            format = PATHSTR("png");
+            if (ext == PATHSTR("png") || ext == PATHSTR("PNG"))
+                format = PATHSTR("png");
+            else if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP"))
+                format = PATHSTR("webp");
+            else if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG"))
+                format = PATHSTR("jpg");
+            else if (ext == PATHSTR("bmp") || ext == PATHSTR("BMP"))
+                format = PATHSTR("bmp");
         }
-        else if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP"))
+        if (!format.empty() && !is_supported_encode_format(format))
         {
-            format = PATHSTR("webp");
-        }
-        else if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG"))
-        {
-            format = PATHSTR("jpg");
-        }
-        else
-        {
-            fprintf(stderr, "invalid outputpath extension type\n");
+            fprintf(stderr, "invalid output format\n");
             return -1;
         }
     }
 
-    if (format != PATHSTR("png") && format != PATHSTR("webp") && format != PATHSTR("jpg"))
-    {
-        fprintf(stderr, "invalid format argument\n");
-        return -1;
-    }
-
-    // collect input and output filepath
     std::vector<path_t> input_files;
     std::vector<path_t> output_files;
     {
-        if (path_is_directory(inputpath) && path_is_directory(outputpath))
-        {
-            std::vector<path_t> filenames;
-            int lr = list_directory(inputpath, filenames);
-            if (lr != 0)
-                return -1;
-
-            const int count = filenames.size();
-            input_files.resize(count);
-            output_files.resize(count);
-
-            path_t last_filename;
-            path_t last_filename_noext;
-            for (int i=0; i<count; i++)
-            {
-                path_t filename = filenames[i];
-                path_t filename_noext = get_file_name_without_extension(filename);
-                path_t output_filename = filename_noext + PATHSTR('.') + format;
-
-                // filename list is sorted, check if output image path conflicts
-                if (filename_noext == last_filename_noext)
-                {
-                    path_t output_filename2 = filename + PATHSTR('.') + format;
-#if _WIN32
-                    fwprintf(stderr, L"both %ls and %ls output %ls ! %ls will output %ls\n", filename.c_str(), last_filename.c_str(), output_filename.c_str(), filename.c_str(), output_filename2.c_str());
-#else
-                    fprintf(stderr, "both %s and %s output %s ! %s will output %s\n", filename.c_str(), last_filename.c_str(), output_filename.c_str(), filename.c_str(), output_filename2.c_str());
-#endif
-                    output_filename = output_filename2;
-                }
-                else
-                {
-                    last_filename = filename;
-                    last_filename_noext = filename_noext;
-                }
-
-                input_files[i] = inputpath + PATHSTR('/') + filename;
-                output_files[i] = outputpath + PATHSTR('/') + output_filename;
-            }
-        }
-        else if (!path_is_directory(inputpath) && !path_is_directory(outputpath))
-        {
-            input_files.push_back(inputpath);
-            output_files.push_back(outputpath);
-        }
-        else
-        {
-            fprintf(stderr, "inputpath and outputpath must be either file or directory at the same time\n");
+        int ret = collect_input_output_files(inputpath, outputpath, format, input_files, output_files);
+        if (ret != 0)
             return -1;
-        }
     }
 
     int prepadding = 0;
@@ -955,7 +817,7 @@ int main(int argc, char** argv)
 
         uint32_t heap_budget = ncnn::get_gpu_device(gpuid[i])->get_heap_budget();
 
-        if (path_is_directory(inputpath) && path_is_directory(outputpath))
+        if (input_files.size() > 1)
         {
             // multiple gpu jobs share the same heap
             heap_budget /= jobs_proc_per_gpu[gpuid[i]];
