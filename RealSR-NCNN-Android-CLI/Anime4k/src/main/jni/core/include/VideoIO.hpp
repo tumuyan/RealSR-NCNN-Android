@@ -61,14 +61,16 @@ public:
     void continueProcess();
 
     virtual void process() = 0;
-protected:
+public:
     void setProgress(double p) noexcept;
+    void setTotalFrameCount(std::size_t count) noexcept;
 protected:
     std::size_t threads = 0;
     std::size_t limit = 0;
     std::function<void()> processor;
     cv::VideoCapture reader;
     cv::VideoWriter writer;
+    std::size_t totalFrameCountOverride = 0;
 
     std::queue<Frame> rawFrames;
     std::unordered_map<std::size_t, cv::Mat> frameMap;

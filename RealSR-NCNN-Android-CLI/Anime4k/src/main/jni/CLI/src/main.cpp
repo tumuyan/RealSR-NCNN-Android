@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cctype>
+#include <cmath>
 #include <set>
 
 #ifdef USE_BOOST_FILESYSTEM
@@ -27,9 +28,17 @@ enum class GPGPU
 
 static bool checkFFmpeg()
 {
+#ifdef __ANDROID__
+    std::cout << "Audio merge is not supported on Android, output will be silent." << std::endl;
+    return false;
+#else
     std::cout << "Checking ffmpeg..." << std::endl;
 
-    return !std::system("ffmpeg -version");
+    bool ffmpegAvailable = !std::system("ffmpeg -version");
+    if (!ffmpegAvailable)
+        std::cout << "Warning: ffmpeg not found, output video will be silent. Install ffmpeg to enable audio support." << std::endl;
+    return ffmpegAvailable;
+#endif
 }
 
 #ifdef ENABLE_VIDEO
@@ -37,20 +46,55 @@ static bool checkFFmpeg()
 static void processVideoWithProgress(Anime4KCPP::VideoProcessor& videoPeocessor)
 {
     auto s = std::chrono::steady_clock::now();
+    int lastFrameCount = 0;
+    double lastProgressTime = 0.0;
+    double estimatedFps = 30.0;
+
     videoPeocessor.processWithProgress(
-        [&s](double progress)
+        [&s, &lastFrameCount, &lastProgressTime, &estimatedFps](double progress)
         {
             auto e = std::chrono::steady_clock::now();
             double currTime = std::chrono::duration_cast<std::chrono::milliseconds>(e - s).count() / 1000.0;
 
-            std::fprintf(stderr,
-                "%7.2f%%     elpsed: %8.2fs    remaining: %8.2fs\r",
-                progress * 100,
-                currTime,
-                currTime / progress - currTime);
+            bool hasValidProgress = (progress > 0.0 && progress <= 1.0 && 
+                                    !std::isnan(progress) && !std::isinf(progress));
 
-            if (progress == 1.0)
-                std::putc('\n', stderr);
+            if (hasValidProgress)
+            {
+                double remaining = currTime / progress - currTime;
+                if (remaining < 0) remaining = 0;
+
+                std::fprintf(stderr,
+                    "%7.2f%%     elpsed: %8.2fs    remaining: %8.2fs\r",
+                    progress * 100,
+                    currTime,
+                    remaining);
+            }
+            else
+            {
+                double timeDelta = currTime - lastProgressTime;
+                
+                if (timeDelta >= 1.0 || lastFrameCount == 0)
+                {
+                    int currentFrameCount = static_cast<int>(currTime * estimatedFps);
+                    
+                    if (currentFrameCount > lastFrameCount)
+                    {
+                        double actualFps = (currentFrameCount - lastFrameCount) / timeDelta;
+                        if (actualFps > 0 && actualFps < 200)
+                            estimatedFps = estimatedFps * 0.7 + actualFps * 0.3;
+                        
+                        std::fprintf(stderr,
+                            "Processing... frame ~%d (%4.1f fps)     elpsed: %8.2fs\r",
+                            currentFrameCount,
+                            estimatedFps,
+                            currTime);
+
+                        lastFrameCount = currentFrameCount;
+                        lastProgressTime = currTime;
+                    }
+                }
+            }
         });
 }
 
@@ -255,7 +299,12 @@ static const std::set<std::string> SUPPORTED_IMAGE_EXTENSIONS = {
 };
 
 static const std::set<std::string> SUPPORTED_VIDEO_EXTENSIONS = {
-    ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".gif"
+    ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".gif",
+    ".ts", ".mts", ".m2ts",
+    ".3gp", ".3g2",
+    ".m4v",
+    ".ogv",
+    ".vob"
 };
 
 static bool isSupportedImageFormat(const std::string& ext)
@@ -935,7 +984,11 @@ int main(int argc, char* argv[])
                 std::string outputTmpName = outputPath.string();
 
                 if (!ffmpeg)
+                {
+#ifndef __ANDROID__
                     std::cout << "Please install ffmpeg, otherwise the output file will be silent.\n";
+#endif
+                }
                 else
                     outputTmpName = inputPath.stem().string() + "_tmp_out.mp4";
 

@@ -1,6 +1,7 @@
 #ifdef ENABLE_VIDEO
 
 #include <exception>
+#include <vector>
 
 #include "ACCreator.hpp"
 #include "VideoProcessor.hpp"
@@ -29,10 +30,79 @@ Anime4KCPP::VideoProcessor::VideoProcessor(const AC& config, const unsigned int 
 void Anime4KCPP::VideoProcessor::loadVideo(const std::string& srcFile, const bool hw)
 {
     if (!videoIO->openReader(srcFile, hw))
-        throw ACException<ExceptionType::IO>("Failed to load file: file doesn't not exist or decoder isn't installed.");
+    {
+        std::string errorMsg = "Failed to load video: " + srcFile + "\n";
+        errorMsg += "Possible reasons:\n";
+        errorMsg += "  1. File does not exist\n";
+        errorMsg += "  2. Invalid file path (use absolute path like /sdcard/...)\n";
+        errorMsg += "  3. No storage permission granted\n";
+        errorMsg += "  4. Unsupported video format or corrupted file\n";
+#ifdef __ANDROID__
+        errorMsg += "\nAndroid tips:\n";
+        errorMsg += "  - Use path: /sdcard/DCIM/video.mp4 or /sdcard/Download/video.mp4\n";
+        errorMsg += "  - Grant storage permission in app settings\n";
+#endif
+        throw ACException<ExceptionType::IO>(errorMsg);
+    }
 
     fps = videoIO->get(cv::CAP_PROP_FPS);
     totalFrameCount = videoIO->get(cv::CAP_PROP_FRAME_COUNT);
+
+#ifdef __ANDROID__
+    if (totalFrameCount <= 0)
+    {
+        std::cerr << "[Anime4K] Scanning video for frame count..." << std::endl;
+        
+        cv::VideoCapture tempReader;
+        long framePos = 0;
+        
+        for (int backend : {cv::CAP_ANY, cv::CAP_FFMPEG})
+        {
+#ifdef NEW_OPENCV_API
+            tempReader.open(srcFile, backend,
+                {cv::CAP_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_NONE});
+#else
+            tempReader.open(srcFile, backend);
+#endif
+            if (!tempReader.isOpened())
+                continue;
+
+            double testCount = tempReader.get(cv::CAP_PROP_FRAME_COUNT);
+            if (testCount > 0)
+            {
+                totalFrameCount = static_cast<std::size_t>(std::round(testCount));
+                break;
+            }
+
+            cv::Mat frame;
+            while (tempReader.read(frame))
+            {
+                framePos++;
+                if (framePos % 200 == 0)
+                    std::cerr << "\r[Anime4K] Scanned " << framePos << " frames..." << std::flush;
+            }
+            
+            if (framePos > 0)
+            {
+                totalFrameCount = static_cast<std::size_t>(framePos);
+                break;
+            }
+            
+            tempReader.release();
+        }
+
+        if (totalFrameCount > 0)
+        {
+            std::cerr << "\r[Anime4K] Found " << totalFrameCount << " frames" << std::endl;
+            videoIO->setTotalFrameCount(totalFrameCount);
+        }
+        else
+        {
+            std::cerr << "\r[Anime4K] Warning: Could not determine frame count" << std::endl;
+        }
+    }
+#endif
+
     height = static_cast<int>(std::round(param.zoomFactor * videoIO->get(cv::CAP_PROP_FRAME_HEIGHT)));
     width = static_cast<int>(std::round(param.zoomFactor * videoIO->get(cv::CAP_PROP_FRAME_WIDTH)));
 }
@@ -128,9 +198,14 @@ std::string Anime4KCPP::VideoProcessor::getInfo() const
         << "Video information" << '\n'
         << "------------------------" << '\n'
         << "FPS: " << fps << '\n'
-        << "Threads: " << threads << '\n'
-        << "Total frames: " << totalFrameCount << '\n'
-        << "------------------------" << '\n';
+        << "Threads: " << threads << '\n';
+    
+    if (totalFrameCount > 0)
+        oss << "Total frames: " << totalFrameCount << '\n';
+    else
+        oss << "Total frames: Unknown (will count during processing)" << '\n';
+    
+    oss << "------------------------" << '\n';
     return oss.str();
 }
 

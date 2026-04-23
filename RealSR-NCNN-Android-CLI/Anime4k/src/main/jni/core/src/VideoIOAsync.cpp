@@ -16,7 +16,12 @@ void Anime4KCPP::Video::VideoIOAsync::process()
 
     futures.emplace_front(std::async(std::launch::async, [&]()
         {
-            double totalFrame = reader.get(cv::CAP_PROP_FRAME_COUNT);
+            double totalFrame = 0;
+            if (totalFrameCountOverride > 0)
+                totalFrame = static_cast<double>(totalFrameCountOverride);
+            else
+                totalFrame = reader.get(cv::CAP_PROP_FRAME_COUNT);
+            bool hasTotalFrames = (totalFrame > 0);
 
             for (std::size_t frameCount = 0; finished == 0 || frameCount < finished; frameCount++)
             {
@@ -31,7 +36,11 @@ void Anime4KCPP::Video::VideoIOAsync::process()
 
                 writer.write(it->second);
                 frameMap.erase(it);
-                setProgress(static_cast<double>(frameCount) / totalFrame);
+                
+                if (hasTotalFrames && totalFrame > 0)
+                    setProgress(static_cast<double>(frameCount) / totalFrame);
+                else
+                    setProgress(0.0);
             }
         }));
 
