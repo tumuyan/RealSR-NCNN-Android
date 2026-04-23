@@ -243,7 +243,7 @@
     <string name="dir_service_error">服务未连接，请重试</string>
     <string name="dir_model_error">无效的模型选择</string>
     <string name="dir_log_hint">日志将显示在这里…</string>
-    <string name="dir_log_starting">正在处理 %d 张图片，来源：%s</string>
+    <string name="dir_log_starting">正在处理目录：%s</string>
     <string name="dir_log_output_to">输出目录：%s</string>
     <string name="dir_log_complete">批量处理完成！</string>
     <string name="dir_no_supported_commands">没有支持目录批量处理的命令，请使用主界面的单图或多图处理功能。</string>

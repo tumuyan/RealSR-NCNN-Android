@@ -4,7 +4,6 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -30,9 +29,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 
 public class DirectoryProcessActivity extends AppCompatActivity {
@@ -42,10 +39,9 @@ public class DirectoryProcessActivity extends AppCompatActivity {
 
     private Uri inputDirUri;
     private Uri outputDirUri;
-    private List<String> inputFileNames = new ArrayList<>();
 
     private EditText etInputDirPath, etOutputDirPath;
-    private TextView tvInputFileCount, tvLog;
+    private TextView tvLog, tvTitle;
     private Button btnSelectInputDir, btnSelectOutputDir, btnStartProcess, btnStopProcess;
     private Spinner spinnerModel;
     private CheckBox cbAutoOutput;
@@ -106,7 +102,6 @@ public class DirectoryProcessActivity extends AppCompatActivity {
     private void initViews() {
         etInputDirPath = findViewById(R.id.et_input_dir_path);
         etOutputDirPath = findViewById(R.id.et_output_dir_path);
-        tvInputFileCount = findViewById(R.id.tv_input_file_count);
         tvLog = findViewById(R.id.tv_log);
 
         btnSelectInputDir = findViewById(R.id.btn_select_input_dir);
@@ -206,11 +201,7 @@ public class DirectoryProcessActivity extends AppCompatActivity {
                 if (!path.isEmpty()) {
                     File file = new File(path);
                     if (file.exists() && file.isDirectory()) {
-                        scanInputDirectoryFromFile(file);
                         updateAutoOutputPath(path);
-                    } else {
-                        inputFileNames.clear();
-                        tvInputFileCount.setText("");
                     }
                 }
                 updateStartButtonState();
@@ -341,7 +332,6 @@ public class DirectoryProcessActivity extends AppCompatActivity {
                 isUpdatingOutputPath = true;
                 etInputDirPath.setText(path.isEmpty() ? treeUri.toString() : path);
                 isUpdatingOutputPath = false;
-                scanInputDirectory(treeUri);
             } else if (requestCode == REQUEST_CODE_OUTPUT_DIR) {
                 outputDirUri = treeUri;
                 getContentResolver().takePersistableUriPermission(treeUri,
@@ -374,96 +364,14 @@ public class DirectoryProcessActivity extends AppCompatActivity {
         return "";
     }
 
-    private void scanInputDirectory(Uri treeUri) {
-        inputFileNames.clear();
-
-        String[] imageExtensions = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"};
-        List<String> validFiles = new ArrayList<>();
-
-        scanDirectoryRecursive(treeUri, DocumentsContract.getTreeDocumentId(treeUri), imageExtensions, validFiles);
-
-        inputFileNames.addAll(validFiles);
-        tvInputFileCount.setText(getString(R.string.dir_file_count, inputFileNames.size()));
-    }
-
-    private void scanInputDirectoryFromFile(File directory) {
-        inputFileNames.clear();
-
-        String[] imageExtensions = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"};
-        List<String> validFiles = new ArrayList<>();
-
-        scanFileRecursive(directory, imageExtensions, validFiles);
-
-        inputFileNames.addAll(validFiles);
-        tvInputFileCount.setText(getString(R.string.dir_file_count, inputFileNames.size()));
-    }
-
-    private void scanFileRecursive(File directory, String[] imageExtensions, List<String> validFiles) {
-        File[] files = directory.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    scanFileRecursive(file, imageExtensions, validFiles);
-                } else {
-                    String name = file.getName().toLowerCase(Locale.ROOT);
-                    for (String ext : imageExtensions) {
-                        if (name.endsWith(ext)) {
-                            validFiles.add(file.getName());
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private void scanDirectoryRecursive(Uri treeUri, String parentDocId, String[] imageExtensions, List<String> validFiles) {
-        Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocId);
-
-        try (Cursor cursor = getContentResolver().query(childrenUri,
-                new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-                        DocumentsContract.Document.COLUMN_MIME_TYPE},
-                null, null, null)) {
-
-            if (cursor != null) {
-                while (cursor.moveToNext()) {
-                    String docId = cursor.getString(cursor.getColumnIndexOrThrow(
-                            DocumentsContract.Document.COLUMN_DOCUMENT_ID));
-                    String fileName = cursor.getString(cursor.getColumnIndexOrThrow(
-                            DocumentsContract.Document.COLUMN_DISPLAY_NAME));
-                    String mimeType = cursor.getString(cursor.getColumnIndexOrThrow(
-                            DocumentsContract.Document.COLUMN_MIME_TYPE));
-
-                    boolean isDir = DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType);
-
-                    if (isDir) {
-                        scanDirectoryRecursive(treeUri, docId, imageExtensions, validFiles);
-                    } else if (mimeType != null && mimeType.startsWith("image/")) {
-                        String lowerName = fileName.toLowerCase(Locale.ROOT);
-                        for (String ext : imageExtensions) {
-                            if (lowerName.endsWith(ext)) {
-                                validFiles.add(fileName);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     private void updateStartButtonState() {
         String inputPath = etInputDirPath.getText().toString().trim();
         String outputPath = etOutputDirPath.getText().toString().trim();
 
         boolean inputValid = !inputPath.isEmpty() && new File(inputPath).exists() && new File(inputPath).isDirectory();
         boolean outputValid = !outputPath.isEmpty();
-        boolean hasFiles = !inputFileNames.isEmpty();
 
-        boolean canStart = inputValid && outputValid && hasFiles;
+        boolean canStart = inputValid && outputValid;
         btnStartProcess.setEnabled(canStart);
     }
 
@@ -530,7 +438,7 @@ public class DirectoryProcessActivity extends AppCompatActivity {
 
         progressLog = new ProgressLogHelper();
         progressLog.reset();
-        progressLog.appendLine(getString(R.string.dir_log_starting, inputFileNames.size(), inputPath));
+        progressLog.appendLine(getString(R.string.dir_log_starting, inputPath));
         progressLog.appendLine(getString(R.string.dir_log_output_to, outputPath));
         progressLog.appendLine("Command: " + execCmd);
         tvLog.setText(progressLog.getDisplayText());

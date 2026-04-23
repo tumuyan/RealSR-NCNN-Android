@@ -259,7 +259,7 @@ Even if this feature is disabled, you can still select multiple images from othe
     <string name="dir_service_error">Service not connected, please retry</string>
     <string name="dir_model_error">Invalid model selection</string>
     <string name="dir_log_hint">Log output will appear here...</string>
-    <string name="dir_log_starting">Processing %d images from: %s</string>
+    <string name="dir_log_starting">Processing directory: %s</string>
     <string name="dir_log_output_to">Output directory: %s</string>
     <string name="dir_log_complete">Batch processing completed successfully!</string>
     <string name="dir_no_supported_commands">No commands support directory batch processing. Please use the main interface for single file or multi-file processing.</string>

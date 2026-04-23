@@ -1032,54 +1032,57 @@ public class MainActivity extends AppCompatActivity {
 
                     runOnUiThread(() -> {
                         logTextView.setText(finalLog);
-                        menuProgress.setTitle(DONE);
-                        // Result notification still handled here
-                        // If failed (!success) and notify==3 (AutoDismiss), we force show notification.
+                        menuProgress.setTitle(success ? DONE : ERR);
                         boolean forceShow = !success && notify == 3;
                         sendNotification(MainActivity.this, success ? DONE : ERR, forceShow);
 
-                        if (save) {
-                            if (!outputFile.exists()) {
-                                Toast.makeText(getApplicationContext(), R.string.output_not_exits, Toast.LENGTH_SHORT)
-                                        .show();
-                            } else {
-                                checkSaveOutput();
+                        if (success) {
+                            if (save) {
+                                if (!outputFile.exists()) {
+                                    Toast.makeText(getApplicationContext(), R.string.output_not_exits, Toast.LENGTH_SHORT)
+                                            .show();
+                                } else {
+                                    checkSaveOutput();
+                                }
+                            } else if (final_export_dir) {
+                                Toast.makeText(getApplicationContext(), R.string.save_succeed, Toast.LENGTH_SHORT).show();
                             }
-                        } else if (final_export_dir) {
-                            Toast.makeText(getApplicationContext(), R.string.save_succeed, Toast.LENGTH_SHORT).show();
-                        }
 
-                        if (inputFile.isDirectory()) {
-                            if (inputIsGifAnimation)
-                                scanFiles(new String[] { outputSavePath });
-                            else {
-                                File[] files = inputFile.listFiles();
-                                if (files != null) {
-                                    List<String> outputPaths = new ArrayList<>();
-                                    for (File file : files) {
-                                        outputPaths.add(savePath + File.separator + file.getName());
+                            if (!save && inputFile.isDirectory()) {
+                                if (inputIsGifAnimation)
+                                    scanFiles(new String[] { outputSavePath });
+                                else {
+                                    File[] files = inputFile.listFiles();
+                                    if (files != null) {
+                                        List<String> outputPaths = new ArrayList<>();
+                                        for (File file : files) {
+                                            outputPaths.add(savePath + File.separator + file.getName());
+                                        }
+                                        scanFiles(outputPaths.toArray(new String[0]));
                                     }
-                                    scanFiles(outputPaths.toArray(new String[0]));
                                 }
                             }
-                        }
 
-                        boolean showImgView = (effectivelyFinalCmd.contains("output.png"));
-                        if (showImgView) {
-                            if (outputFile.exists() && outputFile.isFile()) {
-                                updateImage(dir + "/output.png", String.format("%s\n%s", getString(R.string.hr), log),
-                                        false);
-                            } else if (inputIsGifAnimation && outputFile.exists() && outputFile.isDirectory()
-                                    && outputFile.listFiles().length > 1) {
-                                updateImage(outputFile.listFiles()[0].getPath(),
-                                        String.format("%s\n%s", getString(R.string.hr), log), false);
-                            } else {
-                                updateImage(dir + "/input.png", String.format("%s\n%s", getString(R.string.lr), log),
-                                        false);
+                            boolean showImgView = (effectivelyFinalCmd.contains("output.png"));
+                            if (showImgView) {
+                                if (outputFile.exists() && outputFile.isFile()) {
+                                    updateImage(dir + "/output.png", String.format("%s\n%s", getString(R.string.hr), log),
+                                            false);
+                                } else if (inputIsGifAnimation && outputFile.exists() && outputFile.isDirectory()
+                                        && outputFile.listFiles().length > 1) {
+                                    updateImage(outputFile.listFiles()[0].getPath(),
+                                            String.format("%s\n%s", getString(R.string.hr), log), false);
+                                } else {
+                                    updateImage(dir + "/input.png", String.format("%s\n%s", getString(R.string.lr), log),
+                                            false);
+                                }
                             }
+                            if (!effectivelyFinalCmd.contains("output.png"))
+                                imageView.setVisibility(View.GONE);
+                        } else {
+                            if (!effectivelyFinalCmd.contains("output.png"))
+                                imageView.setVisibility(View.GONE);
                         }
-                        if (!showImgView)
-                            imageView.setVisibility(View.GONE);
                     });
                 }
 

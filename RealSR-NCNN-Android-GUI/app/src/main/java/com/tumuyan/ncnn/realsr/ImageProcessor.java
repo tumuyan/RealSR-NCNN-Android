@@ -4,6 +4,7 @@ import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.InterruptedIOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.concurrent.ExecutorService;
@@ -19,6 +20,7 @@ public class ImageProcessor {
     private final ExecutorService executorService;
     private Process currentProcess;
     private Future<?> currentTask;
+    private volatile boolean taskCancelled;
 
     public interface ProcessCallback {
         void onProgress(String line);
@@ -32,8 +34,8 @@ public class ImageProcessor {
     }
 
     public void executeCommand(String command, String workingDir, ProcessCallback callback) {
-        // 取消当前正在运行的任务（如果有）
         cancelCurrentTask();
+        taskCancelled = false;
 
         currentTask = executorService.submit(() -> {
             runProcess(command, workingDir, callback);
@@ -84,6 +86,9 @@ public class ImageProcessor {
         } catch (InterruptedException e) {
             Log.w(TAG, "Process interrupted");
             callback.onError("Process interrupted");
+        } catch (InterruptedIOException e) {
+            Log.w(TAG, "Process stream closed by cancel, treating as normal cancellation");
+            callback.onError("Task cancelled");
         } catch (Exception e) {
             Log.e(TAG, "Error executing process", e);
             callback.onError(e.getMessage());
@@ -94,11 +99,14 @@ public class ImageProcessor {
                     currentProcess = null;
                 }
             }
-            callback.onCompleted(resultBuilder.toString(), success);
+            if (!taskCancelled) {
+                callback.onCompleted(resultBuilder.toString(), success);
+            }
         }
     }
 
     public void cancelCurrentTask() {
+        taskCancelled = true;
         if (currentTask != null && !currentTask.isDone()) {
             currentTask.cancel(true);
         }

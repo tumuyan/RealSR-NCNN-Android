@@ -47,6 +47,7 @@
         android:id="@+id/tv_input_file_count"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:visibility="gone"
         android:paddingTop="4dp"
         android:paddingBottom="12dp"
         android:text=""
