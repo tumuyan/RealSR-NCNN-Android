@@ -162,7 +162,10 @@ static void print_usage() {
     fprintf(stderr, "  -s scale             upscale ratio (4, default=4)\n");
     fprintf(stderr, "  -m mode        resize mode (bicubic/bilinear/nearest/avir/avir-lancir/de-nearest/de-nearest2/de-nearest3/perfectpixel, default=nearest)\n");
     fprintf(stderr, "  -n not-use-ncnn        bicubic/bilinear not use ncnn\n");
-    fprintf(stderr, "  -f format            output image format (jpg/png/webp/bmp, default=input extension)\n");
+    fprintf(stderr, "  -f format            force output format (ignore alpha channel detection)\n");
+    fprintf(stderr, "  -e format            suggested output format (auto-convert to png if alpha detected)\n");
+    fprintf(stderr, "  -k skip-size         skip if output file exists and size >= threshold bytes (0=disable)\n");
+    fprintf(stderr, "  -p pattern           output name pattern for batch mode, placeholders: {name} {prog} {index} {timestamp} {datetime} {date} {time}\n");
 }
 
 #if _WIN32
@@ -200,12 +203,15 @@ int main(int argc, char **argv)
 #endif
     int verbose = 0;
     bool not_use_ncnn = false;
-    path_t format;
+    path_t output_format;
+    path_t suggested_format;
+    long long skip_size = 0;
+    path_t name_pattern = PATHSTR("{name}");
 
 #if _WIN32
     setlocale(LC_ALL, "");
     wchar_t opt;
-    while ((opt = getopt(argc, argv, L"i:o:s:t:m:g:j:f:vxhn")) != (wchar_t)-1)
+    while ((opt = getopt(argc, argv, L"i:o:s:t:m:g:j:f:vxhkn:e:p:")) != (wchar_t)-1)
     {
         switch (opt)
         {
@@ -224,13 +230,22 @@ int main(int argc, char **argv)
             break;
 
         case L'f':
-            format = optarg;
+            output_format = optarg;
+            break;
+        case L'e':
+            suggested_format = optarg;
             break;
         case L'v':
             verbose = 1;
             break;
         case L'n':
             not_use_ncnn = true;
+            break;
+        case L'k':
+            skip_size = _wtoi64(optarg);
+            break;
+        case L'p':
+            name_pattern = optarg;
             break;
         case L't':
         case L'g':
@@ -243,7 +258,7 @@ int main(int argc, char **argv)
     }
 #else // _WIN32
     int opt;
-    while ((opt = getopt(argc, argv, "i:o:s:t:m:g:j:f:vxhn")) != -1) {
+    while ((opt = getopt(argc, argv, "i:o:s:t:m:g:j:f:vxhkn:e:p:")) != -1) {
         switch (opt) {
             case 'i':
                 inputpath = optarg;
@@ -261,13 +276,22 @@ int main(int argc, char **argv)
                 model = optarg;
                 break;
             case 'f':
-                format = optarg;
+                output_format = optarg;
+                break;
+            case 'e':
+                suggested_format = optarg;
                 break;
             case 'v':
                 verbose = 1;
                 break;
             case 'n':
                 not_use_ncnn = true;
+                break;
+            case 'k':
+                skip_size = atoll(optarg);
+                break;
+            case 'p':
+                name_pattern = optarg;
                 break;
             case 'g':
             case 't':
@@ -308,18 +332,18 @@ int main(int argc, char **argv)
     if (!path_is_directory(outputpath))
     {
         path_t ext = get_file_extension(outputpath);
-        if (!ext.empty() && format.empty())
+        if (!ext.empty() && output_format.empty())
         {
             if (ext == PATHSTR("png") || ext == PATHSTR("PNG"))
-                format = PATHSTR("png");
+                output_format = PATHSTR("png");
             else if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP"))
-                format = PATHSTR("webp");
+                output_format = PATHSTR("webp");
             else if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG"))
-                format = PATHSTR("jpg");
+                output_format = PATHSTR("jpg");
             else if (ext == PATHSTR("bmp") || ext == PATHSTR("BMP"))
-                format = PATHSTR("bmp");
+                output_format = PATHSTR("bmp");
         }
-        if (!format.empty() && !is_supported_encode_format(format))
+        if (!output_format.empty() && !is_supported_encode_format(output_format))
         {
             fprintf(stderr, "invalid output format\n");
             return -1;
@@ -329,7 +353,27 @@ int main(int argc, char **argv)
     std::vector<path_t> input_files;
     std::vector<path_t> output_files;
     {
-        int ret = collect_input_output_files(inputpath, outputpath, format, input_files, output_files);
+        path_t effective_format = output_format.empty() ? suggested_format : output_format;
+
+        path_t prog_name = path_t(argv[0]);
+        {
+            size_t last_sep = prog_name.find_last_of(PATHSTR("/\\"));
+            if (last_sep != path_t::npos)
+                prog_name = prog_name.substr(last_sep + 1);
+            size_t dot = prog_name.rfind(PATHSTR('.'));
+            if (dot != path_t::npos)
+                prog_name = prog_name.substr(0, dot);
+            const path_t ncnn_suffix = PATHSTR("-ncnn");
+            if (prog_name.size() > ncnn_suffix.size() &&
+                prog_name.compare(prog_name.size() - ncnn_suffix.size(), ncnn_suffix.size(), ncnn_suffix) == 0)
+                prog_name = prog_name.substr(0, prog_name.size() - ncnn_suffix.size());
+        }
+
+        int ret = collect_input_output_files(inputpath, outputpath, effective_format, name_pattern, prog_name, input_files, output_files);
+        if (ret != 0)
+            return -1;
+
+        ret = filter_files_by_size_threshold(input_files, output_files, skip_size, verbose);
         if (ret != 0)
             return -1;
     }
@@ -983,7 +1027,7 @@ int main(int argc, char **argv)
             }
 
             path_t ext = get_file_extension(outputpath);
-            if (c == 4 &&
+            if (c == 4 && output_format.empty() &&
                 (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") ||
                  ext == PATHSTR("JPEG"))) {
                 path_t output_filename2 = output_files[i] + PATHSTR(".png");

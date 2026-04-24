@@ -117,7 +117,10 @@ static void print_usage()
     fprintf(stderr, "  -g gpu-id            gpu device to use (default=auto) can be 0,1,2 for multi-gpu\n");
     fprintf(stderr, "  -j load:proc:save    thread count for load/proc/save (default=1:2:2) can be 1:2,2,2:2 for multi-gpu\n");
     fprintf(stderr, "  -x                   enable tta mode\n");
-    fprintf(stderr, "  -f format            output image format (jpg/png/webp/bmp, default=input extension)\n");
+    fprintf(stderr, "  -f format            force output format (ignore alpha channel detection)\n");
+    fprintf(stderr, "  -e format            suggested output format (auto-convert to png if alpha detected)\n");
+    fprintf(stderr, "  -k skip-size         skip if output file exists and size >= threshold bytes (0=disable)\n");
+    fprintf(stderr, "  -p pattern           output name pattern for batch mode, placeholders: {name} {prog} {index} {timestamp} {datetime} {date} {time}\n");
 }
 
 class Task
@@ -187,6 +190,7 @@ class LoadThreadParams
 {
 public:
     int scale;
+    path_t output_format;
     int jobs_load;
 
     // session data
@@ -226,13 +230,13 @@ void* load(void* args)
         if (!inAlpha.empty())
         {
             v.has_alpha = 1;
-            
+
             unsigned char* alphadata = (unsigned char*)malloc(w * h);
             memcpy(alphadata, inAlpha.data, w * h);
             v.inalpha = ncnn::Mat(w, h, (void*)alphadata, (size_t)1, 1);
-            
+
             path_t ext = get_file_extension(v.outpath);
-            if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG"))
+            if (ltp->output_format.empty() && (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG")))
             {
                 path_t output_filename2 = ltp->output_files[i] + PATHSTR(".png");
                 v.outpath = output_filename2;
@@ -398,12 +402,15 @@ int main(int argc, char** argv)
     int jobs_save = 2;
     int verbose = 0;
     int tta_mode = 0;
-    path_t format;
+    path_t output_format;
+    path_t suggested_format;
+    long long skip_size = 0;
+    path_t name_pattern = PATHSTR("{name}");
 
 #if _WIN32
     setlocale(LC_ALL, "");
     wchar_t opt;
-    while ((opt = getopt(argc, argv, L"i:o:n:s:t:m:g:j:f:vxh")) != (wchar_t)-1)
+    while ((opt = getopt(argc, argv, L"i:o:n:s:t:m:g:j:f:vxhk:e:p:")) != (wchar_t)-1)
     {
         switch (opt)
         {
@@ -433,13 +440,22 @@ int main(int argc, char** argv)
             jobs_proc = parse_optarg_int_array(wcschr(optarg, L':') + 1);
             break;
         case L'f':
-            format = optarg;
+            output_format = optarg;
+            break;
+        case L'e':
+            suggested_format = optarg;
             break;
         case L'v':
             verbose = 1;
             break;
         case L'x':
             tta_mode = 1;
+            break;
+        case L'k':
+            skip_size = _wtoi64(optarg);
+            break;
+        case L'p':
+            name_pattern = optarg;
             break;
         case L'h':
         default:
@@ -449,44 +465,53 @@ int main(int argc, char** argv)
     }
 #else // _WIN32
     int opt;
-    while ((opt = getopt(argc, argv, "i:o:n:s:t:m:g:j:f:vxh")) != -1)
+    while ((opt = getopt(argc, argv, "i:o:n:s:t:m:g:j:f:vxhk:e:p:")) != -1)
     {
         switch (opt)
         {
-        case 'i':
-            inputpath = optarg;
+            case 'i':
+                inputpath = optarg;
+                break;
+            case 'o':
+                outputpath = optarg;
+                break;
+            case 'n':
+                noise = atoi(optarg);
+                break;
+            case 's':
+                scale = atoi(optarg);
+                break;
+            case 't':
+                tilesize = parse_optarg_int_array(optarg);
+                break;
+            case 'm':
+                model = optarg;
+                break;
+            case 'g':
+                gpuid = parse_optarg_int_array(optarg);
+                break;
+            case 'j':
+                sscanf(optarg, "%d:%*[^:]:%d", &jobs_load, &jobs_save);
+                jobs_proc = parse_optarg_int_array(strchr(optarg, ':') + 1);
+                break;
+            case 'f':
+            output_format = optarg;
             break;
-        case 'o':
-            outputpath = optarg;
-            break;
-        case 'n':
-            noise = atoi(optarg);
-            break;
-        case 's':
-            scale = atoi(optarg);
-            break;
-        case 't':
-            tilesize = parse_optarg_int_array(optarg);
-            break;
-        case 'm':
-            model = optarg;
-            break;
-        case 'g':
-            gpuid = parse_optarg_int_array(optarg);
-            break;
-        case 'j':
-            sscanf(optarg, "%d:%*[^:]:%d", &jobs_load, &jobs_save);
-            jobs_proc = parse_optarg_int_array(strchr(optarg, ':') + 1);
-            break;
-        case 'f':
-            format = optarg;
-            break;
-        case 'v':
-            verbose = 1;
-            break;
-        case 'x':
-            tta_mode = 1;
-            break;
+            case 'e':
+                suggested_format = optarg;
+                break;
+            case 'v':
+                verbose = 1;
+                break;
+            case 'x':
+                tta_mode = 1;
+                break;
+            case 'k':
+                skip_size = atoll(optarg);
+                break;
+            case 'p':
+                name_pattern = optarg;
+                break;
         case 'h':
         default:
             print_usage();
@@ -546,18 +571,18 @@ int main(int argc, char** argv)
     if (!path_is_directory(outputpath))
     {
         path_t ext = get_file_extension(outputpath);
-        if (!ext.empty() && format.empty())
+        if (!ext.empty() && output_format.empty())
         {
             if (ext == PATHSTR("png") || ext == PATHSTR("PNG"))
-                format = PATHSTR("png");
+                output_format = PATHSTR("png");
             else if (ext == PATHSTR("webp") || ext == PATHSTR("WEBP"))
-                format = PATHSTR("webp");
+                output_format = PATHSTR("webp");
             else if (ext == PATHSTR("jpg") || ext == PATHSTR("JPG") || ext == PATHSTR("jpeg") || ext == PATHSTR("JPEG"))
-                format = PATHSTR("jpg");
+                output_format = PATHSTR("jpg");
             else if (ext == PATHSTR("bmp") || ext == PATHSTR("BMP"))
-                format = PATHSTR("bmp");
+                output_format = PATHSTR("bmp");
         }
-        if (!format.empty() && !is_supported_encode_format(format))
+        if (!output_format.empty() && !is_supported_encode_format(output_format))
         {
             fprintf(stderr, "invalid output format\n");
             return -1;
@@ -567,7 +592,27 @@ int main(int argc, char** argv)
     std::vector<path_t> input_files;
     std::vector<path_t> output_files;
     {
-        int ret = collect_input_output_files(inputpath, outputpath, format, input_files, output_files);
+        path_t effective_format = output_format.empty() ? suggested_format : output_format;
+
+        path_t prog_name = path_t(argv[0]);
+        {
+            size_t last_sep = prog_name.find_last_of(PATHSTR("/\\"));
+            if (last_sep != path_t::npos)
+                prog_name = prog_name.substr(last_sep + 1);
+            size_t dot = prog_name.rfind(PATHSTR('.'));
+            if (dot != path_t::npos)
+                prog_name = prog_name.substr(0, dot);
+            const path_t ncnn_suffix = PATHSTR("-ncnn");
+            if (prog_name.size() > ncnn_suffix.size() &&
+                prog_name.compare(prog_name.size() - ncnn_suffix.size(), ncnn_suffix.size(), ncnn_suffix) == 0)
+                prog_name = prog_name.substr(0, prog_name.size() - ncnn_suffix.size());
+        }
+
+        int ret = collect_input_output_files(inputpath, outputpath, effective_format, name_pattern, prog_name, input_files, output_files);
+        if (ret != 0)
+            return -1;
+
+        ret = filter_files_by_size_threshold(input_files, output_files, skip_size, verbose);
         if (ret != 0)
             return -1;
     }
@@ -703,6 +748,7 @@ int main(int argc, char** argv)
             // load image
             LoadThreadParams ltp;
             ltp.scale = scale;
+            ltp.output_format = output_format;
             ltp.jobs_load = jobs_load;
             ltp.input_files = input_files;
             ltp.output_files = output_files;

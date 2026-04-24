@@ -4,6 +4,9 @@
 #include "filesystem_utils.h"
 #include <vector>
 #include <set>
+#include <ctime>
+#include <sstream>
+#include <iomanip>
 
 struct ImageFile {
     path_t relative_path;
@@ -54,11 +57,64 @@ static bool is_supported_encode_format(const path_t& ext) {
     return SUPPORTED_ENCODE_EXTENSIONS.find(lower_ext) != SUPPORTED_ENCODE_EXTENSIONS.end();
 }
 
+static path_t apply_name_pattern(const path_t& pattern,
+                                  const path_t& name_noext,
+                                  const path_t& prog_name,
+                                  int index,
+                                  const path_t& ts_timestamp,
+                                  const path_t& ts_datetime,
+                                  const path_t& ts_date,
+                                  const path_t& ts_time)
+{
+    path_t result = pattern;
+    path_t index_str;
+    {
+#if _WIN32
+        wchar_t buf[32];
+        swprintf(buf, 32, L"%d", index);
+        index_str = buf;
+#else
+        char buf[32];
+        sprintf(buf, "%d", index);
+        index_str = buf;
+#endif
+    }
+    size_t pos = 0;
+    while ((pos = result.find(PATHSTR("{name}"), pos)) != path_t::npos)
+        result.replace(pos, 6, name_noext);
+    pos = 0;
+    while ((pos = result.find(PATHSTR("{prog}"), pos)) != path_t::npos)
+        result.replace(pos, 6, prog_name);
+    pos = 0;
+    while ((pos = result.find(PATHSTR("{index}"), pos)) != path_t::npos)
+        result.replace(pos, 7, index_str);
+    pos = 0;
+    while ((pos = result.find(PATHSTR("{timestamp}"), pos)) != path_t::npos)
+        result.replace(pos, 11, ts_timestamp);
+    pos = 0;
+    while ((pos = result.find(PATHSTR("{datetime}"), pos)) != path_t::npos)
+        result.replace(pos, 10, ts_datetime);
+    pos = 0;
+    while ((pos = result.find(PATHSTR("{date}"), pos)) != path_t::npos)
+        result.replace(pos, 6, ts_date);
+    pos = 0;
+    while ((pos = result.find(PATHSTR("{time}"), pos)) != path_t::npos)
+        result.replace(pos, 6, ts_time);
+    return result;
+}
+
 static void list_directory_recursive(const path_t& dirpath,
                                       std::vector<ImageFile>& image_files,
                                       const path_t& base_input_dir,
                                       const path_t& base_output_dir,
                                       const path_t& output_format,
+                                      const path_t& name_pattern,
+                                      const path_t& prog_name,
+                                      int& file_index,
+                                      const path_t& ts_timestamp,
+                                      const path_t& ts_datetime,
+                                      const path_t& ts_date,
+                                      const path_t& ts_time,
                                       const path_t& current_relative = path_t())
 {
 #if _WIN32
@@ -81,7 +137,7 @@ static void list_directory_recursive(const path_t& dirpath,
 
         if (attr & FILE_ATTRIBUTE_DIRECTORY)
         {
-            list_directory_recursive(full_path, image_files, base_input_dir, base_output_dir, output_format, rel_path);
+            list_directory_recursive(full_path, image_files, base_input_dir, base_output_dir, output_format, name_pattern, prog_name, file_index, ts_timestamp, ts_datetime, ts_date, ts_time, rel_path);
         }
         else
         {
@@ -94,15 +150,8 @@ static void list_directory_recursive(const path_t& dirpath,
             img.input_abs_path = full_path;
 
             path_t name_noext = get_file_name_without_extension(name);
-            path_t out_name;
-            if (output_format.empty())
-            {
-                out_name = name_noext + PATHSTR('.') + ext;
-            }
-            else
-            {
-                out_name = name_noext + PATHSTR('.') + output_format;
-            }
+            file_index++;
+            path_t out_name = apply_name_pattern(name_pattern, name_noext, prog_name, file_index, ts_timestamp, ts_datetime, ts_date, ts_time) + PATHSTR('.') + (output_format.empty() ? ext : output_format);
 
             img.output_abs_path = base_output_dir + PATHSTR('\\') + (current_relative.empty() ? out_name : current_relative + PATHSTR('\\') + out_name);
 
@@ -131,7 +180,7 @@ static void list_directory_recursive(const path_t& dirpath,
 
         if (S_ISDIR(st.st_mode))
         {
-            list_directory_recursive(full_path, image_files, base_input_dir, base_output_dir, output_format, rel_path);
+            list_directory_recursive(full_path, image_files, base_input_dir, base_output_dir, output_format, name_pattern, prog_name, file_index, ts_timestamp, ts_datetime, ts_date, ts_time, rel_path);
         }
         else
         {
@@ -144,15 +193,8 @@ static void list_directory_recursive(const path_t& dirpath,
             img.input_abs_path = full_path;
 
             path_t name_noext = get_file_name_without_extension(name);
-            path_t out_name;
-            if (output_format.empty())
-            {
-                out_name = name_noext + PATHSTR('.') + ext;
-            }
-            else
-            {
-                out_name = name_noext + PATHSTR('.') + output_format;
-            }
+            file_index++;
+            path_t out_name = apply_name_pattern(name_pattern, name_noext, prog_name, file_index, ts_timestamp, ts_datetime, ts_date, ts_time) + PATHSTR('.') + (output_format.empty() ? ext : output_format);
 
             img.output_abs_path = base_output_dir + PATHSTR('/') + (current_relative.empty() ? out_name : current_relative + PATHSTR('/') + out_name);
 
@@ -228,6 +270,8 @@ static int prepare_output_paths(const std::vector<ImageFile>& image_files)
 static int collect_input_output_files(const path_t& inputpath,
                                        const path_t& outputpath,
                                        const path_t& format,
+                                       const path_t& name_pattern,
+                                       const path_t& prog_name,
                                        std::vector<path_t>& input_files,
                                        std::vector<path_t>& output_files)
 {
@@ -261,8 +305,45 @@ static int collect_input_output_files(const path_t& inputpath,
             output_format = path_t();
         }
 
+        int file_index = 0;
+        std::time_t now = std::time(nullptr);
+        std::tm* tm_now = std::localtime(&now);
+
+        path_t ts_timestamp, ts_datetime, ts_date, ts_time;
+        {
+#if _WIN32
+            wchar_t buf[64];
+            swprintf(buf, 64, L"%lld", (long long)now);
+            ts_timestamp = buf;
+            swprintf(buf, 64, L"%04d%02d%02d_%02d%02d%02d",
+                     tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
+                     tm_now->tm_hour, tm_now->tm_min, tm_now->tm_sec);
+            ts_datetime = buf;
+            swprintf(buf, 64, L"%04d%02d%02d",
+                     tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday);
+            ts_date = buf;
+            swprintf(buf, 64, L"%02d%02d%02d",
+                     tm_now->tm_hour, tm_now->tm_min, tm_now->tm_sec);
+            ts_time = buf;
+#else
+            char buf[64];
+            sprintf(buf, "%lld", (long long)now);
+            ts_timestamp = buf;
+            sprintf(buf, "%04d%02d%02d_%02d%02d%02d",
+                    tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
+                    tm_now->tm_hour, tm_now->tm_min, tm_now->tm_sec);
+            ts_datetime = buf;
+            sprintf(buf, "%04d%02d%02d",
+                    tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday);
+            ts_date = buf;
+            sprintf(buf, "%02d%02d%02d",
+                    tm_now->tm_hour, tm_now->tm_min, tm_now->tm_sec);
+            ts_time = buf;
+#endif
+        }
+
         std::vector<ImageFile> image_files;
-        list_directory_recursive(inputpath, image_files, inputpath, output_dir, output_format);
+        list_directory_recursive(inputpath, image_files, inputpath, output_dir, output_format, name_pattern, prog_name, file_index, ts_timestamp, ts_datetime, ts_date, ts_time);
 
         int ret = prepare_output_paths(image_files);
         if (ret != 0) return -1;
@@ -328,6 +409,58 @@ static int collect_input_output_files(const path_t& inputpath,
         input_files.push_back(inputpath);
         output_files.push_back(final_output);
     }
+
+    return 0;
+}
+
+static int filter_files_by_size_threshold(std::vector<path_t>& input_files,
+                                          std::vector<path_t>& output_files,
+                                          long long size_threshold,
+                                          int verbose)
+{
+    if (size_threshold <= 0) return 0;
+
+    std::vector<path_t> filtered_input;
+    std::vector<path_t> filtered_output;
+
+    for (size_t i = 0; i < output_files.size(); i++)
+    {
+#if _WIN32
+        struct _stat64 file_stat;
+        if (_wstati64(output_files[i].c_str(), &file_stat) == 0)
+        {
+            if (file_stat.st_size >= size_threshold)
+            {
+                if (verbose)
+                {
+                    fwprintf(stderr, L"[skip] %ls -> %ls (exists, size=%lld bytes >= threshold)\n",
+                              input_files[i].c_str(), output_files[i].c_str(), file_stat.st_size);
+                }
+                continue;
+            }
+        }
+#else
+        struct stat file_stat;
+        if (stat(output_files[i].c_str(), &file_stat) == 0)
+        {
+            if (file_stat.st_size >= size_threshold)
+            {
+                if (verbose)
+                {
+                    fprintf(stderr, "[skip] %s -> %s (exists, size=%lld bytes >= threshold)\n",
+                            input_files[i].c_str(), output_files[i].c_str(), (long long)file_stat.st_size);
+                }
+                continue;
+            }
+        }
+#endif
+
+        filtered_input.push_back(input_files[i]);
+        filtered_output.push_back(output_files[i]);
+    }
+
+    input_files = filtered_input;
+    output_files = filtered_output;
 
     return 0;
 }
