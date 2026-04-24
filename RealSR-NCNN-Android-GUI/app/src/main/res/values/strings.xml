@@ -162,7 +162,6 @@ Even if this feature is disabled, you can still select multiple images from othe
         <item>bmp</item>
         <item>webp</item>
         <item>tiff</item>
-        <item>avif</item>
     </string-array>
     <string-array name="name">
         <item>Command-Time</item>

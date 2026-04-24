@@ -108,8 +108,8 @@ static void print_usage()
     fprintf(stderr, "Usage: srmd-ncnn -i infile -o outfile [options]...\n\n");
     fprintf(stderr, "  -h                   show this help\n");
     fprintf(stderr, "  -v                   verbose output\n");
-    fprintf(stderr, "  -i input-path        input image path (jpg/png/webp/bmp) or directory (recursive)\n");
-    fprintf(stderr, "  -o output-path       output image path (jpg/png/webp/bmp) or directory\n");
+    fprintf(stderr, "  -i input-path        input image path (jpg/png/webp/bmp/tiff) or directory (recursive)\n");
+    fprintf(stderr, "  -o output-path       output image path (jpg/png/webp/bmp/tiff) or directory\n");
     fprintf(stderr, "  -n noise-level       denoise level (-1/0/1/2/3/4/5/6/7/8/9/10, default=3)\n");
     fprintf(stderr, "  -s scale             upscale ratio (2/3/4, default=2)\n");
     fprintf(stderr, "  -t tile-size         tile size (>=32/0=auto, default=0) can be 0,0,0 for multi-gpu\n");
@@ -581,6 +581,8 @@ int main(int argc, char** argv)
                 output_format = PATHSTR("jpg");
             else if (ext == PATHSTR("bmp") || ext == PATHSTR("BMP"))
                 output_format = PATHSTR("bmp");
+            else if (ext == PATHSTR("tif") || ext == PATHSTR("TIF") || ext == PATHSTR("tiff") || ext == PATHSTR("TIFF"))
+                output_format = PATHSTR("tiff");
         }
         if (!output_format.empty() && !is_supported_encode_format(output_format))
         {

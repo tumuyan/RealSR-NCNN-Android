@@ -27,21 +27,24 @@ static const std::set<path_t> SUPPORTED_ENCODE_EXTENSIONS = {
     PATHSTR("png"),
     PATHSTR("jpg"), PATHSTR("jpeg"),
     PATHSTR("webp"),
-    PATHSTR("bmp")
+    PATHSTR("bmp"),
+    PATHSTR("tif"), PATHSTR("tiff")
 };
 #else
 static const std::set<path_t> SUPPORTED_DECODE_EXTENSIONS = {
     PATHSTR("jpg"), PATHSTR("jpeg"),
     PATHSTR("png"),
     PATHSTR("bmp"),
-    PATHSTR("webp")
+    PATHSTR("webp"),
+    PATHSTR("tif"), PATHSTR("tiff")
 };
 
 static const std::set<path_t> SUPPORTED_ENCODE_EXTENSIONS = {
     PATHSTR("png"),
     PATHSTR("jpg"), PATHSTR("jpeg"),
     PATHSTR("webp"),
-    PATHSTR("bmp")
+    PATHSTR("bmp"),
+    PATHSTR("tif"), PATHSTR("tiff")
 };
 #endif
 

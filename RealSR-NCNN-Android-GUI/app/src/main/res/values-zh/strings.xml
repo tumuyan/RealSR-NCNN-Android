@@ -225,7 +225,6 @@
         <item>bmp</item>
         <item>webp</item>
         <item>tiff</item>
-        <item>avif</item>
     </string-array>
 
     <!-- 目录批处理页面 -->
