@@ -73,6 +73,9 @@ public class ImageProcessor {
                 }
                 // 过滤无用日志
                 if (line.contains("unused DT entry")) continue;
+                if (line.startsWith("CPU Group:")) continue;
+                if (line.startsWith("(last_midr")) continue;
+                if (line.startsWith("Error tunning info")) continue;
                 
                 Log.d(TAG, line);
                 callback.onProgress(line);

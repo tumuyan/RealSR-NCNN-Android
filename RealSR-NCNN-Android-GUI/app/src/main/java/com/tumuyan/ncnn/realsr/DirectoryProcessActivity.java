@@ -56,6 +56,7 @@ public class DirectoryProcessActivity extends AppCompatActivity {
     private String threadCount;
     private int mnnBackend;
     private int notifySetting;
+    private boolean keepScreen;
     private CommandListManager commandListManager;
     private String[] commandList;
     private ProgressLogHelper progressLog;
@@ -123,6 +124,7 @@ public class DirectoryProcessActivity extends AppCompatActivity {
         threadCount = sp.getString("threadCount", "");
         mnnBackend = sp.getInt("mnnBackend", 3);
         notifySetting = sp.getInt("notify", 2);
+        keepScreen = sp.getBoolean("keepScreen", false);
 
         String galleryPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
                 + File.separator + "RealSR";
@@ -446,6 +448,10 @@ public class DirectoryProcessActivity extends AppCompatActivity {
         btnStopProcess.setEnabled(true);
         isProcessing = true;
 
+        if (keepScreen) {
+            tvLog.setKeepScreenOn(true);
+        }
+
         processingService.startTask(execCmd, dir, notifySetting, new ImageProcessor.ProcessCallback() {
             @Override
             public void onProgress(String line) {
@@ -461,6 +467,10 @@ public class DirectoryProcessActivity extends AppCompatActivity {
                     isProcessing = false;
                     btnStartProcess.setEnabled(true);
                     btnStopProcess.setEnabled(false);
+
+                    if (keepScreen) {
+                        tvLog.setKeepScreenOn(false);
+                    }
 
                     String modelName = extractModelName(finalCmd);
                     boolean isNcnn = finalCmd.matches("./(realsr|srmd|waifu2x|realcugan|mnnsr)-ncnn.*");
@@ -482,6 +492,11 @@ public class DirectoryProcessActivity extends AppCompatActivity {
                     isProcessing = false;
                     btnStartProcess.setEnabled(true);
                     btnStopProcess.setEnabled(false);
+
+                    if (keepScreen) {
+                        tvLog.setKeepScreenOn(false);
+                    }
+
                     progressLog.appendLine("Error: " + error);
                     tvLog.setText(progressLog.getDisplayText());
                 });
@@ -497,6 +512,10 @@ public class DirectoryProcessActivity extends AppCompatActivity {
             isProcessing = false;
             btnStartProcess.setEnabled(true);
             btnStopProcess.setEnabled(false);
+
+            if (keepScreen) {
+                tvLog.setKeepScreenOn(false);
+            }
         }
     }
 

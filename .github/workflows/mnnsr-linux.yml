@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  ncnn_data_tag: "20250916"
+  ncnn_data_tag: "20260113"
 
 jobs:
   build:

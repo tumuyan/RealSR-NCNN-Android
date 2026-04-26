@@ -1036,6 +1036,10 @@ public class MainActivity extends AppCompatActivity {
                         boolean forceShow = !success && notify == 3;
                         sendNotification(MainActivity.this, success ? DONE : ERR, forceShow);
 
+                        if (keepScreen) {
+                            logTextView.setKeepScreenOn(false);
+                        }
+
                         if (success) {
                             if (save) {
                                 if (!outputFile.exists()) {
@@ -1091,6 +1095,10 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         logTextView.append("\nError: " + error);
                         sendNotification(MainActivity.this, ERR, true);
+
+                        if (keepScreen) {
+                            logTextView.setKeepScreenOn(false);
+                        }
                     });
                 }
             });
