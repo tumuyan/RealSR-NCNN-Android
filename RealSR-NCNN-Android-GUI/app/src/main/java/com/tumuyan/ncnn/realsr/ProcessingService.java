@@ -25,6 +25,8 @@ public class ProcessingService extends Service {
     private ImageProcessor imageProcessor;
     private NotificationManager notificationManager;
     private int notifySetting = 2; // 0: Silent, 1: Result Only, 2: Detailed
+    private static final long NOTIFICATION_UPDATE_INTERVAL_MS = 500;
+    private long lastNotificationUpdateTime = 0;
 
     public class LocalBinder extends Binder {
         public ProcessingService getService() {
@@ -90,6 +92,7 @@ public class ProcessingService extends Service {
     public void startTask(String command, String workingDir, int notifySetting,
             ImageProcessor.ProcessCallback callback) {
         this.notifySetting = notifySetting;
+        this.lastNotificationUpdateTime = 0;
         // Initial notification
         startForeground(NOTIFICATION_ID, createNotification(getString(R.string.notification_processing)));
 
@@ -104,8 +107,9 @@ public class ProcessingService extends Service {
 
             @Override
             public void onCompleted(String result, boolean success) {
-                // If notifySetting is 0 (Silent) or 3 (Auto Dismiss), remove notification.
-                // Otherwise (1 or 2), keep it so MainActivity can update it with result.
+                forceUpdateNotification(success ?
+                        getString(R.string.done) :
+                        getString(R.string.notification_fail));
                 boolean removeNotification = (notifySetting == 0 || notifySetting == 3);
                 stopForeground(removeNotification);
 
@@ -116,7 +120,7 @@ public class ProcessingService extends Service {
 
             @Override
             public void onError(String error) {
-                // Same logic for error
+                forceUpdateNotification(getString(R.string.notification_fail));
                 boolean removeNotification = (notifySetting == 0 || notifySetting == 3);
                 stopForeground(removeNotification);
 
@@ -134,11 +138,20 @@ public class ProcessingService extends Service {
     }
 
     private void updateNotification(String text) {
-        // Only update notification if notifySetting is 2 (Detailed) or 3 (Detailed
-        // AutoDismiss)
-        if (notifySetting == 2 || notifySetting == 3) {
-            notificationManager.notify(NOTIFICATION_ID, createNotification(text));
-        }
+        if (notifySetting != 2 && notifySetting != 3) return;
+        if (!ProgressLogHelper.isProgressLine(text)) return;
+
+        long now = System.currentTimeMillis();
+        if (now - lastNotificationUpdateTime < NOTIFICATION_UPDATE_INTERVAL_MS) return;
+        lastNotificationUpdateTime = now;
+
+        notificationManager.notify(NOTIFICATION_ID, createNotification(text));
+    }
+
+    private void forceUpdateNotification(String text) {
+        if (notifySetting == 0) return;
+        lastNotificationUpdateTime = System.currentTimeMillis();
+        notificationManager.notify(NOTIFICATION_ID, createNotification(text));
     }
 
     private Notification createNotification(String text) {

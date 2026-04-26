@@ -12,7 +12,7 @@ public class ProgressLogHelper {
         startTime = System.currentTimeMillis();
     }
 
-    public boolean isProgressLine(String line) {
+    public static boolean isProgressLine(String line) {
         return line != null && line.matches("\\s*\\d([0-9.]*)%(\\s.+)?");
     }
 
