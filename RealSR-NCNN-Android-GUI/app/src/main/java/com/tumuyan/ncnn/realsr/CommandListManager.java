@@ -14,12 +14,27 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 管理命令列表和标签列表的生成，以及自定义标签的映射。
  * 被 MainActivity、SettingActivity、LabelEditorActivity 共用。
  */
 public class CommandListManager {
+
+    public static final String PROGRAM_REALSR = "realsr";
+    public static final String PROGRAM_SRMD = "srmd";
+    public static final String PROGRAM_WAIFU2X = "waifu2x";
+    public static final String PROGRAM_REALCUGAN = "realcugan";
+    public static final String PROGRAM_MNNSR = "mnnsr";
+    public static final String PROGRAM_RESIZE = "resize";
+    public static final String PROGRAM_MAGICK = "magick";
+    public static final String PROGRAM_ANIME4K = "anime4k";
+
+    public static final String[] ALL_PROGRAMS = {
+            PROGRAM_REALSR, PROGRAM_SRMD, PROGRAM_WAIFU2X, PROGRAM_REALCUGAN,
+            PROGRAM_MNNSR, PROGRAM_RESIZE, PROGRAM_MAGICK, PROGRAM_ANIME4K
+    };
 
     public static final String[] COMMAND_0 = new String[] {
             "./realsr-ncnn -i input.png -o output.png  -m models-Real-ESRGAN-anime",
@@ -147,11 +162,35 @@ public class CommandListManager {
      * @param useCustomLabel 是否使用自定义标签
      */
     public String[] getDirectorySupportedLabels(boolean useCustomLabel) {
+        return getDirectorySupportedLabels(useCustomLabel, null);
+    }
+
+    /**
+     * 获取支持目录批量处理的命令列表（带隐藏程序筛选）。
+     */
+    public String[] getDirectorySupportedCommands(Set<String> hiddenPrograms) {
+        int[] indices = getFilteredIndices(hiddenPrograms);
+        List<String> supported = new ArrayList<>();
+        for (int idx : indices) {
+            if (supportsDirectoryMode(commandList[idx])) {
+                supported.add(commandList[idx]);
+            }
+        }
+        return supported.toArray(new String[0]);
+    }
+
+    /**
+     * 获取支持目录批量处理的标签列表（带隐藏程序筛选）。
+     * @param useCustomLabel 是否使用自定义标签
+     * @param hiddenPrograms 要隐藏的程序类型集合，null 表示不隐藏
+     */
+    public String[] getDirectorySupportedLabels(boolean useCustomLabel, Set<String> hiddenPrograms) {
+        int[] indices = getFilteredIndices(hiddenPrograms);
         String[] allLabels = getDisplayLabels(useCustomLabel);
         List<String> supported = new ArrayList<>();
-        for (int i = 0; i < commandList.length; i++) {
-            if (supportsDirectoryMode(commandList[i])) {
-                supported.add(allLabels[i]);
+        for (int idx : indices) {
+            if (supportsDirectoryMode(commandList[idx])) {
+                supported.add(allLabels[idx]);
             }
         }
         return supported.toArray(new String[0]);
@@ -444,5 +483,52 @@ public class CommandListManager {
         }
 
         return new String[] { name, "" + scale };
+    }
+
+    public static String getProgramType(String command) {
+        if (command == null || command.isEmpty()) return "";
+        String cmd = command.trim().toLowerCase();
+        if (cmd.startsWith("./realsr-ncnn")) return PROGRAM_REALSR;
+        if (cmd.startsWith("./srmd-ncnn")) return PROGRAM_SRMD;
+        if (cmd.startsWith("./waifu2x-ncnn")) return PROGRAM_WAIFU2X;
+        if (cmd.startsWith("./realcugan-ncnn")) return PROGRAM_REALCUGAN;
+        if (cmd.startsWith("./mnnsr-ncnn")) return PROGRAM_MNNSR;
+        if (cmd.startsWith("./resize-ncnn")) return PROGRAM_RESIZE;
+        if (cmd.startsWith("./magick ")) return PROGRAM_MAGICK;
+        if (cmd.startsWith("./anime4k") || cmd.startsWith("anime4k")) return PROGRAM_ANIME4K;
+        return "";
+    }
+
+    public int[] getFilteredIndices(Set<String> hiddenPrograms) {
+        if (hiddenPrograms == null || hiddenPrograms.isEmpty()) {
+            int[] all = new int[commandList.length];
+            for (int i = 0; i < all.length; i++) all[i] = i;
+            return all;
+        }
+        List<Integer> indices = new ArrayList<>();
+        for (int i = 0; i < commandList.length; i++) {
+            String programType = getProgramType(commandList[i]);
+            if (programType.isEmpty() || !hiddenPrograms.contains(programType)) {
+                indices.add(i);
+            }
+        }
+        int[] result = new int[indices.size()];
+        for (int i = 0; i < result.length; i++) result[i] = indices.get(i);
+        return result;
+    }
+
+    public String[] getFilteredCommands(Set<String> hiddenPrograms) {
+        int[] indices = getFilteredIndices(hiddenPrograms);
+        String[] result = new String[indices.length];
+        for (int i = 0; i < result.length; i++) result[i] = commandList[indices[i]];
+        return result;
+    }
+
+    public String[] getFilteredLabels(Set<String> hiddenPrograms, boolean useCustomLabel) {
+        int[] indices = getFilteredIndices(hiddenPrograms);
+        String[] allLabels = getDisplayLabels(useCustomLabel);
+        String[] result = new String[indices.length];
+        for (int i = 0; i < result.length; i++) result[i] = allLabels[indices[i]];
+        return result;
     }
 }

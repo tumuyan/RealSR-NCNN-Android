@@ -270,4 +270,13 @@ Even if this feature is disabled, you can still select multiple images from othe
     <string name="dir_auto_output_label">Auto</string>
     <string name="dir_auto_output_format">Auto (%1$s)</string>
     <string name="dir_menu_entry">Batch Dir</string>
+    <string name="hide_programs_title">Hide programs in command list</string>
+    <string name="hide_realsr">Hide RealSR/ESRGAN (realsr-ncnn)</string>
+    <string name="hide_srmd">Hide SRMD (srmd-ncnn)</string>
+    <string name="hide_waifu2x">Hide Waifu2x (waifu2x-ncnn)</string>
+    <string name="hide_realcugan">Hide Real-CUGAN (realcugan-ncnn)</string>
+    <string name="hide_mnnsr">Hide MNNSR (mnnsr-ncnn)</string>
+    <string name="hide_resize">Hide Classical Interpolation (resize-ncnn)</string>
+    <string name="hide_magick">Hide ImageMagick (magick)</string>
+    <string name="hide_anime4k">Hide Anime4K</string>
 </resources>

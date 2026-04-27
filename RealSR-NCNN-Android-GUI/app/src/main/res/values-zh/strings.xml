@@ -262,4 +262,13 @@
     <string name="menu_perfectpixel">PerfectPixel修复</string>
     <string name="menu_perfectpixel1">PerfectPixel 缩小</string>
     <string name="menu_perfectpixel2">PerfectPixel 5X</string>
+    <string name="hide_programs_title">在命令列表中隐藏以下程序</string>
+    <string name="hide_realsr">隐藏 RealSR/ESRGAN (realsr-ncnn)</string>
+    <string name="hide_srmd">隐藏 SRMD (srmd-ncnn)</string>
+    <string name="hide_waifu2x">隐藏 Waifu2x (waifu2x-ncnn)</string>
+    <string name="hide_realcugan">隐藏 Real-CUGAN (realcugan-ncnn)</string>
+    <string name="hide_mnnsr">隐藏 MNNSR (mnnsr-ncnn)</string>
+    <string name="hide_resize">隐藏经典插值算法 (resize-ncnn)</string>
+    <string name="hide_magick">隐藏 ImageMagick (magick)</string>
+    <string name="hide_anime4k">隐藏 Anime4K</string>
 </resources>

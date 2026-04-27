@@ -55,8 +55,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
     private static final int SELECT_IMAGE = 1, SELECT_MULTI_IMAGE = 2;
@@ -392,12 +394,15 @@ public class MainActivity extends AppCompatActivity {
                         .split("\\s+"));
         commandListManager.loadCustomLabels(mySharePerferences.getString("customLabels", ""));
 
-        command = commandListManager.commandList;
-        String[] displayLabels = commandListManager.getDisplayLabels(useCustomLabel);
+        Set<String> hiddenPrograms = mySharePerferences.getStringSet("hiddenPrograms", new HashSet<String>());
+        command = commandListManager.getFilteredCommands(hiddenPrograms);
+        String[] displayLabels = commandListManager.getFilteredLabels(hiddenPrograms, useCustomLabel);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, displayLabels);
         spinner.setAdapter(adapter);
 
+        if (selectCommand >= command.length)
+            selectCommand = Math.max(0, command.length - 1);
         spinner.setSelection(selectCommand);
 
         savePath = mySharePerferences.getString("savePath", "");

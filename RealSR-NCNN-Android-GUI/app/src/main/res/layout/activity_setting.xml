@@ -291,6 +291,94 @@
             android:padding="5dp"
             android:textAlignment="center" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="15dp"
+            android:text="@string/hide_programs_title"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="16sp" />
+
+        <CheckBox
+            android:id="@+id/check_hide_magick"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:padding="5dp"
+            android:text="@string/hide_magick"
+            android:textSize="16sp" />
+
+        <CheckBox
+            android:id="@+id/check_hide_resize"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:padding="5dp"
+            android:text="@string/hide_resize"
+            android:textSize="16sp" />
+
+        <CheckBox
+            android:id="@+id/check_hide_anime4k"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:padding="5dp"
+            android:text="@string/hide_anime4k"
+            android:textSize="16sp" />
+
+        <CheckBox
+            android:id="@+id/check_hide_mnnsr"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:padding="5dp"
+            android:text="@string/hide_mnnsr"
+            android:textSize="16sp" />
+
+        <CheckBox
+            android:id="@+id/check_hide_realsr"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:padding="5dp"
+            android:text="@string/hide_realsr"
+            android:textSize="16sp" />
+
+        <CheckBox
+            android:id="@+id/check_hide_srmd"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:padding="5dp"
+            android:text="@string/hide_srmd"
+            android:textSize="16sp" />
+
+        <CheckBox
+            android:id="@+id/check_hide_waifu2x"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:padding="5dp"
+            android:text="@string/hide_waifu2x"
+            android:textSize="16sp" />
+
+        <CheckBox
+            android:id="@+id/check_hide_realcugan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:padding="5dp"
+            android:text="@string/hide_realcugan"
+            android:textSize="16sp" />
+
         <!--
                 <Button
                     android:id="@+id/btn_download_models"

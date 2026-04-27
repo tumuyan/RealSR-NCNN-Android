@@ -17,6 +17,8 @@ import android.widget.ToggleButton;
 
 import java.io.File;
 import java.text.MessageFormat;
+import java.util.HashSet;
+import java.util.Set;
 
 public class SettingActivity extends AppCompatActivity {
     SharedPreferences mySharePerferences;
@@ -41,6 +43,9 @@ public class SettingActivity extends AppCompatActivity {
     ToggleButton toggleCustomLabel;
     Spinner spinnerFormat, spinnerName, spinnerName2, spinnerName3, spinnerOrientation, spinnerNotify, spinnerDirFormat;
     Spinner spinner;
+
+    android.widget.CheckBox checkHideRealsr, checkHideSrmd, checkHideWaifu2x, checkHideRealcugan,
+            checkHideMnnsr, checkHideResize, checkHideMagick, checkHideAnime4k;
     private final String galleryPath = Environment.getExternalStorageDirectory()
             + File.separator + Environment.DIRECTORY_DCIM
             + File.separator + "RealSR";
@@ -117,6 +122,25 @@ public class SettingActivity extends AppCompatActivity {
         toggleFinalCommand.setChecked(showFinalCommand);
         toggleCustomLabel = findViewById(R.id.toggle_custom_label);
         toggleCustomLabel.setChecked(useCustomLabel);
+
+        checkHideRealsr = findViewById(R.id.check_hide_realsr);
+        checkHideSrmd = findViewById(R.id.check_hide_srmd);
+        checkHideWaifu2x = findViewById(R.id.check_hide_waifu2x);
+        checkHideRealcugan = findViewById(R.id.check_hide_realcugan);
+        checkHideMnnsr = findViewById(R.id.check_hide_mnnsr);
+        checkHideResize = findViewById(R.id.check_hide_resize);
+        checkHideMagick = findViewById(R.id.check_hide_magick);
+        checkHideAnime4k = findViewById(R.id.check_hide_anime4k);
+
+        Set<String> hiddenPrograms = mySharePerferences.getStringSet("hiddenPrograms", new HashSet<>());
+        checkHideRealsr.setChecked(hiddenPrograms.contains(CommandListManager.PROGRAM_REALSR));
+        checkHideSrmd.setChecked(hiddenPrograms.contains(CommandListManager.PROGRAM_SRMD));
+        checkHideWaifu2x.setChecked(hiddenPrograms.contains(CommandListManager.PROGRAM_WAIFU2X));
+        checkHideRealcugan.setChecked(hiddenPrograms.contains(CommandListManager.PROGRAM_REALCUGAN));
+        checkHideMnnsr.setChecked(hiddenPrograms.contains(CommandListManager.PROGRAM_MNNSR));
+        checkHideResize.setChecked(hiddenPrograms.contains(CommandListManager.PROGRAM_RESIZE));
+        checkHideMagick.setChecked(hiddenPrograms.contains(CommandListManager.PROGRAM_MAGICK));
+        checkHideAnime4k.setChecked(hiddenPrograms.contains(CommandListManager.PROGRAM_ANIME4K));
 
         spinnerFormat = findViewById(R.id.spinner_format);
         spinnerFormat.setSelection(format);
@@ -289,6 +313,18 @@ public class SettingActivity extends AppCompatActivity {
         editor.putBoolean("showSearchView", toggleSearchView.isChecked());
         editor.putBoolean("showFinalCommand", toggleFinalCommand.isChecked());
         editor.putBoolean("useCustomLabel", toggleCustomLabel.isChecked());
+
+        Set<String> hiddenPrograms = new HashSet<>();
+        if (checkHideRealsr.isChecked()) hiddenPrograms.add(CommandListManager.PROGRAM_REALSR);
+        if (checkHideSrmd.isChecked()) hiddenPrograms.add(CommandListManager.PROGRAM_SRMD);
+        if (checkHideWaifu2x.isChecked()) hiddenPrograms.add(CommandListManager.PROGRAM_WAIFU2X);
+        if (checkHideRealcugan.isChecked()) hiddenPrograms.add(CommandListManager.PROGRAM_REALCUGAN);
+        if (checkHideMnnsr.isChecked()) hiddenPrograms.add(CommandListManager.PROGRAM_MNNSR);
+        if (checkHideResize.isChecked()) hiddenPrograms.add(CommandListManager.PROGRAM_RESIZE);
+        if (checkHideMagick.isChecked()) hiddenPrograms.add(CommandListManager.PROGRAM_MAGICK);
+        if (checkHideAnime4k.isChecked()) hiddenPrograms.add(CommandListManager.PROGRAM_ANIME4K);
+        editor.putStringSet("hiddenPrograms", hiddenPrograms);
+
         editor.putInt("format", (int) spinnerFormat.getSelectedItemId());
         editor.putInt("dirOutputFormat", (int) spinnerDirFormat.getSelectedItemId());
         editor.putInt("name", (int) spinnerName.getSelectedItemId());

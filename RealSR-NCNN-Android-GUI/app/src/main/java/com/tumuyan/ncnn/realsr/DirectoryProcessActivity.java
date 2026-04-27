@@ -30,7 +30,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 public class DirectoryProcessActivity extends AppCompatActivity {
 
@@ -143,11 +145,13 @@ public class DirectoryProcessActivity extends AppCompatActivity {
                 sp.getString("classicalFilters", getString(R.string.default_classical_filters)).split("\\s+"),
                 sp.getString("magickFilters", getString(R.string.default_magick_filters)).split("\\s+"));
         commandListManager.loadCustomLabels(sp.getString("customLabels", ""));
-        
-        // 只使用支持目录批量处理的命令
+
+        Set<String> hiddenPrograms = sp.getStringSet("hiddenPrograms", new HashSet<String>());
+
+        // 只使用支持目录批量处理的命令（应用隐藏程序筛选）
         int totalCommands = commandListManager.getCommandCount();
-        commandList = commandListManager.getDirectorySupportedCommands();
-        String[] displayLabels = commandListManager.getDirectorySupportedLabels(useCustomLabel);
+        commandList = commandListManager.getDirectorySupportedCommands(hiddenPrograms);
+        String[] displayLabels = commandListManager.getDirectorySupportedLabels(useCustomLabel, hiddenPrograms);
 
         // 记录过滤信息到日志
         Log.i("DirectoryProcess", "Total commands: " + totalCommands + 
